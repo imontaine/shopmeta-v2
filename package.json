@@ -1,0 +1,16 @@
+{
+  "name": "shopmeta-v2",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LibreChat whitelabel deployment for shopmeta.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/imontaine/shopmeta-v2.git"
+  },
+  "scripts": {
+    "version:patch": "npm version patch -m \"release: v%s\"",
+    "version:minor": "npm version minor -m \"release: v%s\"",
+    "version:major": "npm version major -m \"release: v%s\"",
+    "deploy": "npm version patch -m \"deploy: v%s\" && git push && git push --tags"
+  }
+}
