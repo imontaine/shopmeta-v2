@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# Pre-push hook: Blocks direct `git push` unless version was bumped.
+# Forces all pushes to go through `npm run deploy` which auto-bumps the version.
+#
+# To bypass in emergencies: git push --no-verify
+
+# Check if this push was triggered by `npm run deploy` (which sets this env var)
+if [ "$DEPLOY_PUSH" = "1" ]; then
+  exit 0
+fi
+
+# Get the current version from package.json
+CURRENT_VERSION=$(node -p "require('./package.json').version" 2>/dev/null)
+
+if [ -z "$CURRENT_VERSION" ]; then
+  echo "⚠️  Could not read version from package.json"
+  exit 1
+fi
+
+# Get the latest version tag from git
+LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null)
+
+if [ -z "$LATEST_TAG" ]; then
+  # No tags yet — first deploy, allow it
+  exit 0
+fi
+
+# Strip the 'v' prefix for comparison
+LATEST_TAG_VERSION="${LATEST_TAG#v}"
+
+if [ "$CURRENT_VERSION" = "$LATEST_TAG_VERSION" ]; then
+  echo ""
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║  ⛔ PUSH BLOCKED — Version not bumped!                      ║"
+  echo "║                                                              ║"
+  echo "║  Current version:  v${CURRENT_VERSION}                       ║"
+  echo "║  Latest tag:       ${LATEST_TAG}                             ║"
+  echo "║                                                              ║"
+  echo "║  Use one of these instead:                                   ║"
+  echo "║    npm run deploy          (auto-bump patch + push)          ║"
+  echo "║    npm run version:minor   (bump minor, then push)           ║"
+  echo "║    npm run version:major   (bump major, then push)           ║"
+  echo "║                                                              ║"
+  echo "║  Emergency bypass: git push --no-verify                      ║"
+  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo ""
+  exit 1
+fi
+
+exit 0

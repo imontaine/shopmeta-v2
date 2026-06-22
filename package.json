@@ -8,9 +8,10 @@
     "url": "https://github.com/imontaine/shopmeta-v2.git"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
     "version:patch": "npm version patch -m \"release: v%s\"",
     "version:minor": "npm version minor -m \"release: v%s\"",
     "version:major": "npm version major -m \"release: v%s\"",
-    "deploy": "npm version patch -m \"deploy: v%s\" && git push && git push --tags"
+    "deploy": "npm version patch -m \"deploy: v%s\" && set DEPLOY_PUSH=1 && git push && git push --tags"
   }
 }
