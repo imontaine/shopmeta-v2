@@ -1,0 +1,18 @@
+http:
+  routers:
+    dokploy-dashboard:
+      rule: "Host(`deploy.shopmeta.app`)"
+      entryPoints:
+        - websecure
+      service: dokploy-dashboard
+      tls: {}
+    dokploy-dashboard-http:
+      rule: "Host(`deploy.shopmeta.app`)"
+      entryPoints:
+        - web
+      service: dokploy-dashboard
+  services:
+    dokploy-dashboard:
+      loadBalancer:
+        servers:
+          - url: "http://172.17.0.1:3000"

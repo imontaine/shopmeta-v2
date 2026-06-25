@@ -8,6 +8,13 @@
       "when": 1782371295908,
       "tag": "0000_fat_colonel_america",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782371300000,
+      "tag": "0001_better_auth_and_organizations",
+      "breakpoints": true
     }
   ]
 }

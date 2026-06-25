@@ -8,16 +8,11 @@ export default defineConfig({
     include: ['tests/integration/**/*.test.ts', 'tests/integration/**/*.spec.ts'],
     exclude: ['tests/unit/**'],
     globals: true,
-    // Integration tests can take longer due to container startup
+    // Integration tests can take longer due to server/container startup
     testTimeout: 120000,
     hookTimeout: 120000,
-    // Run integration tests serially to avoid container conflicts
+    // Run integration tests serially to avoid port conflicts
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

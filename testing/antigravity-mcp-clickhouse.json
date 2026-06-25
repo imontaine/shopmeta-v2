@@ -1,0 +1,68 @@
+{
+    "source": "Antigravity IDE - ClickHouse Cloud MCP (OAuth authenticated)",
+    "timestamp": "2026-06-24T14:55:11Z",
+    "mcp_server": "clickhouse (mcp.clickhouse.cloud via OAuth)",
+    "tools_available": [
+        "run_select_query",
+        "list_databases",
+        "list_tables",
+        "get_services_list",
+        "get_organizations",
+        "get_organization_details",
+        "get_service_details",
+        "get_clickpipe",
+        "list_clickpipes",
+        "list_service_backups",
+        "get_organization_cost",
+        "get_service_backup_details",
+        "get_service_backup_configuration"
+    ],
+    "query_tool": "run_select_query",
+    "query_args": {
+        "query": "SELECT count() AS perfume_items_sold_qty, countDistinct(i.order_id) AS orders_with_perfume, sum(i.qty_ordered) AS total_units, sum(i.row_total) AS total_revenue FROM magento_analytics.magento_order_items i FINAL INNER JOIN (SELECT entity_id FROM magento_analytics.magento_orders FINAL WHERE toDate(created_at) = toDate(now()) - 1) o ON i.order_id = o.entity_id INNER JOIN (SELECT sku FROM magento_analytics.product_catalog FINAL WHERE department = 'Fragrances' OR subtype = 'Fragrances') p ON i.sku = p.sku SETTINGS max_execution_time = 60",
+        "serviceId": "3c9b7e1c-f798-47fc-88bd-f1a395d6e8c2",
+        "timeoutSeconds": 90
+    },
+    "query_output": {
+        "result": {
+            "meta": [
+                {"name": "perfume_items_sold_qty", "type": "UInt64"},
+                {"name": "orders_with_perfume", "type": "UInt64"},
+                {"name": "total_units", "type": "Decimal(38, 4)"},
+                {"name": "total_revenue", "type": "Decimal(38, 4)"}
+            ],
+            "data": [
+                {
+                    "perfume_items_sold_qty": 9884,
+                    "orders_with_perfume": 5352,
+                    "total_units": 10396,
+                    "total_revenue": 1312551.99
+                }
+            ],
+            "rows": 1,
+            "statistics": {
+                "elapsed": 0.919751608,
+                "rows_read": 32658547,
+                "bytes_read": 1008605044
+            }
+        }
+    },
+    "comparison_notes": {
+        "vs_shopmeta_run_query": {
+            "tool_name": "run_query (NO OAuth)",
+            "output_format": "{columns: [...], rows: [[...]]}",
+            "has_meta": false,
+            "has_statistics": false,
+            "has_data_objects": false,
+            "requires_serviceId": false
+        },
+        "vs_this_run_select_query": {
+            "tool_name": "run_select_query (WITH OAuth)",
+            "output_format": "{result: {meta: [...], data: [{...}], rows: N, statistics: {...}}}",
+            "has_meta": true,
+            "has_statistics": true,
+            "has_data_objects": true,
+            "requires_serviceId": true
+        }
+    }
+}

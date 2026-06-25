@@ -1,0 +1,34 @@
+
+version: 1.2.1
+cache: true
+
+interface:
+  endpointsMenu: true
+  modelSelect: true
+  customFooter: "Powered by [shopmeta.ai](https://shopmeta.ai)"
+
+# BYOK — customers enter their own API keys in the UI
+endpoints:
+  openAI:
+    userProvidedApiKeys: true
+    models:
+      default: ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-4.1", "gpt-4o", "gpt-4o-mini", "o3-mini"]
+  anthropic:
+    userProvidedApiKeys: true
+    models: ["claude-sonnet-4-20250514", "claude-haiku-4-20250414"]
+  google:
+    userProvidedApiKeys: true
+    models: ["gemini-2.5-pro", "gemini-2.5-flash"]
+
+# Rate limiting (abuse protection)
+rateLimits:
+  fileUploads:
+    ipMax: 100
+    ipWindowInMinutes: 60
+    userMax: 50
+    userWindowInMinutes: 60
+  conversationsImport:
+    ipMax: 100
+    ipWindowInMinutes: 60
+    userMax: 50
+    userWindowInMinutes: 60

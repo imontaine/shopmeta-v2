@@ -8,6 +8,8 @@
 *.csr
 *.p12
 *.pfx
+keys/
+plans/
 
 # =========================
 # Environment Variables
@@ -39,9 +41,15 @@ yarn-error.log*
 # Docker
 # =========================
 docker-compose.override.yml
+scratch/
 
 # =========================
 # Logs
 # =========================
 logs/
 *.log
+
+# =========================
+# Vendored / Embedded Repos
+# =========================
+LibreChat-v0.8.7-rc1/

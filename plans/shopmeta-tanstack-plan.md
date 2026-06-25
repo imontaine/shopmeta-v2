@@ -704,8 +704,8 @@ export const ClickHouseToolUI = makeToolUI({
 | # | Unit | File | Depends on | Status |
 |---|------|------|-----------|--------|
 | 01 | Scaffold + Database | [01-scaffold-database.md](units/01-scaffold-database.md) | — | ✅ |
-| 02 | Authentication | [02-authentication.md](units/02-authentication.md) | U1 | ⬜ |
-| 03 | Layout + Theme | [03-layout-theme.md](units/03-layout-theme.md) | U2 | ⬜ |
+| 02 | Authentication | [02-authentication.md](units/02-authentication.md) | U1 | ✅ |
+| 03 | Layout + Theme | [03-layout-theme.md](units/03-layout-theme.md) | U2 | ✅ |
 | 04 | Conversation CRUD | [04-conversation-crud.md](units/04-conversation-crud.md) | U2, U3 | ⬜ |
 | 05 | Chat Streaming | [05-chat-streaming.md](units/05-chat-streaming.md) | U4 | ⬜ |
 | 06 | ClickHouse Connections | [06-clickhouse-connections.md](units/06-clickhouse-connections.md) | U2 | ⬜ |
