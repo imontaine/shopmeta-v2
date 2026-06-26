@@ -415,6 +415,18 @@ body {
   color: #00c573;
 }
 
+/* Version badge on auth pages */
+.auth-version {
+  display: block;
+  text-align: center;
+  margin-top: 1.25rem;
+  font-size: 0.6875rem;
+  color: rgba(240, 240, 248, 0.2);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  user-select: all;
+}
+
 /* ─── App Shell Layout ────────────────────────────────────────────────────── */
 
 :root {

@@ -64,8 +64,8 @@ function LoginPage() {
               <path d="M8 16L14 22L24 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
               <defs>
                 <linearGradient id="grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#6366f1" />
-                  <stop offset="1" stopColor="#8b5cf6" />
+                  <stop stopColor="#3ecf8e" />
+                  <stop offset="1" stopColor="#00c573" />
                 </linearGradient>
               </defs>
             </svg>
@@ -135,6 +135,9 @@ function LoginPage() {
           Don&apos;t have an account?{' '}
           <a href="/register" className="auth-link">Create one</a>
         </p>
+
+        {/* Version */}
+        <span className="auth-version">v{__APP_VERSION__}</span>
       </div>
     </div>
   )

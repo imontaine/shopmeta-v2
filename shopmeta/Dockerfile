@@ -30,6 +30,10 @@ COPY --from=deps /app/package.json ./
 # Copy all source files
 COPY . .
 
+# App version — injected at build time, read by vite.config.ts → define
+ARG APP_VERSION=0.0.0
+ENV APP_VERSION=${APP_VERSION}
+
 # Build the TanStack Start production bundle
 # TanStack Start (with vite) outputs to dist/ by default:
 #   dist/client/   — static assets served by the server
