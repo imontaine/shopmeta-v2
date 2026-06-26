@@ -24,6 +24,9 @@ const config = defineConfig({
       'better-auth/client/plugins',
     ],
   },
+  preview: {
+    allowedHosts: ['app.shopmeta.app'],
+  },
 })
 
 export default config
