@@ -69,8 +69,8 @@ export const Route = createFileRoute('/api/chat/stream')({
         const messages = conversationMessages.map((m) => ({
           role: m.role as 'user' | 'assistant',
           content: typeof m.content === 'string'
-            ? [{ type: 'text' as const, text: m.content }]
-            : m.content.map((p) => ({ type: 'text' as const, text: p.text ?? '' })),
+            ? [{ type: 'text' as const, content: m.content }]
+            : m.content.map((p) => ({ type: 'text' as const, content: p.text ?? '' })),
         }))
 
         const stream = chat({
