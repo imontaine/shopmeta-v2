@@ -2,6 +2,8 @@
 // Root authenticated app layout: sidebar + main content area.
 // Manages sidebar collapse state (desktop) and open/close (mobile).
 // Includes hamburger button visible at mobile widths.
+// data-hydrated="true" is set in useEffect — E2E tests wait for this before
+// clicking interactive elements to ensure React event handlers are attached.
 
 import { useState, useEffect } from 'react'
 import { Outlet } from '@tanstack/react-router'
@@ -12,6 +14,13 @@ export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false)
   // Mobile: sidebar drawer open
   const [mobileOpen, setMobileOpen] = useState(false)
+  // Hydration gate — set to true after React mounts on client.
+  // E2E tests wait for #app-layout[data-hydrated="true"] before interacting.
+  const [hydrated, setHydrated] = useState(false)
+
+  useEffect(() => {
+    setHydrated(true)
+  }, [])
 
   // Close mobile sidebar when window resizes to desktop
   useEffect(() => {
@@ -25,7 +34,7 @@ export function AppLayout() {
   }, [])
 
   return (
-    <div className="app-layout">
+    <div id="app-layout" className="app-layout" data-hydrated={hydrated ? 'true' : 'false'}>
       {/* Hamburger button — only visible on mobile (≤768px) */}
       <button
         id="hamburger-btn"

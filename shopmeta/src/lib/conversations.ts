@@ -80,13 +80,32 @@ async function requireSession() {
 
 /**
  * Get the current user's active org ID from the session.
- * Better Auth stores `activeOrganizationId` on the session object.
- * Falls back to looking up the first org the user is a member of.
+ * Better Auth stores `activeOrganizationId` on the session object after
+ * `setActiveOrganization` is called. For freshly-registered users, this may
+ * not be set yet (the databaseHook creates the org but can't set it active
+ * without a request context). In that case, we fall back to the DB.
  */
 async function requireOrgSession() {
   const session = await requireSession()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const orgId = (session.session as any).activeOrganizationId as string | undefined | null
+  let orgId = (session.session as any).activeOrganizationId as string | undefined | null
+
+  if (!orgId) {
+    // Fallback: look up the first org the user belongs to via the member table.
+    // This handles freshly-registered users whose session doesn't have an active org yet.
+    try {
+      const { member } = await import('#/lib/db/schema')
+      const { db } = await import('#/lib/db/index')
+      const rows = await db
+        .select({ orgId: member.organizationId })
+        .from(member)
+        .where(eq(member.userId, session.user.id))
+        .limit(1)
+      orgId = rows[0]?.orgId ?? null
+    } catch {
+      // DB unavailable — fall through to error below
+    }
+  }
 
   if (!orgId) {
     throw new Error('No active organization. Please join or create an organization.')

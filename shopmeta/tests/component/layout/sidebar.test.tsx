@@ -15,6 +15,22 @@ vi.mock('@tanstack/react-router', () => ({
     </a>
   ),
   useLocation: () => ({ pathname: '/chat' }),
+  useNavigate: () => vi.fn(),
+  useRouterState: () => ({ location: { pathname: '/chat' } }),
+  useRouter: () => ({ navigate: vi.fn() }),
+}))
+
+// ─── Mock TanStack Query ───────────────────────────────────────────────────────
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: () => ({
+    invalidateQueries: vi.fn(),
+    getQueryData: vi.fn(),
+    setQueryData: vi.fn(),
+  }),
+  useQuery: () => ({ data: [], isLoading: false, error: null }),
+  useMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  QueryClient: class { invalidateQueries = vi.fn() },
+  QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
 
 // ─── Mock ThemeToggle so we don't pull in its full dependency tree ─────────────

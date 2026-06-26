@@ -76,16 +76,24 @@ function ConversationItem({
     }
   }, [isRenaming])
 
-  // Close menu on outside click
+  // Close menu on outside click.
+  // Use a setTimeout(0) guard so the mousedown that OPENED the menu
+  // doesn't immediately close it — a race that fires consistently in Playwright.
   useEffect(() => {
     if (!showMenu) return
+    let active = false
+    const timer = setTimeout(() => { active = true }, 0)
     function handleClick(e: MouseEvent) {
+      if (!active) return
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setShowMenu(false)
       }
     }
     document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('mousedown', handleClick)
+    }
   }, [showMenu])
 
   const handleRenameSubmit = () => {
@@ -287,10 +295,7 @@ export function ConversationList({ collapsed, onMobileClose }: ConversationListP
     onMobileClose()
   }
 
-  // Refetch when route changes (navigation)
-  useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY })
-  }, [routerState.location.pathname, routerState.location.search, queryClient])
+
 
   if (collapsed) {
     return (

@@ -19,6 +19,7 @@ const TEST_PASSWORD = 'Test1234!'
 
 /**
  * Registers a fresh user and lands on /chat.
+ * Waits for React hydration so all onClick handlers are attached.
  */
 async function registerAndLandOnChat(page: Page) {
   const email = uniqueEmail()
@@ -29,6 +30,8 @@ async function registerAndLandOnChat(page: Page) {
   await page.fill('[name=confirm-password]', TEST_PASSWORD)
   await page.click('button[type=submit]')
   await expect(page).toHaveURL(/\/chat/, { timeout: 15000 })
+  // Wait for React to fully hydrate — data-hydrated="true" is set in useEffect
+  await expect(page.locator('#app-layout')).toHaveAttribute('data-hydrated', 'true', { timeout: 10000 })
   return { email }
 }
 
@@ -78,7 +81,7 @@ test.describe('Conversation CRUD E2E', () => {
       await expect(convList).toBeVisible({ timeout: 5000 })
 
       const convItem = convList.locator('[data-conversation-id]').first()
-      await expect(convItem).toBeVisible({ timeout: 5000 })
+      await expect(convItem).toBeVisible({ timeout: 10000 })
 
       // ── Step 2: Rename the conversation ──────────────────────────────────
       // Hover to reveal the menu button
@@ -90,38 +93,39 @@ test.describe('Conversation CRUD E2E', () => {
 
       // Click the context menu (⋮) button
       const menuBtn = page.locator(`#conv-menu-${convId}`)
-      await expect(menuBtn).toBeVisible({ timeout: 3000 })
+      await expect(menuBtn).toBeVisible({ timeout: 5000 })
       await menuBtn.click()
 
       // Click "Rename" in the dropdown
       const renameBtn = page.locator(`#conv-rename-btn-${convId}`)
-      await expect(renameBtn).toBeVisible({ timeout: 3000 })
+      await expect(renameBtn).toBeVisible({ timeout: 5000 })
       await renameBtn.click()
 
       // Rename input should appear
       const renameInput = page.locator(`#conv-rename-${convId}`)
-      await expect(renameInput).toBeVisible({ timeout: 3000 })
+      await expect(renameInput).toBeVisible({ timeout: 5000 })
 
       // Clear and type new name
       await renameInput.fill('Revenue Analysis Chat')
       await renameInput.press('Enter')
 
       // ── Step 3: Verify new name appears in sidebar ────────────────────────
-      // The conversation item should now show the new title
+      // The conversation item should now show the new title.
+      // Allow up to 10s for the remote DB renameMutation + invalidateQueries + refetch.
       await expect(convList.locator('[data-conversation-id]').first()).toContainText(
         'Revenue Analysis Chat',
-        { timeout: 5000 },
+        { timeout: 10000 },
       )
 
       // ── Step 4: Delete the conversation ──────────────────────────────────
       await convList.locator('[data-conversation-id]').first().hover()
 
       const menuBtnAfterRename = page.locator(`#conv-menu-${convId}`)
-      await expect(menuBtnAfterRename).toBeVisible({ timeout: 3000 })
+      await expect(menuBtnAfterRename).toBeVisible({ timeout: 5000 })
       await menuBtnAfterRename.click()
 
       const deleteBtn = page.locator(`#conv-delete-btn-${convId}`)
-      await expect(deleteBtn).toBeVisible({ timeout: 3000 })
+      await expect(deleteBtn).toBeVisible({ timeout: 5000 })
       await deleteBtn.click()
 
       // ── Step 5: Verify conversation is gone ──────────────────────────────
@@ -141,28 +145,44 @@ test.describe('Conversation CRUD E2E', () => {
       await registerAndLandOnChat(page)
 
       const convList = page.locator('#conversation-list')
+      const newChatBtn = page.locator('#new-chat-btn')
 
-      // Create 3 conversations
-      await page.click('#new-chat-btn')
+      // Create 3 conversations — wait for button re-enable between clicks.
+      // The button has disabled={createMutation.isPending}; clicking while
+      // disabled is silently ignored, resulting in fewer conversations.
+      await newChatBtn.click()
       await expect(page).toHaveURL(/\/chat\?conversationId=/, { timeout: 10000 })
+      await expect(newChatBtn).toBeEnabled({ timeout: 5000 })
 
-      await page.click('#new-chat-btn')
-      await expect(convList.locator('[data-conversation-id]')).toHaveCount(2, { timeout: 5000 })
+      await newChatBtn.click()
+      await expect(convList.locator('[data-conversation-id]')).toHaveCount(2, { timeout: 10000 })
+      await expect(newChatBtn).toBeEnabled({ timeout: 5000 })
 
-      await page.click('#new-chat-btn')
-      await expect(convList.locator('[data-conversation-id]')).toHaveCount(3, { timeout: 5000 })
+      await newChatBtn.click()
+      await expect(convList.locator('[data-conversation-id]')).toHaveCount(3, { timeout: 10000 })
     })
 
     test('clicking a conversation in sidebar navigates to it', async ({ page }) => {
       await registerAndLandOnChat(page)
 
-      // Create two conversations
-      await page.click('#new-chat-btn')
+      const newChatBtn = page.locator('#new-chat-btn')
+
+      // Create two conversations, waiting for button re-enable between clicks.
+      await newChatBtn.click()
       await expect(page).toHaveURL(/\/chat\?conversationId=/, { timeout: 10000 })
       const firstUrl = page.url()
+      const firstId = new URL(firstUrl).searchParams.get('conversationId')
+      await expect(newChatBtn).toBeEnabled({ timeout: 5000 })
 
-      await page.click('#new-chat-btn')
-      await expect(page).toHaveURL(/\/chat\?conversationId=/, { timeout: 10000 })
+      await newChatBtn.click()
+      // Wait for URL to change to a *different* conversationId.
+      await page.waitForURL(
+        (url) => {
+          const id = url.searchParams.get('conversationId')
+          return id !== null && id !== firstId
+        },
+        { timeout: 10000 },
+      )
       const secondUrl = page.url()
 
       // The URLs should be different (different conversation IDs)

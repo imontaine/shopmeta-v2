@@ -17,8 +17,11 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSignOutRouteImport } from './routes/api/sign-out'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
+import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
+import { Route as ApiChatStreamRouteImport } from './routes/api/chat/stream'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const SignOutRoute = SignOutRouteImport.update({
@@ -60,6 +63,11 @@ const ApiSignOutRoute = ApiSignOutRouteImport.update({
   path: '/api/sign-out',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -69,6 +77,16 @@ const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   id: '/chat',
   path: '/chat',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ApiChatStreamRoute = ApiChatStreamRouteImport.update({
+  id: '/api/chat/stream',
+  path: '/api/chat/stream',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -83,10 +101,13 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-out': typeof SignOutRoute
+  '/agents': typeof AuthenticatedAgentsRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/api/sign-out': typeof ApiSignOutRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/chat/stream': typeof ApiChatStreamRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -95,10 +116,13 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-out': typeof SignOutRoute
+  '/agents': typeof AuthenticatedAgentsRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/api/sign-out': typeof ApiSignOutRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/chat/stream': typeof ApiChatStreamRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -109,10 +133,13 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-out': typeof SignOutRoute
+  '/_authenticated/agents': typeof AuthenticatedAgentsRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/api/sign-out': typeof ApiSignOutRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/chat/stream': typeof ApiChatStreamRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -123,10 +150,13 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/sign-out'
+    | '/agents'
     | '/chat'
     | '/dashboard'
+    | '/settings'
     | '/api/sign-out'
     | '/api/auth/$'
+    | '/api/chat/stream'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -135,10 +165,13 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/sign-out'
+    | '/agents'
     | '/chat'
     | '/dashboard'
+    | '/settings'
     | '/api/sign-out'
     | '/api/auth/$'
+    | '/api/chat/stream'
   id:
     | '__root__'
     | '/'
@@ -148,10 +181,13 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/sign-out'
+    | '/_authenticated/agents'
     | '/_authenticated/chat'
     | '/_authenticated/dashboard'
+    | '/_authenticated/settings'
     | '/api/sign-out'
     | '/api/auth/$'
+    | '/api/chat/stream'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -164,6 +200,7 @@ export interface RootRouteChildren {
   SignOutRoute: typeof SignOutRoute
   ApiSignOutRoute: typeof ApiSignOutRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiChatStreamRoute: typeof ApiChatStreamRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -224,6 +261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSignOutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -238,6 +282,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/agents': {
+      id: '/_authenticated/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AuthenticatedAgentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/chat/stream': {
+      id: '/api/chat/stream'
+      path: '/api/chat/stream'
+      fullPath: '/api/chat/stream'
+      preLoaderRoute: typeof ApiChatStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -249,13 +307,17 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAgentsRoute: AuthenticatedAgentsRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -272,16 +334,8 @@ const rootRouteChildren: RootRouteChildren = {
   SignOutRoute: SignOutRoute,
   ApiSignOutRoute: ApiSignOutRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiChatStreamRoute: ApiChatStreamRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

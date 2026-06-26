@@ -1,0 +1,66 @@
+# docker-compose.test.yml
+# Test-only docker-compose for CI and local Docker verification.
+# No Traefik labels, no external networks — just the app + postgres.
+# Used by: tests/deployment/docker.test.sh
+
+services:
+  # ─── Application ─────────────────────────────────────────────────────────────
+  shopmeta:
+    image: ${SHOPMETA_IMAGE:-shopmeta:test}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shopmeta-app-test
+    restart: "no"
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgresql://shopmeta:testpassword@shopmeta-db-test:5432/shopmeta_test
+      BETTER_AUTH_SECRET: test-secret-at-least-32-chars-long-for-tests
+      BETTER_AUTH_URL: http://localhost:3000
+      OPENAI_API_KEY: test-key-not-real
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+
+    depends_on:
+      shopmeta-db-test:
+        condition: service_healthy
+
+    networks:
+      - test-internal
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 90s
+
+  # ─── Database ─────────────────────────────────────────────────────────────────
+  shopmeta-db-test:
+    image: postgres:16-alpine
+    container_name: shopmeta-db-test
+    restart: "no"
+
+    environment:
+      POSTGRES_USER: shopmeta
+      POSTGRES_PASSWORD: testpassword
+      POSTGRES_DB: shopmeta_test
+
+    networks:
+      - test-internal
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopmeta -d shopmeta_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+
+# ─── Networks ─────────────────────────────────────────────────────────────────
+networks:
+  test-internal:
+    driver: bridge

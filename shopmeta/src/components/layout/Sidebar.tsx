@@ -2,11 +2,11 @@
 // Collapsible navigation sidebar for ShopMeta.
 // - Renders navigation links with active state highlighting.
 // - Can be collapsed to icon-only mode (desktop) or hidden (mobile).
-// - Exposes a hamburger toggle for mobile via `onMobileToggle`.
+// - Exposes a hamburger toggle for mobile via onMobileToggle.
 // - Shows conversation list below navigation.
+// - id="logout-btn" on the sign-out link is required by E2E tests.
 
 import { Link, useLocation } from '@tanstack/react-router'
-import { useTheme } from '#/lib/theme'
 import { ThemeToggle } from './ThemeToggle'
 import { ConversationList } from './ConversationList'
 
@@ -160,9 +160,28 @@ export function Sidebar({ collapsed, mobileOpen, onToggle, onMobileClose }: Side
           />
         </div>
 
-        {/* Footer: theme toggle + user info */}
+        {/* Footer: theme toggle + logout */}
         <div className="sidebar-footer">
           <ThemeToggle />
+          {/*
+            Sign-out link. id="logout-btn" is required by E2E tests to:
+            1. Confirm the user is authenticated (button visible = logged in)
+            2. Trigger logout and verify redirect to /login
+            Uses a plain <a> so it works before React hydrates.
+          */}
+          <a
+            href="/sign-out"
+            id="logout-btn"
+            className="sidebar-logout-btn"
+            aria-label="Sign out"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            {!collapsed && <span>Sign out</span>}
+          </a>
         </div>
       </aside>
     </>

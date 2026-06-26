@@ -1,0 +1,129 @@
+# docker-compose.yml
+# Production docker-compose for ShopMeta on Dokploy.
+#
+# Services:
+#   shopmeta        — TanStack Start Node.js application
+#   shopmeta-db     — PostgreSQL 16 database
+#
+# Networks:
+#   dokploy-network — Shared Traefik proxy network (external, pre-created by Dokploy)
+#   internal        — Private network between app and DB (not exposed)
+#
+# Traefik labels route https://app.shopmeta.app → shopmeta:3000
+# Existing services (chat.shopmeta.app, admin.shopmeta.app) are NOT modified here.
+
+services:
+  # ─── Application ─────────────────────────────────────────────────────────────
+  shopmeta:
+    image: ${SHOPMETA_IMAGE:-shopmeta:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shopmeta-app
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+
+      # PostgreSQL — connects to the internal shopmeta-db service
+      DATABASE_URL: postgresql://${POSTGRES_USER:-shopmeta}:${POSTGRES_PASSWORD}@shopmeta-db:5432/${POSTGRES_DB:-shopmeta}
+
+      # Better Auth
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: https://app.shopmeta.app
+
+      # AI provider keys
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_AI_API_KEY: ${GOOGLE_AI_API_KEY:-}
+
+      # ClickHouse connection password encryption
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+
+    depends_on:
+      shopmeta-db:
+        condition: service_healthy
+
+    networks:
+      - dokploy-network
+      - internal
+
+    # Traefik routing labels
+    labels:
+      - "traefik.enable=true"
+      # HTTP → HTTPS redirect
+      - "traefik.http.routers.shopmeta-http.rule=Host(`app.shopmeta.app`)"
+      - "traefik.http.routers.shopmeta-http.entrypoints=web"
+      - "traefik.http.routers.shopmeta-http.middlewares=redirect-to-https@docker"
+      # HTTPS router
+      - "traefik.http.routers.shopmeta.rule=Host(`app.shopmeta.app`)"
+      - "traefik.http.routers.shopmeta.entrypoints=websecure"
+      - "traefik.http.routers.shopmeta.tls=true"
+      - "traefik.http.routers.shopmeta.tls.certresolver=letsencrypt"
+      # Service port
+      - "traefik.http.services.shopmeta.loadbalancer.server.port=3000"
+      # Dokploy management
+      - "com.docker.compose.project=shopmeta"
+
+    # Container health check (doubles as Traefik readiness)
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ─── Database ─────────────────────────────────────────────────────────────────
+  shopmeta-db:
+    image: postgres:16-alpine
+    container_name: shopmeta-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-shopmeta}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-shopmeta}
+      # Performance tuning for a small VPS
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+
+    volumes:
+      - shopmeta_pgdata:/var/lib/postgresql/data
+
+    networks:
+      - internal
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shopmeta} -d ${POSTGRES_DB:-shopmeta}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+# ─── Volumes ──────────────────────────────────────────────────────────────────
+volumes:
+  shopmeta_pgdata:
+    driver: local
+
+# ─── Networks ─────────────────────────────────────────────────────────────────
+networks:
+  # External network created and managed by Dokploy/Traefik
+  dokploy-network:
+    external: true
+
+  # Internal network — only app + db, not exposed to Traefik
+  internal:
+    driver: bridge
+    internal: true

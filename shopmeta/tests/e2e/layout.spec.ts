@@ -15,7 +15,9 @@ const TEST_PASSWORD = 'Test1234!'
 
 /**
  * Register a fresh user and land on /chat (authenticated).
- * Waits for full hydration before returning.
+ * Waits for full React hydration before returning.
+ * Uses #app-layout[data-hydrated="true"] which is set in useEffect — this
+ * guarantees all onClick handlers (hamburger, collapse, theme toggle) are attached.
  */
 async function loginFreshUser(page: Page): Promise<string> {
   const email = uniqueEmail()
@@ -26,8 +28,8 @@ async function loginFreshUser(page: Page): Promise<string> {
   await page.fill('[name=confirm-password]', TEST_PASSWORD)
   await page.click('button[type=submit]')
   await expect(page).toHaveURL(/\/chat/, { timeout: 15000 })
-  // Wait for React to fully hydrate (logout button becomes enabled)
-  await expect(page.locator('#logout-btn')).toBeEnabled({ timeout: 10000 })
+  // Wait for React to fully hydrate — data-hydrated="true" is set in useEffect
+  await expect(page.locator('#app-layout')).toHaveAttribute('data-hydrated', 'true', { timeout: 10000 })
   return email
 }
 

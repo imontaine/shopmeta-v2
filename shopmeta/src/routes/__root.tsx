@@ -92,7 +92,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   `
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
         {/* Anti-FOUC: applies theme class synchronously before render */}

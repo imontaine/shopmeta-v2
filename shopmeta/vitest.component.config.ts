@@ -1,3 +1,4 @@
+/// <reference types="@testing-library/jest-dom" />
 import { defineConfig } from 'vitest/config'
 import { resolve } from 'path'
 import viteReact from '@vitejs/plugin-react'

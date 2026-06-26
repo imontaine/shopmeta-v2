@@ -2,6 +2,8 @@
 // Global setup for component tests using React Testing Library + jsdom.
 
 import '@testing-library/dom'
+import '@testing-library/jest-dom'
+
 
 // Polyfill matchMedia — jsdom doesn't implement it
 Object.defineProperty(window, 'matchMedia', {

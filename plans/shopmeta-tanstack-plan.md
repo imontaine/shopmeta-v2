@@ -706,18 +706,18 @@ export const ClickHouseToolUI = makeToolUI({
 | 01 | Scaffold + Database | [01-scaffold-database.md](units/01-scaffold-database.md) | — | ✅ |
 | 02 | Authentication | [02-authentication.md](units/02-authentication.md) | U1 | ✅ |
 | 03 | Layout + Theme | [03-layout-theme.md](units/03-layout-theme.md) | U2 | ✅ |
-| 04 | Conversation CRUD | [04-conversation-crud.md](units/04-conversation-crud.md) | U2, U3 | ⬜ |
-| 05 | Chat Streaming | [05-chat-streaming.md](units/05-chat-streaming.md) | U4 | ⬜ |
+| 04 | Conversation CRUD | [04-conversation-crud.md](units/04-conversation-crud.md) | U2, U3 | ✅ |
+| 05 | Chat Streaming | [05-chat-streaming.md](units/05-chat-streaming.md) | U4 | ✅ |
 | 06 | ClickHouse Connections | [06-clickhouse-connections.md](units/06-clickhouse-connections.md) | U2 | ⬜ |
 | 07 | Agent Builder | [07-agent-builder.md](units/07-agent-builder.md) | U2, U6 | ⬜ |
-| 08 | MCP Tool Execution | [08-mcp-tool-execution.md](units/08-mcp-tool-execution.md) | U5, U7 | ⬜ |
-| 09 | Data Table | [09-data-table.md](units/09-data-table.md) | U8 | ⬜ |
-| 10 | Chart Components | [10-chart-components.md](units/10-chart-components.md) | U8 | ⬜ |
-| 11 | Tool Call Renderer | [11-tool-call-renderer.md](units/11-tool-call-renderer.md) | U9, U10 | ⬜ |
-| 12 | Dashboard CRUD | [12-dashboard-crud.md](units/12-dashboard-crud.md) | U2 | ⬜ |
-| 13 | Widget System | [13-widget-system.md](units/13-widget-system.md) | U12, U6, U10 | ⬜ |
-| 14 | Admin + Usage | [14-admin-usage.md](units/14-admin-usage.md) | U2, U5 | ⬜ |
-| 15 | Deployment | [15-deployment.md](units/15-deployment.md) | All | ⬜ |
+| 08 | MCP Tool Execution | [08-mcp-tool-execution.md](units/08-mcp-tool-execution.md) | U5, U7 | ✅ |
+| 09 | Data Table | [09-data-table.md](units/09-data-table.md) | U8 | ✅ |
+| 10 | Chart Components | [10-chart-components.md](units/10-chart-components.md) | U8 | ✅ |
+| 11 | Tool Call Renderer | [11-tool-call-renderer.md](units/11-tool-call-renderer.md) | U9, U10 | ✅ |
+| 12 | Dashboard CRUD | [12-dashboard-crud.md](units/12-dashboard-crud.md) | U2 | ✅ |
+| 13 | Widget System | [13-widget-system.md](units/13-widget-system.md) | U12, U6, U10 | ✅ |
+| 14 | Admin + Usage | [14-admin-usage.md](units/14-admin-usage.md) | U2, U5 | ✅ |
+| 15 | Deployment | [15-deployment.md](units/15-deployment.md) | All | ✅ |
 
 
 

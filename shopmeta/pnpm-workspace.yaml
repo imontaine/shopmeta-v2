@@ -1,7 +1,8 @@
 allowBuilds:
-  better-sqlite3: set this to true or false
+  better-sqlite3: true
   cpu-features: true
   esbuild: true
+  msw: true
   protobufjs: true
   ssh2: true
 minimumReleaseAgeExclude:
