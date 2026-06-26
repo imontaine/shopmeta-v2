@@ -91,8 +91,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         }
         document.documentElement.classList.add(resolved === 'dark' ? 'dark' : 'light');
       } catch (e) {
-        // Default to dark if anything fails
-        document.documentElement.classList.add('dark');
+        // Default to light if anything fails
+        document.documentElement.classList.add('light');
       }
     })();
   `

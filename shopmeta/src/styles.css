@@ -476,7 +476,7 @@ body {
 /* â”€â”€â”€ App Shell Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 :root {
-  --sidebar-width: 240px;
+  --sidebar-width: 260px;
   --sidebar-collapsed-width: 60px;
   --sidebar-mobile-width: 260px;
   --topbar-height: 52px;
@@ -487,8 +487,26 @@ body {
 .app-layout {
   display: flex;
   min-height: 100dvh;
-  background: var(--background);
+  background: var(--bg-base);
   position: relative;
+}
+
+/* Main content area — centered 720px reading column */
+.app-main {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  padding: 24px;
+  transition: margin-left var(--sidebar-transition);
+}
+
+.app-main--expanded {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+@media (max-width: 768px) {
+  .app-main {
+    margin-left: 0;
+  }
 }
 
 /* â”€â”€â”€ Hamburger â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -531,8 +549,8 @@ body {
   left: 0;
   bottom: 0;
   width: var(--sidebar-width);
-  background: #0f0f0f;
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   z-index: 50;
@@ -588,7 +606,7 @@ body {
   justify-content: space-between;
   height: var(--topbar-height);
   padding: 0 12px 0 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   gap: 8px;
   overflow: hidden;
@@ -647,7 +665,7 @@ body {
   gap: 10px;
   padding: 9px 10px;
   border-radius: 8px;
-  color: rgba(240, 240, 248, 0.55);
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
@@ -657,17 +675,18 @@ body {
 }
 
 .sidebar-nav-link:hover {
-  color: rgba(240, 240, 248, 0.9);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  background: var(--bg-elevated);
 }
 
 .sidebar-nav-link--active {
-  color: var(--accent);
+  color: var(--text-primary);
   background: var(--accent-subtle);
+  border-left: 3px solid var(--accent);
 }
 
 .sidebar-nav-link--active:hover {
-  color: var(--accent-hover);
+  color: var(--text-primary);
   background: var(--accent-subtle);
 }
 
@@ -692,7 +711,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border);
   min-height: 0;
 }
 
@@ -700,7 +719,7 @@ body {
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: rgba(240, 240, 248, 0.3);
+  color: var(--text-secondary);
   padding: 8px 16px 4px;
   margin: 0;
   flex-shrink: 0;
@@ -1136,7 +1155,7 @@ body {
 
 .sidebar-footer {
   padding: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
   gap: 8px;
