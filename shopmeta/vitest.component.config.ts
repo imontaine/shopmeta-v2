@@ -7,6 +7,9 @@ import viteReact from '@vitejs/plugin-react'
 // Run with: pnpm vitest run --config vitest.component.config.ts
 export default defineConfig({
   plugins: [viteReact()],
+  define: {
+    __APP_VERSION__: JSON.stringify('0.0.0-test'),
+  },
   test: {
     name: 'component',
     environment: 'jsdom',

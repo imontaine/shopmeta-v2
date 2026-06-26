@@ -160,7 +160,7 @@ export function Sidebar({ collapsed, mobileOpen, onToggle, onMobileClose }: Side
           />
         </div>
 
-        {/* Footer: theme toggle + logout */}
+        {/* Footer: theme toggle + logout + version */}
         <div className="sidebar-footer">
           <ThemeToggle />
           {/*
@@ -182,6 +182,14 @@ export function Sidebar({ collapsed, mobileOpen, onToggle, onMobileClose }: Side
             </svg>
             {!collapsed && <span>Sign out</span>}
           </a>
+          {!collapsed && (
+            <span
+              className="sidebar-version"
+              title={`ShopMeta v${__APP_VERSION__}`}
+            >
+              v{__APP_VERSION__}
+            </span>
+          )}
         </div>
       </aside>
     </>

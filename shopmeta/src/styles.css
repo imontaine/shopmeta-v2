@@ -1123,6 +1123,21 @@ body {
   border-color: rgba(239, 68, 68, 0.2);
 }
 
+/* Version badge in sidebar footer */
+.sidebar-version {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  color: rgba(240, 240, 248, 0.25);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  user-select: all;
+  cursor: default;
+}
+
+.light .sidebar-version {
+  color: rgba(10, 10, 20, 0.3);
+}
+
 /* ─── Theme toggle button ─────────────────────────────────────────────────── */
 
 .theme-toggle {
