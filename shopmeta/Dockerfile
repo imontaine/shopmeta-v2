@@ -1,19 +1,19 @@
 # ─── Stage 1: Dependencies ────────────────────────────────────────────────────
 # Install all node_modules using pnpm with frozen lockfile.
-# We use node:22-alpine for a minimal base.
 FROM node:22-alpine AS deps
 
-# Install pnpm globally via npm (more reliable in Docker build-from-URL context)
+# Install pnpm via npm (pinned version, no corepack network fetch)
 RUN npm install -g pnpm@9
 
 WORKDIR /app
 
-# Copy lockfiles and manifests first for better layer caching
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Copy workspace config and manifests first for better layer caching
+# pnpm-workspace.yaml must have packages: ['.'] for single-package workspace mode
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY drizzle.config.ts ./
 
-# Install production + dev dependencies (we need dev deps to build)
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Install all dependencies (dev included — needed for the build step)
+RUN pnpm install --frozen-lockfile
 
 # ─── Stage 2: Build ───────────────────────────────────────────────────────────
 # Run vite build to produce the production bundle.
@@ -23,45 +23,40 @@ RUN npm install -g pnpm@9
 
 WORKDIR /app
 
-# Copy dependencies from deps stage
+# Copy installed dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./
-COPY --from=deps /app/pnpm-workspace.yaml ./
 
 # Copy all source files
 COPY . .
 
 # Build the TanStack Start production bundle
-# Output goes to .output/ (configured by TanStack Start)
-RUN pnpm build 2>&1 || (echo "Build failed — listing /app:" && ls -la /app && exit 1)
+# Output goes to .output/ (TanStack Start default output directory)
+RUN pnpm build
 
 # Verify .output was produced — fail loudly if not
-RUN ls -la .output && echo "✅ Build output verified"
-
+RUN ls -la .output && echo "✅ .output verified"
 
 # ─── Stage 3: Production runtime ──────────────────────────────────────────────
 # Minimal runtime image with only production artifacts.
 FROM node:22-alpine AS runner
 
-# Install netcat for the PostgreSQL health check in entrypoint
-# and ca-certificates for HTTPS connections to ClickHouse/OpenAI
-RUN apk add --no-cache netcat-openbsd ca-certificates
+# Install wget for health checks and ca-certificates for HTTPS
+RUN apk add --no-cache wget ca-certificates
 
 WORKDIR /app
 
-# Create non-root user (node user already exists in node:alpine at uid 1000)
-# Ensure app directory is owned by node user
+# Create non-root user ownership (node user exists in node:alpine at uid 1000)
 RUN chown node:node /app
 
-# Copy build output
+# Copy the built .output directory
 COPY --from=builder --chown=node:node /app/.output ./.output
 
 # Copy drizzle migrations (needed for drizzle-kit migrate at startup)
 COPY --from=builder --chown=node:node /app/drizzle ./drizzle
 COPY --from=builder --chown=node:node /app/drizzle.config.ts ./drizzle.config.ts
 
-# Copy node_modules (needed by drizzle-kit for migrations)
-# We install only production deps here to keep the image lean
+# Copy node_modules and package.json for drizzle-kit at runtime
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=deps --chown=node:node /app/package.json ./package.json
 
@@ -76,7 +71,7 @@ USER node
 EXPOSE 3000
 
 # Container health check — polls /api/health every 30s
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
   CMD wget -qO- http://localhost:${PORT:-3000}/api/health || exit 1
 
 # Default environment

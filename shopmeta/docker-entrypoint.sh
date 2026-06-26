@@ -50,11 +50,8 @@ if [ -n "$DATABASE_URL" ]; then
   # ─── Run migrations ─────────────────────────────────────────────────────────
 
   echo "[entrypoint] Running database migrations..."
-  node_modules/.bin/drizzle-kit migrate --config=drizzle.config.js || {
-    echo "[entrypoint] WARNING: Migration via drizzle-kit failed. Trying migrate script..."
-    # Fallback: run the built-in migrate script if available
-    node --experimental-vm-modules scripts/migrate.mjs 2>/dev/null || true
-  }
+  # drizzle-kit supports .ts configs natively
+  node_modules/.bin/drizzle-kit migrate
   echo "[entrypoint] Migrations complete."
 else
   echo "[entrypoint] WARNING: DATABASE_URL is not set. Skipping migrations."
