@@ -4,6 +4,27 @@
 import '@testing-library/dom'
 import '@testing-library/jest-dom'
 
+// Polyfill ResizeObserver — jsdom doesn't implement it
+// Required by use-stick-to-bottom (prompt-kit ChatContainer dependency)
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver
+
+// Polyfill IntersectionObserver — jsdom doesn't implement it
+class IntersectionObserverMock {
+  readonly root = null
+  readonly rootMargin = ''
+  readonly thresholds: readonly number[] = []
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords(): IntersectionObserverEntry[] { return [] }
+}
+globalThis.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver
+
 
 // Polyfill matchMedia — jsdom doesn't implement it
 Object.defineProperty(window, 'matchMedia', {

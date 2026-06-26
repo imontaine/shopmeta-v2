@@ -1,14 +1,13 @@
 // tests/component/chat/composer.test.tsx
 // Component tests for the Composer chat input component.
 // Tests: send on Enter, stop button visibility, input behavior.
+// Updated for prompt-kit migration — mocks prompt-kit UI components.
 
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 // ─── Mock assistant-ui primitives ─────────────────────────────────────────────
-// Since assistant-ui requires a runtime context, we mock the primitives
-// to isolate the Composer component behavior.
 
 let mockIsRunning = false
 const mockSend = vi.fn()
@@ -60,6 +59,50 @@ vi.mock('@assistant-ui/react', async () => {
   }
 })
 
+// Mock prompt-kit PromptInput — renders children directly with the textarea
+vi.mock('@/components/ui/prompt-input', async () => {
+  const React = await import('react')
+
+  // Store the onValueChange callback so the textarea mock can call it
+  let storedOnValueChange: ((v: string) => void) | null = null
+  let storedIsLoading = false
+
+  return {
+    PromptInput: ({ children, value, onValueChange, onSubmit, isLoading, ...props }: any) => {
+      storedOnValueChange = onValueChange || null
+      storedIsLoading = !!isLoading
+      return React.createElement('div', { 'data-testid': 'prompt-input', ...props }, children)
+    },
+    PromptInputTextarea: React.forwardRef(({ className, ...props }: any, ref: any) =>
+      React.createElement('textarea', {
+        role: 'textbox',
+        ref,
+        disabled: storedIsLoading,
+        onChange: (e: any) => {
+          storedOnValueChange?.(e.target.value)
+          props.onChange?.(e)
+        },
+        ...props,
+      }),
+    ),
+    PromptInputActions: ({ children, ...props }: any) =>
+      React.createElement('div', props, children),
+    PromptInputAction: ({ children, tooltip }: any) =>
+      React.createElement(React.Fragment, null, children),
+  }
+})
+
+// Mock Button component
+vi.mock('@/components/ui/button', async () => {
+  const React = await import('react')
+  return {
+    Button: React.forwardRef(({ children, ...props }: any, ref: any) =>
+      React.createElement('button', { ref, ...props }, children),
+    ),
+    buttonVariants: () => '',
+  }
+})
+
 // Mock ModelSelector since it imports providers
 vi.mock('#/components/chat/ModelSelector', () => ({
   ModelSelector: ({ currentModel }: { currentModel: string; currentProvider: string; onModelChange: () => void }) => (
@@ -80,8 +123,14 @@ vi.mock('#/lib/ai/providers', () => ({
 vi.mock('lucide-react', () => ({
   Send: () => <span data-testid="send-icon">→</span>,
   Square: () => <span data-testid="stop-icon">■</span>,
+  ArrowUp: () => <span data-testid="arrow-up-icon">↑</span>,
   Plus: () => <span>+</span>,
   MessageSquare: () => <span>💬</span>,
+}))
+
+// Mock cn utility
+vi.mock('@/lib/utils', () => ({
+  cn: (...args: any[]) => args.filter(Boolean).join(' '),
 }))
 
 const { Composer } = await import('#/components/chat/Composer')

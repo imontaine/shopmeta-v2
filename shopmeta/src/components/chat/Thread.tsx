@@ -1,207 +1,185 @@
 // src/components/chat/Thread.tsx
 // Thread component — renders the list of messages in a conversation.
-// Uses assistant-ui primitives with auto-scroll during streaming.
-// Wraps messages with MarkdownRenderer for rich content display.
+// Uses assistant-ui primitives for runtime integration.
+// Uses prompt-kit's ChatContainer, Message, and Markdown for the view layer.
 // Includes: Regenerate button on the last assistant message.
 
-import { useEffect, useRef } from 'react'
 import {
   ThreadPrimitive,
   MessagePrimitive,
-  useThreadRuntime,
   ActionBarPrimitive,
 } from '@assistant-ui/react'
-import { MarkdownRenderer } from '#/components/chat/MarkdownRenderer'
-import { RefreshCw } from 'lucide-react'
+import {
+  ChatContainerRoot,
+  ChatContainerContent,
+  ChatContainerScrollAnchor,
+} from '@/components/ui/chat-container'
+import { ScrollButton } from '@/components/ui/scroll-button'
+import {
+  Message,
+  MessageAvatar,
+  MessageContent,
+  MessageActions,
+  MessageAction,
+} from '@/components/ui/message'
+import { Loader } from '@/components/ui/loader'
+import { RefreshCw, Copy, Check } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { Markdown } from '@/components/ui/markdown'
+import { cn } from '@/lib/utils'
 
-// ─── Message Bubble ───────────────────────────────────────────────────────────
+// ─── Markdown wrapper for assistant messages ────────────────────────────────
+
+function MarkdownText({ text }: { text: string }) {
+  return (
+    <Markdown
+      className="prose prose-neutral dark:prose-invert max-w-none text-sm leading-relaxed break-words"
+    >
+      {text}
+    </Markdown>
+  )
+}
+
+// ─── Copy Button ────────────────────────────────────────────────────────────
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }, [text])
+
+  return (
+    <MessageAction tooltip={copied ? 'Copied' : 'Copy'}>
+      <button
+        onClick={handleCopy}
+        className="hover:text-foreground cursor-pointer rounded-md p-1 transition-colors"
+        aria-label="Copy message"
+      >
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      </button>
+    </MessageAction>
+  )
+}
+
+// ─── User Message ───────────────────────────────────────────────────────────
 
 function UserMessage() {
   return (
     <MessagePrimitive.Root>
       <div
         data-testid="user-message"
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginBottom: '1rem',
-        }}
+        className="mb-6 flex justify-end"
       >
-        <div
-          style={{
-            maxWidth: '75%',
-            fontSize: '0.9rem',
-            lineHeight: 1.6,
-            color: 'var(--text-primary)',
-          }}
-        >
-          <MessagePrimitive.Content />
-        </div>
+        <Message className="max-w-[75%] flex-row-reverse">
+          <MessageContent
+            className="bg-muted text-foreground rounded-2xl rounded-tr-sm px-4 py-2.5"
+            data-testid="user-message-content"
+          >
+            <MessagePrimitive.Content />
+          </MessageContent>
+        </Message>
       </div>
     </MessagePrimitive.Root>
   )
 }
+
+// ─── Assistant Message ──────────────────────────────────────────────────────
 
 function AssistantMessage() {
   return (
     <MessagePrimitive.Root>
       <div
         data-testid="assistant-message"
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-start',
-          marginBottom: '1rem',
-          gap: '0.5rem',
-        }}
+        className="group/message mb-6"
       >
-        {/* Avatar */}
-        <div
-          style={{
-            width: '2rem',
-            height: '2rem',
-            borderRadius: '50%',
-            background: 'var(--accent-subtle)',
-            border: '1px solid var(--border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--accent)',
-            flexShrink: 0,
-            marginTop: '0.1rem',
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 16v-4" />
-            <path d="M12 8h.01" />
-          </svg>
-        </div>
-        <div style={{ maxWidth: '80%' }}>
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '0.25rem 1rem 1rem 1rem',
-              padding: '0.75rem 1rem',
-            }}
-          >
-            <MessagePrimitive.Content
-              components={{
-                Text: ({ text }) => <MarkdownRenderer content={text} />,
-              }}
-            />
-          </div>
+        <Message>
+          <MessageAvatar
+            src=""
+            alt="ShopMeta"
+            fallback="S"
+            className="bg-primary/10 text-primary border-border mt-0.5 h-7 w-7 border text-xs"
+          />
+          <div className="min-w-0 flex-1 space-y-2">
+            <MessageContent className="bg-transparent p-0 text-foreground">
+              <MessagePrimitive.Content
+                components={{
+                  Text: ({ text }) => <MarkdownText text={text} />,
+                }}
+              />
+            </MessageContent>
 
-          {/* Regenerate button — only shown on the last assistant message */}
-          <MessagePrimitive.If last={true}>
-            <div style={{ marginTop: '0.35rem', display: 'flex', gap: '0.25rem' }}>
-              <ActionBarPrimitive.Root hideWhenRunning autohide="not-last">
-                <ActionBarPrimitive.Reload asChild>
-                  <button
-                    data-testid="regenerate-btn"
-                    aria-label="Regenerate response"
-                    title="Regenerate response"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.3rem',
-                      padding: '0.5rem 0.75rem',
-                      minHeight: '44px',
-                      background: 'transparent',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '0.375rem',
-                      color: 'inherit',
-                      cursor: 'pointer',
-                      fontSize: '0.7rem',
-                      opacity: 0.5,
-                      transition: 'opacity 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.opacity = '0.9'
-                    }}
-                    onMouseLeave={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.opacity = '0.5'
-                    }}
-                  >
-                    <RefreshCw size={11} />
-                    Regenerate
-                  </button>
-                </ActionBarPrimitive.Reload>
-              </ActionBarPrimitive.Root>
-            </div>
-          </MessagePrimitive.If>
-        </div>
+            {/* Actions — visible on hover or on last message */}
+            <MessagePrimitive.If last={true}>
+              <MessageActions className="opacity-0 transition-opacity group-hover/message:opacity-100">
+                <ActionBarPrimitive.Root hideWhenRunning autohide="not-last">
+                  <ActionBarPrimitive.Reload asChild>
+                    <MessageAction tooltip="Regenerate">
+                      <button
+                        data-testid="regenerate-btn"
+                        aria-label="Regenerate response"
+                        className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      </button>
+                    </MessageAction>
+                  </ActionBarPrimitive.Reload>
+                </ActionBarPrimitive.Root>
+              </MessageActions>
+            </MessagePrimitive.If>
+          </div>
+        </Message>
       </div>
     </MessagePrimitive.Root>
   )
 }
 
-// ─── Thread ───────────────────────────────────────────────────────────────────
+// ─── Loading Indicator ──────────────────────────────────────────────────────
+
+function LoadingMessage() {
+  return (
+    <div className="mb-6 flex gap-3">
+      <div className="bg-primary/10 text-primary border-border mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs">
+        S
+      </div>
+      <div className="flex items-center gap-2 py-2">
+        <Loader variant="dots" size="sm" className="text-muted-foreground" />
+        <span className="text-muted-foreground text-sm">Searching…</span>
+      </div>
+    </div>
+  )
+}
+
+// ─── Thread ─────────────────────────────────────────────────────────────────
 
 interface ThreadProps {
   className?: string
+  isEmpty?: boolean
 }
 
-export function Thread({ className }: ThreadProps) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const runtime = useThreadRuntime()
-
-  // Auto-scroll to bottom during streaming
-  useEffect(() => {
-    const unsubscribe = runtime.subscribe(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-      }
-    })
-    return unsubscribe
-  }, [runtime])
-
+export function Thread({ className, isEmpty }: ThreadProps) {
   return (
     <ThreadPrimitive.Root
       data-testid="thread"
-      className={className}
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: 0,
-      }}
+      className={cn('flex min-h-0 flex-1 flex-col', className)}
     >
-      {/* Scrollable message list */}
-      <div
-        ref={scrollRef}
-        data-testid="thread-messages"
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '1.5rem',
-          scrollBehavior: 'smooth',
-        }}
-      >
-        <ThreadPrimitive.Empty>
-          <div
-            data-testid="thread-empty"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              gap: '0.5rem',
-              userSelect: 'none',
-            }}
-          >
-            <p style={{ fontSize: '1.25rem', fontWeight: 500, color: 'var(--text-primary)', opacity: 0.6 }}>Ask anything.</p>
-          </div>
-        </ThreadPrimitive.Empty>
-
-        <ThreadPrimitive.Messages
-          components={{
-            UserMessage,
-            AssistantMessage,
-          }}
-        />
-      </div>
+      {/* Hide message area when no messages and empty state is handled by ChatLayout */}
+      {isEmpty ? null : (
+        <ChatContainerRoot className="flex-1">
+          <ChatContainerContent className="gap-0 px-4 py-6">
+            <ThreadPrimitive.Messages
+              components={{
+                UserMessage,
+                AssistantMessage,
+              }}
+            />
+          </ChatContainerContent>
+          <ChatContainerScrollAnchor />
+        </ChatContainerRoot>
+      )}
     </ThreadPrimitive.Root>
   )
 }

@@ -1,6 +1,7 @@
 // tests/component/chat/thread.test.tsx
 // Component tests for the Thread message display component.
 // Tests: user/assistant message rendering, empty state.
+// Updated for prompt-kit migration — mocks prompt-kit UI components.
 
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
@@ -50,11 +51,9 @@ vi.mock('@assistant-ui/react', async () => {
       // If — renders children unconditionally in test context
       If: ({ children }: { children: React.ReactNode; last?: boolean }) =>
         React.createElement(React.Fragment, null, children),
-      // Last — renders children only when this is the last message in the thread
       Last: ({ children }: { children: React.ReactNode }) =>
         React.createElement(React.Fragment, null, children),
     },
-    // ActionBarPrimitive — used by the Regenerate button
     ActionBarPrimitive: {
       Root: ({ children }: { children: React.ReactNode; hideWhenRunning?: boolean; autohide?: string }) =>
         React.createElement(React.Fragment, null, children),
@@ -69,12 +68,46 @@ vi.mock('@assistant-ui/react', async () => {
   }
 })
 
+// Mock prompt-kit components — these use DOM APIs not available in jsdom
+vi.mock('@/components/ui/chat-container', () => {
+  const React = require('react')
+  return {
+    ChatContainerRoot: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) =>
+      React.createElement('div', { 'data-testid': 'chat-container', ...props }, children),
+    ChatContainerContent: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) =>
+      React.createElement('div', props, children),
+    ChatContainerScrollAnchor: (props: Record<string, unknown>) =>
+      React.createElement('div', props),
+  }
+})
 
-// Mock MarkdownRenderer
-vi.mock('#/components/chat/MarkdownRenderer', () => ({
-  MarkdownRenderer: ({ content }: { content: string }) => (
-    <div data-testid="markdown-renderer">{content}</div>
+vi.mock('@/components/ui/scroll-button', () => ({
+  ScrollButton: () => null,
+}))
+
+vi.mock('@/components/ui/message', () => {
+  const React = require('react')
+  return {
+    Message: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) =>
+      React.createElement('div', props, children),
+    MessageAvatar: () => React.createElement('div', { 'data-testid': 'avatar' }),
+    MessageContent: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) =>
+      React.createElement('div', props, children),
+    MessageActions: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) =>
+      React.createElement('div', props, children),
+    MessageAction: ({ children }: { children: React.ReactNode; tooltip?: string }) =>
+      React.createElement('div', null, children),
+  }
+})
+
+vi.mock('@/components/ui/markdown', () => ({
+  Markdown: ({ children }: { children: string }) => (
+    <div data-testid="markdown-renderer">{children}</div>
   ),
+}))
+
+vi.mock('@/components/ui/loader', () => ({
+  Loader: () => <span>loading...</span>,
 }))
 
 // Mock lucide-react
@@ -88,6 +121,9 @@ vi.mock('lucide-react', () => ({
   ),
   RefreshCw: () => <span>↺</span>,
   Sparkles: ({ size }: { size?: number }) => <span data-testid="sparkles-icon">✦</span>,
+  ArrowUp: () => <span>↑</span>,
+  Copy: () => <span>⎘</span>,
+  Check: () => <span>✓</span>,
 }))
 
 
@@ -111,8 +147,10 @@ describe('Thread component', () => {
 
   test('shows empty state when no messages', async () => {
     await setMessages([])
+    // With prompt-kit migration, empty state is handled by ChatLayout.
+    // Thread still renders the thread container even when empty.
     render(<Thread />)
-    expect(screen.getByTestId('thread-empty')).toBeInTheDocument()
+    expect(screen.getByTestId('thread')).toBeInTheDocument()
   })
 
   test('renders user message bubble', async () => {
@@ -146,6 +184,7 @@ describe('Thread component', () => {
   test('does not show empty state when messages exist', async () => {
     await setMessages([{ role: 'user', content: 'Test' }])
     render(<Thread />)
-    expect(screen.queryByTestId('thread-empty')).not.toBeInTheDocument()
+    // Thread just renders messages when they exist — no empty state element
+    expect(screen.getByTestId('user-message')).toBeInTheDocument()
   })
 })

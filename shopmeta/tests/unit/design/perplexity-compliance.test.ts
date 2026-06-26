@@ -307,11 +307,12 @@ describe('L3: Thread component design compliance', () => {
 
   it('empty state uses "Ask anything" text (not emoji-laden copy)', () => {
     // DESIGN.md §8: empty state should be "Ask anything." — no emoji
-    if (!threadContent) return
-    // Should NOT contain Sparkles icon or similar decorative elements in empty state
-    // After migration, empty state text should be clean
-    const hasCleanEmptyState = threadContent.includes('Ask anything')
-      || threadContent.includes('ask anything')
+    // After prompt-kit migration, empty state text may be in Thread.tsx or ChatLayout.tsx
+    const chatLayoutPath = resolve(ROOT, 'components/chat/ChatLayout.tsx')
+    const chatLayoutContent = existsSync(chatLayoutPath) ? readFileSync(chatLayoutPath, 'utf-8') : ''
+    const combinedContent = threadContent + chatLayoutContent
+    const hasCleanEmptyState = combinedContent.includes('Ask anything')
+      || combinedContent.includes('ask anything')
     expect(hasCleanEmptyState).toBe(true)
   })
 
