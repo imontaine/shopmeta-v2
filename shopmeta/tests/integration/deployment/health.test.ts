@@ -276,9 +276,11 @@ describe('Deployment artifacts — docker-compose.yml content', () => {
     expect(compose).toContain('pgdata')
   })
 
-  test('docker-compose.yml has TLS configured for Traefik', () => {
-    expect(compose).toContain('tls')
-    expect(compose).toContain('letsencrypt')
+  test('docker-compose.yml uses Cloudflare for TLS (HTTP-only Traefik entrypoint)', () => {
+    // Cloudflare Flexible mode: TLS terminates at Cloudflare edge.
+    // Traefik only needs an HTTP router (entrypoints=web), no certresolver.
+    expect(compose).toContain('Cloudflare')
+    expect(compose).toContain('entrypoints=web')
   })
 })
 
@@ -303,7 +305,7 @@ describe('Deployment artifacts — docker-entrypoint.sh content', () => {
   })
 
   test('entrypoint.sh starts the Node.js server', () => {
-    expect(entrypoint).toMatch(/node .+server\/index/i)
+    expect(entrypoint).toMatch(/vite preview|node .+server/i)
   })
 
   test('entrypoint.sh uses exec (PID 1 signal handling)', () => {
