@@ -3,8 +3,8 @@
 # We use node:22-alpine for a minimal base.
 FROM node:22-alpine AS deps
 
-# Install pnpm globally
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm globally via npm (more reliable in Docker build-from-URL context)
+RUN npm install -g pnpm@9
 
 WORKDIR /app
 
@@ -13,26 +13,31 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY drizzle.config.ts ./
 
 # Install production + dev dependencies (we need dev deps to build)
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # ─── Stage 2: Build ───────────────────────────────────────────────────────────
 # Run vite build to produce the production bundle.
 FROM node:22-alpine AS builder
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@9
 
 WORKDIR /app
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./
+COPY --from=deps /app/pnpm-workspace.yaml ./
 
 # Copy all source files
 COPY . .
 
 # Build the TanStack Start production bundle
 # Output goes to .output/ (configured by TanStack Start)
-RUN pnpm build
+RUN pnpm build 2>&1 || (echo "Build failed — listing /app:" && ls -la /app && exit 1)
+
+# Verify .output was produced — fail loudly if not
+RUN ls -la .output && echo "✅ Build output verified"
+
 
 # ─── Stage 3: Production runtime ──────────────────────────────────────────────
 # Minimal runtime image with only production artifacts.
