@@ -62,4 +62,4 @@ fi
 PORT=${PORT:-3000}
 echo "[entrypoint] Starting ShopMeta server on port $PORT..."
 
-exec node .output/server/index.js
+exec node dist/server/server.js

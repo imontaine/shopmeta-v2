@@ -8,7 +8,7 @@ RUN npm install -g pnpm@9
 WORKDIR /app
 
 # Copy workspace config and manifests first for better layer caching
-# pnpm-workspace.yaml must have packages: ['.'] for single-package workspace mode
+# pnpm-workspace.yaml has packages: ['.'] for single-package workspace mode
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY drizzle.config.ts ./
 
@@ -16,7 +16,7 @@ COPY drizzle.config.ts ./
 RUN pnpm install --frozen-lockfile
 
 # ─── Stage 2: Build ───────────────────────────────────────────────────────────
-# Run vite build to produce the production bundle.
+# Run vite build to produce the production bundle in dist/
 FROM node:22-alpine AS builder
 
 RUN npm install -g pnpm@9
@@ -31,11 +31,13 @@ COPY --from=deps /app/package.json ./
 COPY . .
 
 # Build the TanStack Start production bundle
-# Output goes to .output/ (TanStack Start default output directory)
+# TanStack Start (with vite) outputs to dist/ by default:
+#   dist/client/   — static assets served by the server
+#   dist/server/   — server-side bundle, entry: dist/server/server.js
 RUN pnpm build
 
-# Verify .output was produced — fail loudly if not
-RUN ls -la .output && echo "✅ .output verified"
+# Verify dist was produced — fail loudly if not
+RUN ls -la dist/server/server.js && echo "✅ dist/server/server.js verified"
 
 # ─── Stage 3: Production runtime ──────────────────────────────────────────────
 # Minimal runtime image with only production artifacts.
@@ -49,8 +51,8 @@ WORKDIR /app
 # Create non-root user ownership (node user exists in node:alpine at uid 1000)
 RUN chown node:node /app
 
-# Copy the built .output directory
-COPY --from=builder --chown=node:node /app/.output ./.output
+# Copy the built dist directory (client + server bundles)
+COPY --from=builder --chown=node:node /app/dist ./dist
 
 # Copy drizzle migrations (needed for drizzle-kit migrate at startup)
 COPY --from=builder --chown=node:node /app/drizzle ./drizzle
