@@ -12,6 +12,7 @@
     "version:patch": "npm version patch -m \"release: v%s\"",
     "version:minor": "npm version minor -m \"release: v%s\"",
     "version:major": "npm version major -m \"release: v%s\"",
+    "version": "node -e \"const fs=require('fs');const p=JSON.parse(fs.readFileSync('shopmeta/package.json','utf8'));p.version=require('./package.json').version;fs.writeFileSync('shopmeta/package.json',JSON.stringify(p,null,2)+'\\n')\" && git add shopmeta/package.json",
     "deploy": "npm version patch -m \"deploy: v%s\" && git push --no-verify && git push --tags --no-verify"
   }
 }

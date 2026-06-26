@@ -1,5 +1,6 @@
 {
   "name": "shopmeta",
+  "version": "0.1.23",
   "private": true,
   "type": "module",
   "imports": {
