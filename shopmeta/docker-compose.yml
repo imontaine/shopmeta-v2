@@ -49,18 +49,12 @@ services:
       - dokploy-network
       - internal
 
-    # Traefik routing labels
+    # Traefik routing labels (Cloudflare handles TLS termination)
     labels:
       - "traefik.enable=true"
-      # HTTP → HTTPS redirect
-      - "traefik.http.routers.shopmeta-http.rule=Host(`app.shopmeta.app`)"
-      - "traefik.http.routers.shopmeta-http.entrypoints=web"
-      - "traefik.http.routers.shopmeta-http.middlewares=redirect-to-https@docker"
-      # HTTPS router
+      # HTTP router — Cloudflare proxies to origin over HTTP
       - "traefik.http.routers.shopmeta.rule=Host(`app.shopmeta.app`)"
-      - "traefik.http.routers.shopmeta.entrypoints=websecure"
-      - "traefik.http.routers.shopmeta.tls=true"
-      - "traefik.http.routers.shopmeta.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.shopmeta.entrypoints=web"
       # Service port
       - "traefik.http.services.shopmeta.loadbalancer.server.port=3000"
       # Dokploy management
