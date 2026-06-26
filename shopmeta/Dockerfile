@@ -37,14 +37,17 @@ COPY . .
 RUN pnpm build
 
 # Verify dist was produced — fail loudly if not
-RUN ls -la dist/server/server.js && echo "✅ dist/server/server.js verified"
+RUN ls -la dist/server/ && echo "✅ dist/server/ verified"
 
 # ─── Stage 3: Production runtime ──────────────────────────────────────────────
-# Minimal runtime image with only production artifacts.
+# Runtime image with production artifacts + vite for `vite preview`.
+# TanStack Start's dist/server/server.js is a Fetch API handler module,
+# NOT a standalone HTTP server. `vite preview` is the correct production
+# server command that wraps the fetch handler with an HTTP listener.
 FROM node:22-alpine AS runner
 
-# Install wget for health checks and ca-certificates for HTTPS
-RUN apk add --no-cache wget ca-certificates
+# Install wget for health checks, ca-certificates for HTTPS, netcat for DB wait
+RUN apk add --no-cache wget ca-certificates netcat-openbsd
 
 WORKDIR /app
 
@@ -54,13 +57,18 @@ RUN chown node:node /app
 # Copy the built dist directory (client + server bundles)
 COPY --from=builder --chown=node:node /app/dist ./dist
 
+# Copy vite config — required by `vite preview` to locate the dist directory
+COPY --from=builder --chown=node:node /app/vite.config.ts ./vite.config.ts
+
 # Copy drizzle migrations (needed for drizzle-kit migrate at startup)
 COPY --from=builder --chown=node:node /app/drizzle ./drizzle
 COPY --from=builder --chown=node:node /app/drizzle.config.ts ./drizzle.config.ts
 
-# Copy node_modules and package.json for drizzle-kit at runtime
+# Copy node_modules (needed for vite binary, vite plugins, and drizzle-kit)
+# and package.json (needed for pnpm/npm resolution)
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=deps --chown=node:node /app/package.json ./package.json
+COPY --from=deps --chown=node:node /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
 # Copy entrypoint script and make it executable
 COPY --chown=node:node docker-entrypoint.sh ./docker-entrypoint.sh
@@ -80,5 +88,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
 ENV NODE_ENV=production \
     PORT=3000
 
-# Start via entrypoint (runs migrations then starts server)
+# Start via entrypoint (runs migrations then starts server via vite preview)
 ENTRYPOINT ["./docker-entrypoint.sh"]

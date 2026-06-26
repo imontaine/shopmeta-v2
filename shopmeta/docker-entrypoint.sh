@@ -62,4 +62,4 @@ fi
 PORT=${PORT:-3000}
 echo "[entrypoint] Starting ShopMeta server on port $PORT..."
 
-exec node dist/server/server.js
+exec node_modules/.bin/vite preview --port "$PORT" --host 0.0.0.0
