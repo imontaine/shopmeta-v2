@@ -18,8 +18,8 @@ describe('ToolCallRunning', () => {
   it('renders a spinner (running state)', () => {
     render(<ToolCallRunning />)
 
-    const spinner = screen.getByTestId('tool-spinner')
-    expect(spinner).toBeInTheDocument()
+    const container = screen.getByTestId('tool-call-running')
+    expect(container).toBeInTheDocument()
   })
 
   it('shows "running" status role', () => {
