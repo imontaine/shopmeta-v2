@@ -71,4 +71,4 @@ pnpm test:component   # 332
 
 57/57 compliance tests pass. All existing tests pass. Visual review confirms Perplexity light mode look. Deployed to production.
 
-## Status: ⬜
+## Status: ✅

@@ -10,18 +10,23 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 // Read version — try root package.json first (local dev), fall back to
-// local package.json (Docker), then env var, then '0.0.0'.
+// local package.json (Docker), then APP_VERSION env var, then '0.0.0'.
 function getAppVersion(): string {
-  if (process.env.APP_VERSION) return process.env.APP_VERSION
+  // 1. Try reading from package.json (most reliable source)
   const rootPkgPath = resolve(__dirname, '../package.json')
   const localPkgPath = resolve(__dirname, 'package.json')
   const pkgPath = existsSync(rootPkgPath) ? rootPkgPath : localPkgPath
   try {
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
-    return pkg.version ?? '0.0.0'
-  } catch {
-    return '0.0.0'
+    if (pkg.version && pkg.version !== '0.0.0') return pkg.version
+  } catch { /* fall through */ }
+
+  // 2. Fall back to env var (can be set by CI/Docker build-arg)
+  if (process.env.APP_VERSION && process.env.APP_VERSION !== '0.0.0') {
+    return process.env.APP_VERSION
   }
+
+  return '0.0.0'
 }
 const APP_VERSION = getAppVersion()
 

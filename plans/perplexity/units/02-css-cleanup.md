@@ -56,4 +56,4 @@ pnpm vitest run --config vitest.config.ts tests/unit/design/ -t "L1: Perplexity 
 
 All L2 CSS anti-pattern tests pass. No regressions in existing tests.
 
-## Status: ⬜
+## Status: ✅

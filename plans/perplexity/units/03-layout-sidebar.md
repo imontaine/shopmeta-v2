@@ -50,4 +50,4 @@ pnpm test:component
 
 Layout + sidebar L1/L3 tests pass. All 332 component tests still pass.
 
-## Status: ⬜
+## Status: ✅
