@@ -1,6 +1,6 @@
 {
   "name": "shopmeta-v2",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "description": "LibreChat whitelabel deployment for shopmeta.app",
   "repository": {
