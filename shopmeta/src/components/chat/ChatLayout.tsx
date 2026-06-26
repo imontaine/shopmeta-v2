@@ -120,6 +120,7 @@ function ChatContent({ conversationId }: { conversationId?: string }) {
         data-testid="chat-layout"
         style={{
           display: 'flex',
+          width: '100%',
           height: '100%',
           overflow: 'hidden',
           flexDirection: 'column',
@@ -154,7 +155,7 @@ export function ChatLayout({ conversationId, className }: ChatLayoutProps) {
   return (
     <div
       className={className}
-      style={{ display: 'flex', height: '100%', overflow: 'hidden' }}
+      style={{ display: 'flex', width: '100%', height: '100%', overflow: 'hidden' }}
     >
       {mounted && <ChatContent conversationId={conversationId} />}
     </div>
