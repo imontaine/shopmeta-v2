@@ -45,6 +45,8 @@ vi.mock('@assistant-ui/react', async () => {
           },
           children,
         ),
+      Cancel: ({ asChild, children }: { asChild?: boolean; children: React.ReactNode }) =>
+        React.createElement(React.Fragment, null, children),
     },
     ThreadPrimitive: {
       If: ({ running, children }: { running?: boolean; children: React.ReactNode }) =>
@@ -52,6 +54,7 @@ vi.mock('@assistant-ui/react', async () => {
     },
     useComposerRuntime: () => ({
       send: mockSend,
+      setText: vi.fn(),
       value: mockInputValue.current,
     }),
   }
@@ -129,13 +132,14 @@ describe('Composer component', () => {
     const input = screen.getByRole('textbox')
     await userEvent.type(input, 'Hello AI')
 
-    // Simulate send (our mock triggers on click of Send wrapper)
+    // Click the send button
     const sendBtn = screen.getByTestId('send-message-btn')
     await userEvent.click(sendBtn)
 
-    // Because our mock triggers mockSend, verify mockSend called
-    expect(mockSend).toHaveBeenCalledWith(
-      expect.objectContaining({ content: expect.any(String) }),
+    // When onSend prop is provided, the component calls onSend({ content })
+    // directly instead of composerRuntime.send()
+    expect(onSend).toHaveBeenCalledWith(
+      expect.objectContaining({ content: 'Hello AI' }),
     )
   })
 

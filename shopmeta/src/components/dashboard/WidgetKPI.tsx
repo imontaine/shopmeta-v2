@@ -101,7 +101,7 @@ export function WidgetKPI({ title, rows, prefix = '', suffix = '', accentColor }
           data-testid="kpi-value"
           style={{
             fontSize: '2.4rem',
-            fontWeight: 700,
+            fontWeight: 500,
             color: accentColor ?? 'hsl(var(--foreground, 0 0% 98%))',
             fontVariantNumeric: 'tabular-nums',
             lineHeight: 1,

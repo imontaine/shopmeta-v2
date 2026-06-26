@@ -123,7 +123,7 @@ export function ModelSelector({
                 style={{
                   padding: '0.4rem 0.75rem',
                   fontSize: '0.65rem',
-                  fontWeight: 700,
+                  fontWeight: 500,
                   letterSpacing: '0.08em',
                   textTransform: 'uppercase',
                   opacity: 0.4,

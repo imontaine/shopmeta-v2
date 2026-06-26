@@ -17,6 +17,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSignOutRouteImport } from './routes/api/sign-out'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
@@ -63,6 +64,11 @@ const ApiSignOutRoute = ApiSignOutRouteImport.update({
   path: '/api/sign-out',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/sign-out': typeof ApiSignOutRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/sign-out': typeof ApiSignOutRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/sign-out': typeof ApiSignOutRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/dashboard'
     | '/settings'
+    | '/api/health'
     | '/api/sign-out'
     | '/api/auth/$'
     | '/api/chat/stream'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/dashboard'
     | '/settings'
+    | '/api/health'
     | '/api/sign-out'
     | '/api/auth/$'
     | '/api/chat/stream'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat'
     | '/_authenticated/dashboard'
     | '/_authenticated/settings'
+    | '/api/health'
     | '/api/sign-out'
     | '/api/auth/$'
     | '/api/chat/stream'
@@ -198,6 +210,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignOutRoute: typeof SignOutRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   ApiSignOutRoute: typeof ApiSignOutRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiChatStreamRoute: typeof ApiChatStreamRoute
@@ -259,6 +272,13 @@ declare module '@tanstack/react-router' {
       path: '/api/sign-out'
       fullPath: '/api/sign-out'
       preLoaderRoute: typeof ApiSignOutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/settings': {
@@ -332,6 +352,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignOutRoute: SignOutRoute,
+  ApiHealthRoute: ApiHealthRoute,
   ApiSignOutRoute: ApiSignOutRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiChatStreamRoute: ApiChatStreamRoute,
@@ -339,3 +360,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

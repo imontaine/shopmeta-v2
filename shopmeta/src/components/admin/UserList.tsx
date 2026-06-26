@@ -54,7 +54,7 @@ function RoleBadge({ role, suspended }: { role: MemberRole; suspended: boolean }
         padding: '2px 8px',
         borderRadius: '10px',
         fontSize: '0.7rem',
-        fontWeight: 700,
+        fontWeight: 600,
         textTransform: 'uppercase',
         letterSpacing: '0.05em',
         border: `1px solid ${color}`,
@@ -216,7 +216,7 @@ export function UserList({
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '0.8rem',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#fff',
                     flexShrink: 0,
                   }}
@@ -456,10 +456,10 @@ export function InviteMemberForm({ onInvite, loading, className }: InviteMemberF
         disabled={loading || !email.trim()}
         style={{
           padding: '7px 16px',
-          background: 'hsl(224 71% 55%)',
+          background: '#3ecf8e',
           border: 'none',
           borderRadius: '5px',
-          color: '#fff',
+          color: '#0f0f0f',
           fontSize: '0.85rem',
           fontWeight: 600,
           cursor: loading || !email.trim() ? 'not-allowed' : 'pointer',

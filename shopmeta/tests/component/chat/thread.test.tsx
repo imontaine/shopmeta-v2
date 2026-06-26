@@ -47,13 +47,16 @@ vi.mock('@assistant-ui/react', async () => {
       },
       InProgress: ({ children }: { children: React.ReactNode }) =>
         React.createElement('span', { 'data-testid': 'in-progress' }, children),
+      // If — renders children unconditionally in test context
+      If: ({ children }: { children: React.ReactNode; last?: boolean }) =>
+        React.createElement(React.Fragment, null, children),
       // Last — renders children only when this is the last message in the thread
       Last: ({ children }: { children: React.ReactNode }) =>
         React.createElement(React.Fragment, null, children),
     },
     // ActionBarPrimitive — used by the Regenerate button
     ActionBarPrimitive: {
-      Root: ({ children }: { children: React.ReactNode }) =>
+      Root: ({ children }: { children: React.ReactNode; hideWhenRunning?: boolean; autohide?: string }) =>
         React.createElement(React.Fragment, null, children),
       Reload: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) =>
         React.createElement(React.Fragment, null, children),
@@ -79,8 +82,12 @@ vi.mock('lucide-react', () => ({
   Send: () => <span>→</span>,
   Square: () => <span>■</span>,
   Plus: () => <span>+</span>,
-  MessageSquare: () => <span>💬</span>,
+  MessageSquare: () => <span data-testid="message-square-icon">msg</span>,
+  MessageSquarePlus: ({ size, style }: { size?: number; style?: React.CSSProperties }) => (
+    <span data-testid="empty-state-icon" style={style}>msg+</span>
+  ),
   RefreshCw: () => <span>↺</span>,
+  Sparkles: ({ size }: { size?: number }) => <span data-testid="sparkles-icon">✦</span>,
 }))
 
 

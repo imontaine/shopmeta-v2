@@ -173,7 +173,7 @@ function ComposerInner({
           transition: 'border-color 0.15s ease',
         }}
         onFocus={(e) => {
-          (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(99,102,241,0.5)'
+          (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(62,207,142,0.5)'
         }}
         onBlur={(e) => {
           (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.10)'
@@ -220,7 +220,7 @@ function ComposerInner({
               height: '2rem',
               borderRadius: '0.5rem',
               border: 'none',
-              background: canSend ? 'hsl(224 71% 55%)' : 'rgba(255,255,255,0.08)',
+              background: canSend ? '#3ecf8e' : 'rgba(255,255,255,0.08)',
               color: canSend ? '#fff' : 'rgba(255,255,255,0.3)',
               cursor: canSend ? 'pointer' : 'not-allowed',
               transition: 'all 0.15s ease',

@@ -25,12 +25,12 @@ export interface AreaChartViewProps {
 }
 
 const COLORS = [
-  '#6366f1',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#3b82f6',
-  '#ec4899',
+  '#3ecf8e', // Supabase emerald
+  '#00c573', // Supabase interactive green
+  '#f59e0b', // amber
+  '#ef4444', // red
+  '#3b82f6', // blue
+  '#ec4899', // pink
 ]
 
 export function AreaChartView({

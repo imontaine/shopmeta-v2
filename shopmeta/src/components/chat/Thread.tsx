@@ -12,7 +12,7 @@ import {
   ActionBarPrimitive,
 } from '@assistant-ui/react'
 import { MarkdownRenderer } from '#/components/chat/MarkdownRenderer'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Sparkles, MessageSquarePlus } from 'lucide-react'
 
 // ─── Message Bubble ───────────────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ function UserMessage() {
         <div
           style={{
             maxWidth: '75%',
-            background: 'hsl(224 71% 55%)',
+            background: '#3ecf8e',
             borderRadius: '1rem 1rem 0.25rem 1rem',
             padding: '0.75rem 1rem',
             fontSize: '0.9rem',
@@ -62,16 +62,17 @@ function AssistantMessage() {
             width: '2rem',
             height: '2rem',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, hsl(258 83% 64%), hsl(224 71% 55%))',
+            background: 'rgba(62, 207, 142, 0.15)',
+            border: '1px solid rgba(62, 207, 142, 0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '0.8rem',
+            color: '#3ecf8e',
             flexShrink: 0,
             marginTop: '0.1rem',
           }}
         >
-          ✦
+          <Sparkles size={14} />
         </div>
         <div style={{ maxWidth: '80%' }}>
           <div
@@ -188,7 +189,7 @@ export function Thread({ className }: ThreadProps) {
               userSelect: 'none',
             }}
           >
-            <div style={{ fontSize: '3rem' }}>✦</div>
+            <MessageSquarePlus size={48} style={{ color: '#3ecf8e', opacity: 0.6 }} />
             <p style={{ fontSize: '1rem', fontWeight: 500 }}>Start a conversation</p>
             <p style={{ fontSize: '0.85rem' }}>Ask anything — I&apos;m powered by your selected AI model</p>
           </div>

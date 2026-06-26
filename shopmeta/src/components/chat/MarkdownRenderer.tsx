@@ -151,7 +151,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
     },
     // Style headings
     h1: ({ children }) => (
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem', marginTop: '1.25rem' }}>{children}</h1>
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '0.75rem', marginTop: '1.25rem' }}>{children}</h1>
     ),
     h2: ({ children }) => (
       <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem', marginTop: '1rem' }}>{children}</h2>
@@ -232,7 +232,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
     ),
     // Style strong / em
     strong: ({ children }) => (
-      <strong style={{ fontWeight: 700 }}>{children}</strong>
+      <strong style={{ fontWeight: 600 }}>{children}</strong>
     ),
     em: ({ children }) => (
       <em style={{ fontStyle: 'italic' }}>{children}</em>

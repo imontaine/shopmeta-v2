@@ -22,14 +22,14 @@ export interface LineChartViewProps {
   className?: string
 }
 
-// Accessible color palette
+// Supabase-aligned color palette
 const COLORS = [
-  '#6366f1', // indigo-500
-  '#10b981', // emerald-500
-  '#f59e0b', // amber-500
-  '#ef4444', // red-500
-  '#3b82f6', // blue-500
-  '#ec4899', // pink-500
+  '#3ecf8e', // Supabase emerald
+  '#00c573', // Supabase interactive green
+  '#f59e0b', // amber
+  '#ef4444', // red
+  '#3b82f6', // blue
+  '#ec4899', // pink
 ]
 
 export function LineChartView({
