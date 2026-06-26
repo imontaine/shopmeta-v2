@@ -57,6 +57,13 @@ RUN chown node:node /app
 # Copy the built dist directory (client + server bundles)
 COPY --from=builder --chown=node:node /app/dist ./dist
 
+# Copy source directory — TanStack Start's vite plugin resolves entry files
+# (src/router.tsx, src/client.tsx) at config time, even during `vite preview`
+COPY --from=builder --chown=node:node /app/src ./src
+
+# Copy tsconfig.json — needed by vite-tsconfig-paths during config resolution
+COPY --from=builder --chown=node:node /app/tsconfig.json ./tsconfig.json
+
 # Copy vite config — required by `vite preview` to locate the dist directory
 COPY --from=builder --chown=node:node /app/vite.config.ts ./vite.config.ts
 
