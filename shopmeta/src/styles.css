@@ -2,7 +2,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-/* Perplexity Design System — Inter + JetBrains Mono (Google Fonts link in __root.tsx) */
+/* Perplexity Design System â€” Inter + JetBrains Mono (Google Fonts link in __root.tsx) */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -10,7 +10,7 @@
   box-sizing: border-box;
 }
 
-/* ── UX Fix #1: prefers-reduced-motion (a11y) ─────────────────────────────── */
+/* â”€â”€ UX Fix #1: prefers-reduced-motion (a11y) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -20,7 +20,7 @@
   }
 }
 
-/* ── UX Fix #2: global focus-visible ring (Perplexity teal) ───────────────── */
+/* â”€â”€ UX Fix #2: global focus-visible ring (Perplexity teal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 :focus-visible {
   box-shadow: 0 0 0 2px var(--bg-base, #ffffff), 0 0 0 4px var(--accent, #21808D);
   outline: none;
@@ -84,7 +84,7 @@ body {
 }
 
 :root {
-  /* ── Perplexity Light Theme (primary — light-mode-native) ──────────────── */
+  /* â”€â”€ Perplexity Light Theme (primary â€” light-mode-native) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
   /* Perplexity design tokens */
   --bg-base: #ffffff;
@@ -158,7 +158,7 @@ body {
 }
 
 .dark {
-  /* ── Perplexity Dark Theme ────────────────────────────────────────────── */
+  /* â”€â”€ Perplexity Dark Theme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
   /* Perplexity design tokens */
   --bg-base: #0f0f10;
@@ -216,7 +216,7 @@ body {
   }
 }
 
-/* ─── Auth Pages ──────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Auth Pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .auth-page {
   min-height: 100dvh;
@@ -224,10 +224,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: #0f0f0f;
-  background-image:
-    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(62, 207, 142, 0.15), transparent),
-    radial-gradient(ellipse 60% 50% at 80% 110%, rgba(139, 92, 246, 0.1), transparent);
+  background: var(--bg-base);
 }
 
 .auth-card {
@@ -238,9 +235,7 @@ body {
   border-radius: 1.25rem;
   padding: 2.5rem;
   backdrop-filter: blur(12px);
-  box-shadow:
-    0 0 0 1px rgba(62, 207, 142, 0.05),
-    0 24px 64px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1px var(--border);
   animation: fadeSlideIn 0.3s ease-out;
 }
 
@@ -261,8 +256,8 @@ body {
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: rgba(62, 207, 142, 0.12);
-  border: 1px solid rgba(62, 207, 142, 0.2);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-subtle);
   margin-bottom: 1rem;
 }
 
@@ -314,7 +309,7 @@ body {
   color: #fafafa;
   font-size: 0.875rem;
   font-family: inherit;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s;
   outline: none;
 }
 
@@ -323,8 +318,8 @@ body {
 }
 
 .auth-input:focus {
-  border-color: rgba(62, 207, 142, 0.6);
-  box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
 }
 
 .auth-input:disabled {
@@ -337,7 +332,7 @@ body {
   padding: 0.6875rem 1rem;
   border-radius: 9999px;
   border: none;
-  background: #3ecf8e;
+  background: var(--accent);
   color: #0f0f0f;
   font-size: 0.9375rem;
   font-weight: 600;
@@ -348,15 +343,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 4px 16px rgba(62, 207, 142, 0.2);
+  transition: opacity 0.15s, transform 0.15s;
   text-decoration: none;
 }
 
 .auth-btn-primary:hover:not(:disabled) {
   opacity: 0.92;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(62, 207, 142, 0.4);
 }
 
 .auth-btn-primary:active:not(:disabled) {
@@ -445,27 +438,27 @@ body {
 }
 
 .auth-link {
-  color: #3ecf8e;
+  color: var(--accent);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.15s;
 }
 
 .auth-link:hover {
-  color: #00c573;
+  color: var(--accent-hover);
   text-decoration: underline;
 }
 
 .auth-link-sm {
   font-size: 0.75rem;
-  color: #3ecf8e;
+  color: var(--accent);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.15s;
 }
 
 .auth-link-sm:hover {
-  color: #00c573;
+  color: var(--accent-hover);
 }
 
 /* Version badge on auth pages */
@@ -480,7 +473,7 @@ body {
   user-select: all;
 }
 
-/* ─── App Shell Layout ────────────────────────────────────────────────────── */
+/* â”€â”€â”€ App Shell Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 :root {
   --sidebar-width: 240px;
@@ -498,8 +491,8 @@ body {
   position: relative;
 }
 
-/* ─── Hamburger ───────────────────────────────────────────────────────────── */
-/* Visible only on mobile (≤768px) */
+/* â”€â”€â”€ Hamburger â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Visible only on mobile (â‰¤768px) */
 .hamburger-btn {
   display: none;
   position: fixed;
@@ -530,7 +523,7 @@ body {
   }
 }
 
-/* ─── Sidebar ─────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .sidebar {
   position: fixed;
@@ -568,7 +561,7 @@ body {
   to { opacity: 1; }
 }
 
-/* ─── Mobile sidebar behaviour ────────────────────────────────────────────── */
+/* â”€â”€â”€ Mobile sidebar behaviour â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
@@ -578,16 +571,16 @@ body {
 
   .sidebar--mobile-open {
     transform: translateX(0);
-    box-shadow: 8px 0 40px rgba(0, 0, 0, 0.5);
+    border-right: 1px solid var(--border);
   }
 
-  /* On mobile, collapse state doesn't apply — always show full width */
+  /* On mobile, collapse state doesn't apply â€” always show full width */
   .sidebar--collapsed {
     width: var(--sidebar-mobile-width);
   }
 }
 
-/* ─── Sidebar brand / header ─────────────────────────────────────────────── */
+/* â”€â”€â”€ Sidebar brand / header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .sidebar-brand {
   display: flex;
@@ -604,7 +597,7 @@ body {
 .sidebar-brand-name {
   font-size: 1rem;
   font-weight: 500;
-  color: #3ecf8e;
+  color: var(--accent);
   letter-spacing: -0.02em;
   white-space: nowrap;
 }
@@ -630,10 +623,10 @@ body {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* ─── Sidebar navigation ─────────────────────────────────────────────────── */
+/* â”€â”€â”€ Sidebar navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .sidebar-nav {
-  /* No flex:1 — let conversation list grow instead */
+  /* No flex:1 â€” let conversation list grow instead */
   overflow-x: hidden;
   padding: 12px 8px 8px;
   flex-shrink: 0;
@@ -669,13 +662,13 @@ body {
 }
 
 .sidebar-nav-link--active {
-  color: #3ecf8e;
-  background: rgba(62, 207, 142, 0.1);
+  color: var(--accent);
+  background: var(--accent-subtle);
 }
 
 .sidebar-nav-link--active:hover {
-  color: #00c573;
-  background: rgba(62, 207, 142, 0.15);
+  color: var(--accent-hover);
+  background: var(--accent-subtle);
 }
 
 .sidebar-nav-icon {
@@ -692,7 +685,7 @@ body {
   text-overflow: ellipsis;
 }
 
-/* ─── Sidebar conversations section ──────────────────────────────────────── */
+/* â”€â”€â”€ Sidebar conversations section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .sidebar-conversations {
   flex: 1;
@@ -706,7 +699,6 @@ body {
 .sidebar-section-label {
   font-size: 0.6875rem;
   font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.06em;
   color: rgba(240, 240, 248, 0.3);
   padding: 8px 16px 4px;
@@ -714,7 +706,7 @@ body {
   flex-shrink: 0;
 }
 
-/* ─── Conversation list wrapper ───────────────────────────────────────────── */
+/* â”€â”€â”€ Conversation list wrapper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conv-list-wrapper {
   flex: 1;
@@ -733,7 +725,7 @@ body {
   padding: 6px 4px;
 }
 
-/* ─── New Chat button ─────────────────────────────────────────────────────── */
+/* â”€â”€â”€ New Chat button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conv-new-btn {
   display: flex;
@@ -742,8 +734,8 @@ body {
   width: 100%;
   padding: 7px 10px;
   border-radius: 8px;
-  border: 1px dashed rgba(62, 207, 142, 0.35);
-  background: rgba(62, 207, 142, 0.06);
+  border: 1px dashed var(--accent);
+  background: var(--accent-subtle);
   color: rgba(129, 140, 248, 0.85);
   font-size: 0.8125rem;
   font-weight: 600;
@@ -754,9 +746,9 @@ body {
 }
 
 .conv-new-btn:hover:not(:disabled) {
-  background: rgba(62, 207, 142, 0.12);
-  border-color: rgba(62, 207, 142, 0.55);
-  color: #3ecf8e;
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .conv-new-btn:disabled {
@@ -771,8 +763,8 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  border: 1px dashed rgba(62, 207, 142, 0.35);
-  background: rgba(62, 207, 142, 0.06);
+  border: 1px dashed var(--accent);
+  background: var(--accent-subtle);
   color: rgba(129, 140, 248, 0.8);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -780,11 +772,11 @@ body {
 }
 
 .conv-new-btn-collapsed:hover:not(:disabled) {
-  background: rgba(62, 207, 142, 0.12);
-  border-color: rgba(62, 207, 142, 0.55);
+  background: var(--accent-subtle);
+  border-color: var(--accent);
 }
 
-/* ─── Search input ────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Search input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conv-search-wrapper {
   position: relative;
@@ -818,11 +810,11 @@ body {
 }
 
 .conv-search-input:focus {
-  border-color: rgba(62, 207, 142, 0.4);
+  border-color: var(--accent);
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* ─── Conversation list ───────────────────────────────────────────────────── */
+/* â”€â”€â”€ Conversation list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conv-list {
   list-style: none;
@@ -856,7 +848,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(62, 207, 142, 0.6);
+  background: var(--accent);
   animation: convDotPulse 1.2s ease-in-out infinite;
 }
 
@@ -868,7 +860,7 @@ body {
   40% { opacity: 1; transform: scale(1); }
 }
 
-/* ─── Conversation item ───────────────────────────────────────────────────── */
+/* â”€â”€â”€ Conversation item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conv-item {
   display: flex;
@@ -885,11 +877,11 @@ body {
 }
 
 .conv-item--active {
-  background: rgba(62, 207, 142, 0.1);
+  background: var(--accent-subtle);
 }
 
 .conv-item--active:hover {
-  background: rgba(62, 207, 142, 0.14);
+  background: var(--accent-subtle);
 }
 
 .conv-item--collapsed {
@@ -913,8 +905,8 @@ body {
 }
 
 .conv-item--collapsed.conv-item--active {
-  background: rgba(62, 207, 142, 0.12);
-  color: #3ecf8e;
+  background: var(--accent-subtle);
+  color: var(--accent);
 }
 
 .conv-item-icon {
@@ -952,7 +944,7 @@ body {
 }
 
 .conv-item--active .conv-item-title {
-  color: #00c573;
+  color: var(--accent-hover);
 }
 
 .conv-item-time {
@@ -961,23 +953,23 @@ body {
   white-space: nowrap;
 }
 
-/* ─── Rename input ────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Rename input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conv-item-rename-input {
   flex: 1;
   margin: 3px 4px;
   padding: 3px 7px;
   border-radius: 6px;
-  border: 1px solid rgba(62, 207, 142, 0.5);
-  background: rgba(62, 207, 142, 0.1);
+  border: 1px solid var(--accent);
+  background: var(--accent-subtle);
   color: rgba(240, 240, 248, 0.9);
   font-size: 0.78125rem;
   font-family: inherit;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(62, 207, 142, 0.15);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
 }
 
-/* ─── Context menu ────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Context menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conv-item-menu-wrapper {
   position: relative;
@@ -1024,7 +1016,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 9px;
   padding: 4px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1px var(--border);
   animation: dropdownIn 0.12s ease-out;
 }
 
@@ -1060,7 +1052,7 @@ body {
   color: #f87171;
 }
 
-/* ─── Light mode conversation overrides ───────────────────────────────────── */
+/* â”€â”€â”€ Light mode conversation overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .light .sidebar-conversations {
   border-top-color: rgba(0, 0, 0, 0.08);
@@ -1071,13 +1063,13 @@ body {
 }
 
 .light .conv-new-btn {
-  border-color: rgba(62, 207, 142, 0.25);
-  background: rgba(62, 207, 142, 0.04);
-  color: #3ecf8e;
+  border-color: var(--accent-subtle);
+  background: var(--accent-subtle);
+  color: var(--accent);
 }
 
 .light .conv-new-btn:hover:not(:disabled) {
-  background: rgba(62, 207, 142, 0.08);
+  background: var(--accent-subtle);
 }
 
 .light .conv-search-input {
@@ -1087,7 +1079,7 @@ body {
 }
 
 .light .conv-search-input:focus {
-  border-color: rgba(62, 207, 142, 0.4);
+  border-color: var(--accent);
   background: rgba(0, 0, 0, 0.04);
 }
 
@@ -1100,7 +1092,7 @@ body {
 }
 
 .light .conv-item--active {
-  background: rgba(62, 207, 142, 0.08);
+  background: var(--accent-subtle);
 }
 
 .light .conv-item-title {
@@ -1108,7 +1100,7 @@ body {
 }
 
 .light .conv-item--active .conv-item-title {
-  color: #3ecf8e;
+  color: var(--accent);
 }
 
 .light .conv-item-time {
@@ -1118,7 +1110,7 @@ body {
 .light .conv-item-dropdown {
   background: #ffffff;
   border-color: rgba(0, 0, 0, 0.1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 0 0 1px var(--border);
 }
 
 .light .conv-item-dropdown-item {
@@ -1131,8 +1123,8 @@ body {
 }
 
 .light .conv-item-rename-input {
-  border-color: rgba(62, 207, 142, 0.5);
-  background: rgba(62, 207, 142, 0.06);
+  border-color: var(--accent);
+  background: var(--accent-subtle);
   color: rgba(10, 10, 20, 0.9);
 }
 
@@ -1140,7 +1132,7 @@ body {
   color: rgba(10, 10, 20, 0.3);
 }
 
-/* ─── Sidebar footer ─────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Sidebar footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .sidebar-footer {
   padding: 12px;
@@ -1203,7 +1195,7 @@ body {
   color: rgba(10, 10, 20, 0.3);
 }
 
-/* ─── Theme toggle button ─────────────────────────────────────────────────── */
+/* â”€â”€â”€ Theme toggle button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .theme-toggle {
   display: flex;
@@ -1238,7 +1230,7 @@ body {
   border-color: rgba(0, 0, 0, 0.18);
 }
 
-/* ─── Main content area ───────────────────────────────────────────────────── */
+/* â”€â”€â”€ Main content area â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .app-main {
   flex: 1;
@@ -1264,7 +1256,7 @@ body {
   }
 }
 
-/* ─── Page placeholder (for stub routes) ─────────────────────────────────── */
+/* â”€â”€â”€ Page placeholder (for stub routes) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .page-placeholder {
   padding: 2rem;
@@ -1282,7 +1274,7 @@ body {
   font-size: 0.875rem;
 }
 
-/* ─── Light mode sidebar ─────────────────────────────────────────────────── */
+/* â”€â”€â”€ Light mode sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .light .sidebar {
   background: #ffffff;
@@ -1290,7 +1282,7 @@ body {
 }
 
 .light .sidebar-brand-name {
-  color: #00c573;
+  color: var(--accent-hover);
 }
 
 .light .sidebar-nav-link {
@@ -1303,12 +1295,12 @@ body {
 }
 
 .light .sidebar-nav-link--active {
-  color: #3ecf8e;
-  background: rgba(62, 207, 142, 0.08);
+  color: var(--accent);
+  background: var(--accent-subtle);
 }
 
 .light .sidebar-nav-link--active:hover {
-  background: rgba(62, 207, 142, 0.14);
+  background: var(--accent-subtle);
 }
 
 .light .sidebar-collapse-btn {
@@ -1322,7 +1314,7 @@ body {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* ─── Settings Page ───────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Settings Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .settings-page {
   display: flex;
@@ -1393,8 +1385,8 @@ body {
 }
 
 .settings-tab--active {
-  color: #3ecf8e;
-  background: rgba(62, 207, 142, 0.12);
+  color: var(--accent);
+  background: var(--accent-subtle);
 }
 
 .settings-content {
@@ -1404,7 +1396,7 @@ body {
   min-width: 0;
 }
 
-/* ─── Connections Settings ─────────────────────────────────────────────────── */
+/* â”€â”€â”€ Connections Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conn-settings {
   display: flex;
@@ -1436,7 +1428,7 @@ body {
   line-height: 1.5;
 }
 
-/* ─── Buttons ──────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conn-btn {
   display: inline-flex;
@@ -1455,15 +1447,13 @@ body {
 }
 
 .conn-btn--primary {
-  background: #3ecf8e;
+  background: var(--accent);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(62, 207, 142, 0.2);
 }
 
 .conn-btn--primary:hover:not(:disabled) {
   opacity: 0.9;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(62, 207, 142, 0.4);
 }
 
 .conn-btn--primary:active:not(:disabled) {
@@ -1524,7 +1514,7 @@ body {
   cursor: not-allowed;
 }
 
-/* ─── Spinner ──────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Spinner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conn-spinner {
   display: inline-block;
@@ -1547,7 +1537,7 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* ─── Connection form ──────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Connection form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conn-form-wrapper {
   background: rgba(255, 255, 255, 0.025);
@@ -1620,7 +1610,7 @@ body {
   font-size: 0.875rem;
   font-family: inherit;
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s;
 }
 
 .conn-input::placeholder {
@@ -1628,8 +1618,8 @@ body {
 }
 
 .conn-input:focus {
-  border-color: rgba(62, 207, 142, 0.5);
-  box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
 }
 
 .conn-input:disabled {
@@ -1679,7 +1669,7 @@ body {
 .conn-checkbox {
   width: 14px;
   height: 14px;
-  accent-color: #3ecf8e;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -1719,7 +1709,7 @@ body {
   gap: 8px;
 }
 
-/* ─── Connection grid ──────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Connection grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conn-grid {
   display: grid;
@@ -1727,29 +1717,28 @@ body {
   gap: 12px;
 }
 
-/* ─── Connection card ──────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Connection card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conn-card {
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 16px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s;
   animation: connFadeIn 0.2s ease-out;
 }
 
 .conn-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .conn-card--default {
-  border-color: rgba(62, 207, 142, 0.2);
-  box-shadow: 0 0 0 1px rgba(62, 207, 142, 0.1);
+  border-color: var(--accent-subtle);
+  box-shadow: 0 0 0 1px var(--accent-subtle);
 }
 
 .conn-card--default:hover {
-  border-color: rgba(62, 207, 142, 0.45);
+  border-color: var(--accent);
 }
 
 .conn-card-header {
@@ -1782,9 +1771,9 @@ body {
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 20px;
-  background: rgba(62, 207, 142, 0.15);
-  border: 1px solid rgba(62, 207, 142, 0.2);
-  color: #3ecf8e;
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-subtle);
+  color: var(--accent);
   flex-shrink: 0;
   letter-spacing: 0.02em;
 }
@@ -1869,7 +1858,7 @@ body {
   color: #f87171;
 }
 
-/* ─── Empty state ──────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conn-empty {
   display: flex;
@@ -1887,9 +1876,9 @@ body {
   width: 64px;
   height: 64px;
   border-radius: 16px;
-  background: rgba(62, 207, 142, 0.08);
-  border: 1px solid rgba(62, 207, 142, 0.15);
-  color: #3ecf8e;
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-subtle);
+  color: var(--accent);
   margin-bottom: 8px;
 }
 
@@ -1908,7 +1897,7 @@ body {
   line-height: 1.5;
 }
 
-/* ─── Loading state ────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Loading state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conn-loading {
   display: flex;
@@ -1929,7 +1918,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(62, 207, 142, 0.6);
+  background: var(--accent);
   animation: connDotPulse 1.2s ease-in-out infinite;
 }
 
@@ -1941,7 +1930,7 @@ body {
   40% { opacity: 1; transform: scale(1); }
 }
 
-/* ─── Error banner ─────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Error banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conn-error-banner {
   display: flex;
@@ -1955,7 +1944,7 @@ body {
   font-size: 0.875rem;
 }
 
-/* ─── Toast notifications ──────────────────────────────────────────────────── */
+/* â”€â”€â”€ Toast notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conn-toasts {
   position: fixed;
@@ -1978,7 +1967,7 @@ body {
   font-weight: 500;
   pointer-events: auto;
   backdrop-filter: blur(8px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
   animation: connToastIn 0.25s ease-out;
 }
 
@@ -2000,12 +1989,12 @@ body {
 }
 
 .conn-toast--info {
-  background: rgba(62, 207, 142, 0.12);
-  border: 1px solid rgba(62, 207, 142, 0.25);
-  color: #3ecf8e;
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-subtle);
+  color: var(--accent);
 }
 
-/* ─── Delete confirmation modal ────────────────────────────────────────────── */
+/* â”€â”€â”€ Delete confirmation modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .conn-modal-overlay {
   position: fixed;
@@ -2027,7 +2016,7 @@ body {
   padding: 28px;
   max-width: 420px;
   width: 100%;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2081,7 +2070,7 @@ body {
   justify-content: center;
 }
 
-/* ─── Responsive settings ──────────────────────────────────────────────────── */
+/* â”€â”€â”€ Responsive settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 @media (max-width: 768px) {
   .settings-layout {
@@ -2123,9 +2112,9 @@ body {
     padding: 20px 16px 0;
   }
 }
-/* ─────────────────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Agent Builder
-   ───────────────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .agents-page { min-height: 100%; display: flex; flex-direction: column; }
 .agents-page-header { padding: 36px 40px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); }
@@ -2138,8 +2127,8 @@ body {
 .agent-section-desc { font-size: 13px; color: #64748b; margin: 0; max-width: 480px; }
 
 .agent-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 1px solid transparent; cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit; }
-.agent-btn--primary { background: #3ecf8e; color: #fff; border-color: #2db87a; }
-.agent-btn--primary:hover:not(:disabled) { background: #2db87a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(62,207,142,0.35); }
+.agent-btn--primary { background: var(--accent); color: #fff; border-color: var(--accent-hover); }
+.agent-btn--primary:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
 .agent-btn--cancel { background: rgba(255,255,255,0.05); color: #94a3b8; border-color: rgba(255,255,255,0.08); }
 .agent-btn--cancel:hover:not(:disabled) { background: rgba(255,255,255,0.08); color: #fafafa; }
 .agent-btn--danger { background: rgba(239,68,68,0.12); color: #f87171; border-color: rgba(239,68,68,0.2); }
@@ -2160,32 +2149,32 @@ body {
 .agent-required { color: #f87171; }
 
 .agent-input { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; font-size: 13px; color: #fafafa; font-family: inherit; transition: border-color 0.15s; outline: none; width: 100%; box-sizing: border-box; }
-.agent-input:focus { border-color: #3ecf8e; box-shadow: 0 0 0 3px rgba(62,207,142,0.15); }
+.agent-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-subtle); }
 .agent-input::placeholder { color: #475569; }
 .agent-input:disabled { opacity: 0.5; cursor: not-allowed; }
 .agent-input--error { border-color: #f87171; }
-.agent-input--error:focus { box-shadow: 0 0 0 3px rgba(248,113,113,0.15); }
+.agent-input--error:focus { box-shadow: 0 0 0 2px rgba(248,113,113,0.15); }
 .agent-textarea { resize: vertical; min-height: 120px; line-height: 1.5; }
 .agent-mono { font-family: 'Fira Code','Cascadia Code','JetBrains Mono','Menlo',monospace; font-size: 12px; }
 .agent-select { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; font-size: 13px; color: #fafafa; font-family: inherit; transition: border-color 0.15s; outline: none; width: 100%; box-sizing: border-box; cursor: pointer; appearance: auto; }
-.agent-select:focus { border-color: #3ecf8e; box-shadow: 0 0 0 3px rgba(62,207,142,0.15); }
+.agent-select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-subtle); }
 .agent-select option, .agent-select optgroup { background: #1c1c1c; color: #fafafa; }
 .agent-field-error { font-size: 12px; color: #f87171; margin: 0; }
 .agent-field-hint { font-size: 12px; color: #64748b; margin: 0; }
 .agent-field-hint code { font-family: 'Fira Code','Menlo',monospace; background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px; font-size: 11px; }
 .agent-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #94a3b8; cursor: pointer; }
-.agent-checkbox { width: 15px; height: 15px; cursor: pointer; accent-color: #3ecf8e; }
+.agent-checkbox { width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent); }
 .agent-form-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); }
 
 .agent-list-section { min-height: 200px; }
 .agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-.agent-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 18px 20px; transition: border-color 0.2s, box-shadow 0.2s; }
-.agent-card:hover { border-color: rgba(255,255,255,0.12); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-.agent-card--default { border-color: rgba(62,207,142,0.3); background: rgba(62,207,142,0.04); }
+.agent-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 18px 20px; transition: border-color 0.2s; }
+.agent-card:hover { border-color: rgba(255,255,255,0.15); }
+.agent-card--default { border-color: var(--accent); background: var(--accent-subtle); }
 .agent-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
 .agent-card-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .agent-card-name { font-size: 15px; font-weight: 600; color: #fafafa; }
-.agent-default-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; background: rgba(62,207,142,0.18); color: #3ecf8e; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(62,207,142,0.25); }
+.agent-default-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; background: var(--accent-subtle); color: var(--accent); padding: 2px 7px; border-radius: 4px; border: 1px solid var(--accent-subtle); }
 .agent-card-actions { display: flex; gap: 4px; flex-shrink: 0; }
 .agent-card-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: transparent; border: 1px solid rgba(255,255,255,0.06); color: #64748b; cursor: pointer; transition: all 0.15s; }
 .agent-card-btn:hover:not(:disabled) { background: rgba(255,255,255,0.06); color: #fafafa; border-color: rgba(255,255,255,0.1); }
@@ -2194,20 +2183,20 @@ body {
 .agent-card-description { font-size: 12px; color: #64748b; margin: 0 0 10px; line-height: 1.5; }
 .agent-card-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .agent-meta-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 3px 7px; border-radius: 4px; background: rgba(255,255,255,0.05); color: #64748b; border: 1px solid rgba(255,255,255,0.06); }
-.agent-meta-chip--model { color: #3ecf8e; background: rgba(62,207,142,0.08); border-color: rgba(62,207,142,0.15); }
+.agent-meta-chip--model { color: var(--accent); background: var(--accent-subtle); border-color: var(--accent-subtle); }
 .agent-meta-chip--mcp { color: #34d399; background: rgba(52,211,153,0.08); border-color: rgba(52,211,153,0.15); }
 .agent-meta-chip--instructions { color: #60a5fa; background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.15); }
 
 .agent-loading { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 60px 20px; color: #64748b; font-size: 14px; }
 .agent-loading-dots { display: flex; gap: 4px; }
-.agent-loading-dots span { width: 6px; height: 6px; border-radius: 50%; background: #3ecf8e; animation: agent-pulse 1.2s ease-in-out infinite; }
+.agent-loading-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: agent-pulse 1.2s ease-in-out infinite; }
 .agent-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
 .agent-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes agent-pulse { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.85); } 40% { opacity: 1; transform: scale(1); } }
 
 .agent-error-banner { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; font-size: 13px; color: #f87171; margin-top: 16px; }
 .agent-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; text-align: center; }
-.agent-empty-icon { width: 72px; height: 72px; border-radius: 20px; background: rgba(62,207,142,0.1); border: 1px solid rgba(62,207,142,0.2); display: flex; align-items: center; justify-content: center; color: #3ecf8e; margin-bottom: 20px; }
+.agent-empty-icon { width: 72px; height: 72px; border-radius: 20px; background: var(--accent-subtle); border: 1px solid var(--accent-subtle); display: flex; align-items: center; justify-content: center; color: var(--accent); margin-bottom: 20px; }
 .agent-empty-title { font-size: 18px; font-weight: 600; color: #fafafa; margin: 0 0 8px; }
 .agent-empty-desc { font-size: 14px; color: #64748b; margin: 0 0 24px; max-width: 360px; }
 
@@ -2219,7 +2208,7 @@ body {
 
 .agent-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; animation: agent-fade-in 0.15s ease; }
 @keyframes agent-fade-in { from { opacity: 0; } to { opacity: 1; } }
-.agent-modal { background: #1c1c1c; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.5); animation: agent-scale-in 0.15s ease; }
+.agent-modal { background: #1c1c1c; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px; max-width: 420px; width: 100%; text-align: center; animation: agent-scale-in 0.15s ease; }
 @keyframes agent-scale-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
 .agent-modal-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
 .agent-modal-icon--danger { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
