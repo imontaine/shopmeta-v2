@@ -228,7 +228,7 @@ function QueryDisplay({ sql }: QueryDisplayProps) {
           transition: 'color 0.15s ease',
         }}
       >
-        {copied ? '✓ Copied' : 'Copy'}
+        {copied ? 'Copied' : 'Copy'}
       </button>
 
       <pre
@@ -313,9 +313,9 @@ export function ToolCallRenderer({
 
   // Build tab list
   const tabs: Tab[] = [
-    ...(isChartable ? [{ id: 'chart' as TabId, label: 'Chart', icon: '📊' }] : []),
-    { id: 'result', label: 'Result', icon: '📋' },
-    { id: 'query', label: 'Query', icon: '🔍' },
+    ...(isChartable ? [{ id: 'chart' as TabId, label: 'Chart', icon: '' }] : []),
+    { id: 'result', label: 'Result', icon: '' },
+    { id: 'query', label: 'Query', icon: '' },
   ]
 
   // Default: Chart if chartable, otherwise Result

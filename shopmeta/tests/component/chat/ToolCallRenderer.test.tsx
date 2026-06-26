@@ -390,11 +390,11 @@ describe('ToolCallRenderer — Query tab', () => {
 
     await user.click(copyBtn)
 
-    // After click: shows "✓ Copied" — confirms clipboard interaction happened
-    expect(screen.getByTestId('copy-sql-button')).toHaveTextContent('✓ Copied')
+    // After click: shows "Copied" — confirms clipboard interaction happened
+    expect(screen.getByTestId('copy-sql-button')).toHaveTextContent('Copied')
   })
 
-  it('copy button shows "✓ Copied" after click', async () => {
+  it('copy button shows "Copied" after click', async () => {
     const user = userEvent.setup()
     render(
       <ToolCallRenderer
@@ -407,7 +407,7 @@ describe('ToolCallRenderer — Query tab', () => {
     await user.click(screen.getByTestId('tab-query'))
     await user.click(screen.getByTestId('copy-sql-button'))
 
-    expect(screen.getByTestId('copy-sql-button')).toHaveTextContent('✓ Copied')
+    expect(screen.getByTestId('copy-sql-button')).toHaveTextContent('Copied')
   })
 })
 

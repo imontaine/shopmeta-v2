@@ -22,10 +22,10 @@ export interface LineChartViewProps {
   className?: string
 }
 
-// Supabase-aligned color palette
+// Perplexity-aligned color palette
 const COLORS = [
-  '#3ecf8e', // Supabase emerald
-  '#00c573', // Supabase interactive green
+  '#21808D', // Perplexity teal
+  '#1a6b76', // Perplexity teal hover
   '#f59e0b', // amber
   '#ef4444', // red
   '#3b82f6', // blue

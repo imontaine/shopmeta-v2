@@ -27,14 +27,14 @@ export interface PieChartViewProps {
 }
 
 const COLORS = [
-  '#3ecf8e', // Supabase emerald
-  '#00c573', // Supabase interactive green
+  '#21808D', // Perplexity teal
+  '#1a6b76', // Perplexity teal hover
   '#f59e0b', // amber
   '#ef4444', // red
   '#3b82f6', // blue
   '#ec4899', // pink
-  '#14b8a6', // teal
-  '#898989', // Supabase mid gray
+  '#14b8a6', // teal alt
+  '#898989', // mid gray
 ]
 
 // Custom label renderer

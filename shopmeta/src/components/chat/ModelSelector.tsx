@@ -19,9 +19,9 @@ const providerLabels: Record<string, string> = {
 }
 
 const providerIcons: Record<string, string> = {
-  openai: '⚡',
-  anthropic: '🎭',
-  google: '💎',
+  openai: 'OAI',
+  anthropic: 'ANT',
+  google: 'GGL',
 }
 
 export function ModelSelector({

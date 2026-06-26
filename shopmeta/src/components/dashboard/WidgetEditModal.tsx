@@ -24,9 +24,9 @@ export interface WidgetEditModalProps {
 }
 
 const WIDGET_TYPES: { value: WidgetType; label: string; icon: string }[] = [
-  { value: 'chart', label: 'Chart', icon: '📊' },
-  { value: 'table', label: 'Table', icon: '📋' },
-  { value: 'kpi', label: 'KPI', icon: '🔢' },
+  { value: 'chart', label: 'Chart', icon: 'C' },
+  { value: 'table', label: 'Table', icon: 'T' },
+  { value: 'kpi', label: 'KPI', icon: '#' },
 ]
 
 const CHART_TYPES = ['line', 'bar', 'area', 'pie'] as const
@@ -130,7 +130,7 @@ export function WidgetEditModal({ initialValues, onSave, onClose, saving = false
               fontSize: '0.85rem',
             }}
           >
-            ✕
+            x
           </button>
         </div>
 

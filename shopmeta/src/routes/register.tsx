@@ -79,8 +79,8 @@ function RegisterPage() {
               <path d="M8 16L14 22L24 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
               <defs>
                 <linearGradient id="grad2" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#3ecf8e" />
-                  <stop offset="1" stopColor="#00c573" />
+                  <stop stopColor="#21808D" />
+                  <stop offset="1" stopColor="#1a6b76" />
                 </linearGradient>
               </defs>
             </svg>

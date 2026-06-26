@@ -148,7 +148,7 @@ export function UserList({
             color: 'hsl(var(--muted-foreground, 240 5% 64.9%))',
           }}
         >
-          🔍
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
         </span>
       </div>
 
@@ -456,7 +456,7 @@ export function InviteMemberForm({ onInvite, loading, className }: InviteMemberF
         disabled={loading || !email.trim()}
         style={{
           padding: '7px 16px',
-          background: '#3ecf8e',
+          background: 'var(--accent)',
           border: 'none',
           borderRadius: '5px',
           color: '#0f0f0f',

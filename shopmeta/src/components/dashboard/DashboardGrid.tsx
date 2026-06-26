@@ -102,7 +102,7 @@ export function DashboardGrid({
           borderRadius: '12px',
         }}
       >
-        <span style={{ fontSize: '2.5rem', marginBottom: '16px' }}>📊</span>
+        <span style={{ fontSize: '2.5rem', marginBottom: '16px', opacity: 0.3 }}>--</span>
         <h3 style={{ margin: '0 0 8px', fontSize: '1rem', fontWeight: 600 }}>
           No widgets yet
         </h3>

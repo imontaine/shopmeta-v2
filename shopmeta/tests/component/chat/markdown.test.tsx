@@ -67,7 +67,7 @@ describe('MarkdownRenderer component', () => {
     expect(mockWriteText).toHaveBeenCalledWith(code)
   })
 
-  test('copy button shows "✓ Copied" after click', async () => {
+  test('copy button shows "Copied" after click', async () => {
     vi.useFakeTimers()
 
     const content = '```js\nconst x = 1\n```'
@@ -82,8 +82,8 @@ describe('MarkdownRenderer component', () => {
       await mockWriteText.mock.results[mockWriteText.mock.results.length - 1]?.value
     })
 
-    // After async state update, should show "✓ Copied"
-    expect(copyBtn).toHaveTextContent('✓ Copied')
+    // After async state update, should show "Copied"
+    expect(copyBtn).toHaveTextContent('Copied')
 
     // Advance fake timers to trigger the 2s timeout
     act(() => {

@@ -136,8 +136,8 @@ function ComposerInner({
       data-testid="composer"
       style={{
         padding: '0.75rem',
-        borderTop: '1px solid rgba(255,255,255,0.07)',
-        background: 'rgba(0,0,0,0.2)',
+        borderTop: '1px solid var(--border)',
+        background: 'var(--bg-base)',
       }}
     >
       {/* Toolbar row */}
@@ -166,17 +166,17 @@ function ComposerInner({
           display: 'flex',
           alignItems: 'flex-end',
           gap: '0.5rem',
-          background: 'rgba(255,255,255,0.04)',
-          borderRadius: '0.75rem',
-          border: '1px solid rgba(255,255,255,0.10)',
+          background: 'var(--bg-surface)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--border)',
           padding: '0.5rem 0.75rem',
           transition: 'border-color 0.15s ease',
         }}
         onFocus={(e) => {
-          (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(62,207,142,0.5)'
+          (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--accent)'
         }}
         onBlur={(e) => {
-          (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.10)'
+          (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)'
         }}
       >
         {/* Plain controlled textarea — responds to Playwright fill() correctly.
@@ -222,7 +222,7 @@ function ComposerInner({
               minHeight: '44px',
               borderRadius: '0.5rem',
               border: 'none',
-              background: canSend ? '#3ecf8e' : 'rgba(255,255,255,0.08)',
+              background: canSend ? 'var(--accent)' : 'var(--bg-elevated)',
               color: canSend ? '#fff' : 'rgba(255,255,255,0.3)',
               cursor: canSend ? 'pointer' : 'not-allowed',
               transition: 'all 0.15s ease',

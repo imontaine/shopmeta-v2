@@ -153,7 +153,7 @@ export function ChartView({
             cursor: 'pointer',
           }}
         >
-          ⚙ Configure
+          Configure
         </button>
       </div>
 

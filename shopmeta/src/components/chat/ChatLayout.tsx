@@ -121,6 +121,8 @@ function ChatContent({ conversationId }: { conversationId?: string }) {
         style={{
           display: 'flex',
           width: '100%',
+          maxWidth: '720px',
+          margin: '0 auto',
           height: '100%',
           overflow: 'hidden',
           flexDirection: 'column',

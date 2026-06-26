@@ -12,7 +12,7 @@ import {
   ActionBarPrimitive,
 } from '@assistant-ui/react'
 import { MarkdownRenderer } from '#/components/chat/MarkdownRenderer'
-import { RefreshCw, Sparkles, MessageSquarePlus } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 
 // ─── Message Bubble ───────────────────────────────────────────────────────────
 
@@ -30,11 +30,9 @@ function UserMessage() {
         <div
           style={{
             maxWidth: '75%',
-            background: '#3ecf8e',
-            borderRadius: '1rem 1rem 0.25rem 1rem',
-            padding: '0.75rem 1rem',
             fontSize: '0.9rem',
             lineHeight: 1.6,
+            color: 'var(--text-primary)',
           }}
         >
           <MessagePrimitive.Content />
@@ -62,17 +60,21 @@ function AssistantMessage() {
             width: '2rem',
             height: '2rem',
             borderRadius: '50%',
-            background: 'rgba(62, 207, 142, 0.15)',
-            border: '1px solid rgba(62, 207, 142, 0.3)',
+            background: 'var(--accent-subtle)',
+            border: '1px solid var(--border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#3ecf8e',
+            color: 'var(--accent)',
             flexShrink: 0,
             marginTop: '0.1rem',
           }}
         >
-          <Sparkles size={14} />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4" />
+            <path d="M12 8h.01" />
+          </svg>
         </div>
         <div style={{ maxWidth: '80%' }}>
           <div
@@ -185,14 +187,11 @@ export function Thread({ className }: ThreadProps) {
               alignItems: 'center',
               justifyContent: 'center',
               height: '100%',
-              gap: '1rem',
-              opacity: 0.4,
+              gap: '0.5rem',
               userSelect: 'none',
             }}
           >
-            <MessageSquarePlus size={48} style={{ color: '#3ecf8e', opacity: 0.6 }} />
-            <p style={{ fontSize: '1rem', fontWeight: 500 }}>Start a conversation</p>
-            <p style={{ fontSize: '0.85rem' }}>Ask anything — I&apos;m powered by your selected AI model</p>
+            <p style={{ fontSize: '1.25rem', fontWeight: 500, color: 'var(--text-primary)', opacity: 0.6 }}>Ask anything.</p>
           </div>
         </ThreadPrimitive.Empty>
 

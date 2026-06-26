@@ -59,7 +59,7 @@ function CopyButton({ code }: CopyButtonProps) {
         zIndex: 1,
       }}
     >
-      {copied ? '✓ Copied' : 'Copy'}
+      {copied ? 'Copied' : 'Copy'}
     </button>
   )
 }

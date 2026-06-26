@@ -19,10 +19,10 @@ interface TypeOption {
 }
 
 const TYPES: TypeOption[] = [
-  { type: 'line', label: 'Line', icon: '📈' },
-  { type: 'bar', label: 'Bar', icon: '📊' },
-  { type: 'area', label: 'Area', icon: '🏔️' },
-  { type: 'pie', label: 'Pie', icon: '🥧' },
+  { type: 'line', label: 'Line', icon: '\u2014' },
+  { type: 'bar', label: 'Bar', icon: '\u2503' },
+  { type: 'area', label: 'Area', icon: '\u25E2' },
+  { type: 'pie', label: 'Pie', icon: '\u25CB' },
 ]
 
 export function ChartTypeSwitcher({ current, onChange, className }: ChartTypeSwitcherProps) {

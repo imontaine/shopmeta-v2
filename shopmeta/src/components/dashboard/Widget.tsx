@@ -24,9 +24,9 @@ export interface WidgetProps {
 }
 
 const TYPE_ICONS: Record<string, string> = {
-  chart: '📊',
-  table: '📋',
-  kpi: '🔢',
+  chart: 'C',
+  table: 'T',
+  kpi: '#',
 }
 
 export function Widget({
@@ -77,7 +77,7 @@ export function Widget({
 
         {/* Type icon */}
         <span aria-hidden="true" style={{ fontSize: '0.85rem' }}>
-          {TYPE_ICONS[type] ?? '📊'}
+          {TYPE_ICONS[type] ?? 'C'}
         </span>
 
         {/* Title */}
@@ -114,7 +114,7 @@ export function Widget({
                 cursor: 'pointer',
               }}
             >
-              ✏
+              Edit
             </button>
           )}
           {onRemove && (
@@ -132,7 +132,7 @@ export function Widget({
                 cursor: 'pointer',
               }}
             >
-              ✕
+              x
             </button>
           )}
         </div>

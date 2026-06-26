@@ -105,7 +105,7 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
           fontWeight: 600,
         }}
       >
-        ✓ Saved to dashboard
+        Saved to dashboard
       </div>
     )
   }
@@ -132,7 +132,7 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
           transition: 'all 0.15s ease',
         }}
       >
-        <span aria-hidden="true">📌</span>
+        <span aria-hidden="true">+</span>
         Save to Dashboard
       </button>
     )
@@ -154,7 +154,7 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
         fontSize: '0.82rem',
       }}
     >
-      <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>📌 Save to Dashboard</div>
+      <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>Save to Dashboard</div>
 
       {/* Dashboard picker */}
       {dashboards.length > 0 ? (
