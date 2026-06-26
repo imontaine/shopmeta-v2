@@ -105,38 +105,46 @@ export default async function globalSetup() {
   console.log(`📦 E2E Database: ${dbUrl.replace(/:([^:@]+)@/, ':***@')}`)
 
   // Run Drizzle migrations against the E2E database
-  console.log('🗄️  Running database migrations...')
-  try {
-    execSync('pnpm db:migrate', {
-      cwd: ROOT,
-      stdio: 'pipe',
-      timeout: 30000,
-      env: {
-        ...process.env,
-        DATABASE_URL: dbUrl,
-      },
-    })
-    console.log('✅ Migrations complete')
-  } catch (err) {
-    const castErr = err as { stdout?: Buffer; stderr?: Buffer; message?: string }
-    const output = castErr.stderr?.toString() ?? castErr.message ?? String(err)
-    // If already up to date, that's fine
-    if (output.includes('No changes') || output.includes('up to date') || output.includes('0 migrations')) {
-      console.log('✅ Migrations already up to date')
-    } else {
-      console.error('Migration output:', output)
-      throw new Error(
-        `Migrations failed.\n\n` +
-        `If the error is a connection timeout, the database port may be blocked.\n` +
-        `Options to fix:\n` +
-        `  1. SSH into the server and run: ufw allow 5433\n` +
-        `  2. Set E2E_SSH_TUNNEL=true and E2E_SSH_KEY=/path/to/key in .env.e2e\n\n` +
-        `Error details: ${output}`
-      )
+  // Skip if E2E_SKIP_MIGRATIONS=true — useful when running against a live production
+  // URL where the app already handles migrations on startup via docker-entrypoint.sh
+  if (process.env['E2E_SKIP_MIGRATIONS'] !== 'true') {
+    console.log('🗄️  Running database migrations...')
+    try {
+      execSync('pnpm db:migrate', {
+        cwd: ROOT,
+        stdio: 'pipe',
+        timeout: 30000,
+        env: {
+          ...process.env,
+          DATABASE_URL: dbUrl,
+        },
+      })
+      console.log('✅ Migrations complete')
+    } catch (err) {
+      const castErr = err as { stdout?: Buffer; stderr?: Buffer; message?: string }
+      const output = castErr.stderr?.toString() ?? castErr.message ?? String(err)
+      // If already up to date, that's fine
+      if (output.includes('No changes') || output.includes('up to date') || output.includes('0 migrations')) {
+        console.log('✅ Migrations already up to date')
+      } else {
+        console.error('Migration output:', output)
+        throw new Error(
+          `Migrations failed.\n\n` +
+          `If the error is a connection timeout, the database port may be blocked.\n` +
+          `Options to fix:\n` +
+          `  1. SSH into the server and run: ufw allow 5433\n` +
+          `  2. Set E2E_SSH_TUNNEL=true and E2E_SSH_KEY=/path/to/key in .env.e2e\n` +
+          `  3. Set E2E_SKIP_MIGRATIONS=true if the production app already migrated\n\n` +
+          `Error details: ${output}`
+        )
+      }
     }
+  } else {
+    console.log('⏭️  Skipping migrations (E2E_SKIP_MIGRATIONS=true)')
   }
 
   console.log('✅ E2E Global Setup complete\n')
+
 }
 
 export async function globalTeardown() {
