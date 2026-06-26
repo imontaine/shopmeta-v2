@@ -90,7 +90,7 @@ function AssistantMessage() {
           </div>
 
           {/* Regenerate button — only shown on the last assistant message */}
-          <MessagePrimitive.Last>
+          <MessagePrimitive.If last={true}>
             <div style={{ marginTop: '0.35rem', display: 'flex', gap: '0.25rem' }}>
               <ActionBarPrimitive.Root hideWhenRunning autohide="not-last">
                 <ActionBarPrimitive.Reload asChild>
@@ -125,7 +125,7 @@ function AssistantMessage() {
                 </ActionBarPrimitive.Reload>
               </ActionBarPrimitive.Root>
             </div>
-          </MessagePrimitive.Last>
+          </MessagePrimitive.If>
         </div>
       </div>
     </MessagePrimitive.Root>
