@@ -230,11 +230,10 @@ body {
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1.25rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   padding: 2.5rem;
-  backdrop-filter: blur(12px);
   box-shadow: 0 0 0 1px var(--border);
   animation: fadeSlideIn 0.3s ease-out;
 }
@@ -264,14 +263,14 @@ body {
 .auth-title {
   font-size: 1.5rem;
   font-weight: 500;
-  color: #fafafa;
+  color: var(--text-primary);
   margin: 0 0 0.5rem;
   letter-spacing: -0.02em;
 }
 
 .auth-subtitle {
   font-size: 0.875rem;
-  color: rgba(240, 240, 248, 0.5);
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.5;
 }
@@ -291,7 +290,7 @@ body {
 .auth-label {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgba(240, 240, 248, 0.65);
+  color: var(--text-secondary);
 }
 
 .auth-label-row {
@@ -303,10 +302,10 @@ body {
 .auth-input {
   width: 100%;
   padding: 0.625rem 0.875rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.625rem;
-  color: #fafafa;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
   font-size: 0.875rem;
   font-family: inherit;
   transition: border-color 0.15s;
@@ -314,7 +313,7 @@ body {
 }
 
 .auth-input::placeholder {
-  color: rgba(240, 240, 248, 0.25);
+  color: var(--text-secondary);
 }
 
 .auth-input:focus {
@@ -333,7 +332,7 @@ body {
   border-radius: 9999px;
   border: none;
   background: var(--accent);
-  color: #0f0f0f;
+  color: #fff;
   font-size: 0.9375rem;
   font-weight: 600;
   font-family: inherit;
@@ -434,7 +433,7 @@ body {
   text-align: center;
   margin-top: 1.5rem;
   font-size: 0.8125rem;
-  color: rgba(240, 240, 248, 0.45);
+  color: var(--text-secondary);
 }
 
 .auth-link {
@@ -467,7 +466,8 @@ body {
   text-align: center;
   margin-top: 1.25rem;
   font-size: 0.6875rem;
-  color: rgba(240, 240, 248, 0.2);
+  color: var(--text-secondary);
+  opacity: 0.5;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
   user-select: all;
