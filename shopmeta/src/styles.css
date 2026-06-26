@@ -10,6 +10,22 @@
   box-sizing: border-box;
 }
 
+/* ── UX Fix #1: prefers-reduced-motion (a11y) ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── UX Fix #2: global focus-visible ring (Supabase emerald) ──────────────── */
+:focus-visible {
+  box-shadow: 0 0 0 2px #171717, 0 0 0 4px #3ecf8e;
+  outline: none;
+}
+
 html,
 body,
 #app {
@@ -907,8 +923,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px;
   border-radius: 5px;
   border: none;
   background: transparent;
@@ -917,7 +936,7 @@ body {
   opacity: 0;
   transition: opacity 0.12s, background 0.12s, color 0.12s;
   flex-shrink: 0;
-  margin-right: 4px;
+  margin-right: 0px;
 }
 
 .conv-item:hover .conv-item-menu-btn,
