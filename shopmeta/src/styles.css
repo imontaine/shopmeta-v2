@@ -28,8 +28,8 @@ body,
 body {
   margin: 0;
   font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
-  font-size: 15px;
-  line-height: 1.65;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 /* ── Tailwind v4 theme bridge ────────────────────────────────────────────── */
@@ -83,8 +83,8 @@ body {
 :root {
   /* Structural tokens */
   --bg-base: #ffffff;
-  --bg-surface: #f1f1f1;
-  --bg-elevated: #f1f1f1;
+  --bg-surface: #f4f4f5;
+  --bg-elevated: #f4f4f5;
   --border: #e5e7eb;
   --text-primary: #000000;
   --text-secondary: #707070;
@@ -122,9 +122,9 @@ body {
   --popover-foreground: #000000;
   --primary: #000000;
   --primary-foreground: #ffffff;
-  --secondary: #f1f1f1;
+  --secondary: #f4f4f5;
   --secondary-foreground: #000000;
-  --muted: #f1f1f1;
+  --muted: #f4f4f5;
   --muted-foreground: #707070;
   --accent-foreground: #000000;
   --destructive: #f53255;
@@ -135,14 +135,14 @@ body {
   --chart-3: #707070;
   --chart-4: #bcbec4;
   --chart-5: #e5e7eb;
-  --radius: 6px;
+  --radius: 0.625rem;
 
   /* Sidebar */
   --sidebar: #ffffff;
   --sidebar-foreground: #000000;
   --sidebar-primary: #000000;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f1f1;
+  --sidebar-accent: #f4f4f5;
   --sidebar-accent-foreground: #000000;
   --sidebar-border: #e5e7eb;
   --sidebar-ring: #000000;

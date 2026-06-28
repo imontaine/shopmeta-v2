@@ -75,18 +75,17 @@ function ComposerInner({
         isLoading={disabled}
         onSubmit={handleSend}
         className={cn(
-          'border-input bg-background w-full border',
-          'shadow-[0_9px_9px_0px_rgba(0,0,0,0.01),0_2px_5px_0px_rgba(0,0,0,0.06)]',
+          'w-full shadow-xs',
           'transition-all duration-200',
         )}
       >
         <PromptInputTextarea
           data-testid="composer-input"
           placeholder={placeholder}
-          className="min-h-[36px] text-base"
+          className="min-h-[44px] text-sm"
           autoFocus
         />
-        <PromptInputActions className="flex items-center justify-between gap-2 px-1 pb-1">
+        <PromptInputActions className="flex items-center justify-between gap-2 px-2 pb-2">
           <div className="flex items-center gap-x-1.5">
             {/* Model selector */}
             {onModelChange && (
