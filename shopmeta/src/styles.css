@@ -20,9 +20,9 @@
   }
 }
 
-/* â”€â”€ UX Fix #2: global focus-visible ring (Perplexity teal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── UX Fix #2: global focus-visible ring (DESIGN.md ink) ───────────────────── */
 :focus-visible {
-  box-shadow: 0 0 0 2px var(--bg-base, #ffffff), 0 0 0 4px var(--accent, #21808D);
+  box-shadow: 0 0 0 2px var(--bg-base, #ffffff), 0 0 0 4px var(--accent, #000000);
   outline: none;
 }
 
@@ -84,25 +84,25 @@ body {
 }
 
 :root {
-  /* â”€â”€ Perplexity Light Theme (primary â€” light-mode-native) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── OpenAI Light Theme (DESIGN.md — ink-on-canvas) ────────────────── */
 
-  /* Perplexity design tokens */
+  /* DESIGN.md structural tokens */
   --bg-base: #ffffff;
-  --bg-surface: #f8f8f8;
-  --bg-elevated: #f0f0f0;
-  --border: #e5e5e5;
-  --text-primary: #191a1a;
-  --text-secondary: #6b6b6b;
-  --text-tertiary: #9a9a9a;
-  --accent: #21808D;
-  --accent-hover: #1a6b76;
-  --accent-subtle: rgba(33, 128, 141, 0.08);
+  --bg-surface: #f1f1f1;
+  --bg-elevated: #f1f1f1;
+  --border: #e5e7eb;
+  --text-primary: #000000;
+  --text-secondary: #707070;
+  --text-tertiary: #bcbec4;
+  --accent: #000000;
+  --accent-hover: #47484f;
+  --accent-subtle: rgba(0, 0, 0, 0.04);
 
-  /* Typography */
-  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Typography — Inter as OpenAI Sans substitute */
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "SF Mono", Consolas, "Liberation Mono", ui-monospace, monospace;
 
-  /* Spacing (8px base) */
+  /* Spacing (DESIGN.md: 4px base) */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -111,11 +111,11 @@ body {
   --space-6: 24px;
   --space-8: 32px;
 
-  /* Radius */
+  /* Radius (DESIGN.md: binary — 6px cards, pill interactive) */
   --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-md: 6px;
+  --radius-lg: 24px;
+  --radius-xl: 40px;
 
   /* Motion */
   --motion-fast: 120ms;
@@ -124,84 +124,84 @@ body {
   /* Layout */
   --reading-width: 720px;
 
-  /* shadcn compatibility (mapped from Perplexity tokens) */
+  /* shadcn compatibility (mapped from DESIGN.md tokens) */
   --background: #ffffff;
-  --foreground: #191a1a;
-  --card: #f8f8f8;
-  --card-foreground: #191a1a;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
   --popover: #ffffff;
-  --popover-foreground: #191a1a;
-  --primary: #21808D;
+  --popover-foreground: #000000;
+  --primary: #000000;
   --primary-foreground: #ffffff;
-  --secondary: #f0f0f0;
-  --secondary-foreground: #191a1a;
-  --muted: #f8f8f8;
-  --muted-foreground: #6b6b6b;
-  --accent-foreground: #191a1a;
-  --destructive: #dc2626;
-  --input: #e5e5e5;
-  --ring: #21808D;
-  --chart-1: #21808D;
-  --chart-2: #1a6b76;
-  --chart-3: #6b6b6b;
-  --chart-4: #4d4d4d;
-  --chart-5: #242424;
-  --radius: 0.5rem;
-  --sidebar: #f8f8f8;
-  --sidebar-foreground: #191a1a;
-  --sidebar-primary: #21808D;
+  --secondary: #f1f1f1;
+  --secondary-foreground: #000000;
+  --muted: #f1f1f1;
+  --muted-foreground: #707070;
+  --accent-foreground: #000000;
+  --destructive: #f53255;
+  --input: #e5e7eb;
+  --ring: #000000;
+  --chart-1: #000000;
+  --chart-2: #47484f;
+  --chart-3: #707070;
+  --chart-4: #bcbec4;
+  --chart-5: #e5e7eb;
+  --radius: 6px;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #000000;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f0f0f0;
-  --sidebar-accent-foreground: #191a1a;
-  --sidebar-border: #e5e5e5;
-  --sidebar-ring: #21808D;
+  --sidebar-accent: #f1f1f1;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #000000;
 }
 
 .dark {
-  /* â”€â”€ Perplexity Dark Theme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── OpenAI Dark Theme (inverted ink-on-canvas) ──────────────────── */
 
-  /* Perplexity design tokens */
-  --bg-base: #0f0f10;
-  --bg-surface: #19191a;
-  --bg-elevated: #232325;
-  --border: #2e2e30;
+  /* DESIGN.md structural tokens (inverted) */
+  --bg-base: #1f1f1f;
+  --bg-surface: #2a2a2a;
+  --bg-elevated: #333333;
+  --border: #3a3a3c;
   --text-primary: #f0f0f0;
   --text-secondary: #9b9b9b;
   --text-tertiary: #6b6b6b;
-  --accent: #2ba3b0;
-  --accent-hover: #35b7c5;
-  --accent-subtle: rgba(43, 163, 176, 0.08);
+  --accent: #f0f0f0;
+  --accent-hover: #ffffff;
+  --accent-subtle: rgba(255, 255, 255, 0.04);
 
-  /* shadcn compatibility (mapped from Perplexity dark tokens) */
-  --background: #0f0f10;
+  /* shadcn compatibility (mapped from DESIGN.md dark tokens) */
+  --background: #1f1f1f;
   --foreground: #f0f0f0;
-  --card: #19191a;
+  --card: #2a2a2a;
   --card-foreground: #f0f0f0;
-  --popover: #19191a;
+  --popover: #2a2a2a;
   --popover-foreground: #f0f0f0;
-  --primary: #2ba3b0;
-  --primary-foreground: #0f0f10;
-  --secondary: #232325;
+  --primary: #f0f0f0;
+  --primary-foreground: #1f1f1f;
+  --secondary: #333333;
   --secondary-foreground: #f0f0f0;
-  --muted: #232325;
+  --muted: #333333;
   --muted-foreground: #9b9b9b;
   --accent-foreground: #f0f0f0;
-  --destructive: #dc2626;
-  --input: #2e2e30;
-  --ring: #2ba3b0;
-  --chart-1: #2ba3b0;
-  --chart-2: #35b7c5;
-  --chart-3: #9b9b9b;
-  --chart-4: #6b6b6b;
-  --chart-5: #232325;
-  --sidebar: #0f0f10;
+  --destructive: #f53255;
+  --input: #3a3a3c;
+  --ring: #f0f0f0;
+  --chart-1: #f0f0f0;
+  --chart-2: #9b9b9b;
+  --chart-3: #6b6b6b;
+  --chart-4: #3a3a3c;
+  --chart-5: #2a2a2a;
+  --sidebar: #1f1f1f;
   --sidebar-foreground: #f0f0f0;
-  --sidebar-primary: #2ba3b0;
-  --sidebar-primary-foreground: #0f0f10;
-  --sidebar-accent: #19191a;
+  --sidebar-primary: #f0f0f0;
+  --sidebar-primary-foreground: #1f1f1f;
+  --sidebar-accent: #2a2a2a;
   --sidebar-accent-foreground: #f0f0f0;
-  --sidebar-border: #2e2e30;
-  --sidebar-ring: #2ba3b0;
+  --sidebar-border: #3a3a3c;
+  --sidebar-ring: #f0f0f0;
 }
 
 @layer base {

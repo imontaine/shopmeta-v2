@@ -50,8 +50,8 @@ function ForgotPasswordPage() {
               <path d="M16 10V22M10 16H22" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
               <defs>
                 <linearGradient id="grad3" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#21808D" />
-                  <stop offset="1" stopColor="#1a6b76" />
+                  <stop stopColor="#000000" />
+                  <stop offset="1" stopColor="#47484f" />
                 </linearGradient>
               </defs>
             </svg>

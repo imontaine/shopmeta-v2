@@ -64,8 +64,8 @@ function LoginPage() {
               <path d="M8 16L14 22L24 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
               <defs>
                 <linearGradient id="grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#21808D" />
-                  <stop offset="1" stopColor="#1a6b76" />
+                  <stop stopColor="#000000" />
+                  <stop offset="1" stopColor="#47484f" />
                 </linearGradient>
               </defs>
             </svg>

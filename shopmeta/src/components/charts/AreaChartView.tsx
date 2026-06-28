@@ -25,12 +25,12 @@ export interface AreaChartViewProps {
 }
 
 const COLORS = [
-  '#21808D', // Perplexity teal
-  '#1a6b76', // Perplexity teal hover
-  '#f59e0b', // amber
+  '#000000', // ink
+  '#47484f', // ink-soft
+  '#707070', // ink-muted
   '#ef4444', // red
   '#3b82f6', // blue
-  '#ec4899', // pink
+  '#f59e0b', // amber
 ]
 
 export function AreaChartView({

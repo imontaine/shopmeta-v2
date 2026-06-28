@@ -26,14 +26,14 @@ export interface BarChartViewProps {
 }
 
 const COLORS = [
-  '#21808D', // Perplexity teal
-  '#1a6b76', // Perplexity teal hover
-  '#f59e0b', // amber
+  '#000000', // ink
+  '#47484f', // ink-soft
+  '#707070', // ink-muted
   '#ef4444', // red
   '#3b82f6', // blue
-  '#ec4899', // pink
-  '#14b8a6', // teal alt
-  '#898989', // mid gray
+  '#f59e0b', // amber
+  '#bcbec4', // gray-60
+  '#e5e7eb', // hairline
 ]
 
 export function BarChartView({
