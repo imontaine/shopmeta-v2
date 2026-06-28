@@ -75,7 +75,7 @@ function ComposerInner({
         isLoading={disabled}
         onSubmit={handleSend}
         className={cn(
-          'border-input bg-background w-full border px-3 py-1',
+          'border-input bg-background w-full border',
           'shadow-[0_9px_9px_0px_rgba(0,0,0,0.01),0_2px_5px_0px_rgba(0,0,0,0.06)]',
           'transition-all duration-200',
         )}
@@ -83,10 +83,10 @@ function ComposerInner({
         <PromptInputTextarea
           data-testid="composer-input"
           placeholder={placeholder}
-          className="min-h-[44px] text-base"
+          className="min-h-[36px] text-base"
           autoFocus
         />
-        <PromptInputActions className="mt-0 mb-2 flex h-auto items-center justify-between gap-2 sm:mt-5">
+        <PromptInputActions className="flex items-center justify-between gap-2 px-1 pb-1">
           <div className="flex items-center gap-x-1.5">
             {/* Model selector */}
             {onModelChange && (
@@ -107,7 +107,7 @@ function ComposerInner({
                     data-testid="stop-generation-btn"
                     variant="destructive"
                     size="icon"
-                    className="h-9 w-9 rounded-full"
+                    className="h-8 w-8 rounded-full"
                   >
                     <Square className="h-3.5 w-3.5" fill="currentColor" />
                   </Button>
@@ -125,7 +125,7 @@ function ComposerInner({
                   disabled={!canSend}
                   onClick={handleSend}
                   className={cn(
-                    'h-9 w-9 rounded-full transition-all',
+                    'h-8 w-8 rounded-full transition-all',
                     canSend
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                       : 'text-muted-foreground',
