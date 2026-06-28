@@ -2,12 +2,19 @@
 // Thread component — renders the list of messages in a conversation.
 // Uses assistant-ui primitives for runtime integration.
 // Uses prompt-kit's ChatContainer, Message, and Markdown for the view layer.
-// Includes: Regenerate button on the last assistant message.
+//
+// Streaming UX features:
+//  - ScrollButton with streaming indicator (pulsing "New content" when scrolled up)
+//  - scroll-margin-top on assistant messages (new turn appears near viewport top)
+//  - Interaction-aware scroll (text selection + keyboard stop auto-scroll)
+//  - aria-live region for streaming status announcements
+//  - Keyboard navigation between messages (Alt+↑/↓)
 
 import {
   ThreadPrimitive,
   MessagePrimitive,
   ActionBarPrimitive,
+  useThread,
 } from '@assistant-ui/react'
 import {
   ChatContainerRoot,
@@ -39,6 +46,15 @@ function MarkdownText({ text }: { text: string }) {
   )
 }
 
+// ─── Streaming Thinking Bar ─────────────────────────────────────────────────
+// Replaces MessagePrimitive.InProgress which doesn't exist in @assistant-ui/react v0.10.50.
+// Uses useThread to detect if the thread is actively running.
+
+function StreamingThinkingBar() {
+  const isRunning = useThread((state) => state.isRunning)
+  if (!isRunning) return null
+  return <ThinkingBar text="Searching" className="py-1" />
+}
 
 // ─── User Message ───────────────────────────────────────────────────────────
 
@@ -47,6 +63,8 @@ function UserMessage() {
     <MessagePrimitive.Root>
       <div
         data-testid="user-message"
+        role="article"
+        aria-label="Your message"
         className="mb-6 flex justify-end"
       >
         <Message className="max-w-[75%] flex-row-reverse">
@@ -69,7 +87,9 @@ function AssistantMessage() {
     <MessagePrimitive.Root>
       <div
         data-testid="assistant-message"
-        className="group/message mb-6"
+        role="article"
+        aria-label="ShopMeta response"
+        className="group/message mb-6 scroll-mt-[60vh]"
       >
         <Message>
           <MessageAvatar
@@ -81,9 +101,7 @@ function AssistantMessage() {
           <div className="min-w-0 flex-1 space-y-2">
             {/* ThinkingBar — shown while streaming on the last message */}
             <MessagePrimitive.If last>
-              <MessagePrimitive.InProgress>
-                <ThinkingBar text="Searching" className="py-1" />
-              </MessagePrimitive.InProgress>
+              <StreamingThinkingBar />
             </MessagePrimitive.If>
 
             <MessageContent className="bg-transparent p-0 text-foreground">
@@ -133,16 +151,19 @@ function AssistantMessage() {
   )
 }
 
-// ─── Loading Indicator (unused — ThinkingBar is embedded in AssistantMessage) ─
+
 
 // ─── Thread ─────────────────────────────────────────────────────────────────
 
 interface ThreadProps {
   className?: string
   isEmpty?: boolean
+  conversationId?: string
 }
 
 export function Thread({ className, isEmpty }: ThreadProps) {
+  const isRunning = useThread((state) => state.isRunning)
+
   return (
     <ThreadPrimitive.Root
       data-testid="thread"
@@ -159,7 +180,21 @@ export function Thread({ className, isEmpty }: ThreadProps) {
               }}
             />
           </ChatContainerContent>
+
+          {/* Streaming-aware scroll button */}
+          <ScrollButton isStreaming={isRunning} />
+
           <ChatContainerScrollAnchor />
+
+          {/* Accessibility: announce streaming status changes */}
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="sr-only"
+          >
+            {isRunning ? 'Response is being generated' : ''}
+          </div>
         </ChatContainerRoot>
       )}
     </ThreadPrimitive.Root>

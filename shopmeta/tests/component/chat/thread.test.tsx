@@ -67,15 +67,23 @@ vi.mock('@assistant-ui/react', async () => {
         return () => {}
       },
     }),
+    useThread: (selector: (state: { isRunning: boolean }) => unknown) => selector({ isRunning: false }),
   }
 })
+
+// Mock useScrollPersistence — no-op in tests
+vi.mock('#/hooks/useScrollPersistence', () => ({
+  useScrollPersistence: () => ({ savePosition: () => {} }),
+}))
 
 // Mock prompt-kit components — these use DOM APIs not available in jsdom
 vi.mock('@/components/ui/chat-container', () => {
   const React = require('react')
   return {
-    ChatContainerRoot: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) =>
-      React.createElement('div', { 'data-testid': 'chat-container', ...props }, children),
+    ChatContainerRoot: React.forwardRef(
+      ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }, ref: React.Ref<HTMLDivElement>) =>
+        React.createElement('div', { 'data-testid': 'chat-container', ref, ...props }, children),
+    ),
     ChatContainerContent: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) =>
       React.createElement('div', props, children),
     ChatContainerScrollAnchor: (props: Record<string, unknown>) =>

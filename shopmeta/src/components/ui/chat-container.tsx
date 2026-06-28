@@ -29,6 +29,7 @@ function ChatContainerRoot({
       resize="smooth"
       initial="instant"
       role="log"
+      aria-label="Chat messages"
       {...props}
     >
       {children}
