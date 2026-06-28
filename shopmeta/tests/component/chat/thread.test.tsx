@@ -59,6 +59,8 @@ vi.mock('@assistant-ui/react', async () => {
         React.createElement(React.Fragment, null, children),
       Reload: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) =>
         React.createElement(React.Fragment, null, children),
+      Copy: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) =>
+        React.createElement(React.Fragment, null, children),
     },
     useThreadRuntime: () => ({
       subscribe: (_cb: () => void) => {

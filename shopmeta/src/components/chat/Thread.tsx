@@ -23,8 +23,7 @@ import {
   MessageAction,
 } from '@/components/ui/message'
 import { ThinkingBar } from '@/components/ui/thinking-bar'
-import { RefreshCw, Copy, Check } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { RefreshCw, Copy } from 'lucide-react'
 import { Markdown } from '@/components/ui/markdown'
 import { cn } from '@/lib/utils'
 
@@ -40,30 +39,6 @@ function MarkdownText({ text }: { text: string }) {
   )
 }
 
-// ─── Copy Button ────────────────────────────────────────────────────────────
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }, [text])
-
-  return (
-    <MessageAction tooltip={copied ? 'Copied' : 'Copy'}>
-      <button
-        onClick={handleCopy}
-        className="hover:text-foreground cursor-pointer rounded-md p-1 transition-colors"
-        aria-label="Copy message"
-      >
-        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-      </button>
-    </MessageAction>
-  )
-}
 
 // ─── User Message ───────────────────────────────────────────────────────────
 
@@ -121,8 +96,22 @@ function AssistantMessage() {
 
             {/* Actions — visible on hover or on last message */}
             <MessagePrimitive.If last={true}>
-              <MessageActions className="opacity-0 transition-opacity group-hover/message:opacity-100">
+              <MessageActions className="text-muted-foreground flex items-center gap-1 opacity-0 transition-opacity group-hover/message:opacity-100">
                 <ActionBarPrimitive.Root hideWhenRunning autohide="not-last">
+                  {/* Copy */}
+                  <ActionBarPrimitive.Copy asChild>
+                    <MessageAction tooltip="Copy">
+                      <button
+                        data-testid="copy-message-btn"
+                        aria-label="Copy message"
+                        className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    </MessageAction>
+                  </ActionBarPrimitive.Copy>
+
+                  {/* Regenerate */}
                   <ActionBarPrimitive.Reload asChild>
                     <MessageAction tooltip="Regenerate">
                       <button
