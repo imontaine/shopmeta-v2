@@ -17,6 +17,9 @@
 # Note: No 'set -e' — migration failures are handled gracefully below
 
 echo "[entrypoint] ShopMeta starting up..."
+echo "[entrypoint] BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:+SET (${#BETTER_AUTH_SECRET} chars)}"
+echo "[entrypoint] DATABASE_URL=${DATABASE_URL:+SET}"
+echo "[entrypoint] NODE_ENV=${NODE_ENV}"
 
 # ─── Wait for PostgreSQL ───────────────────────────────────────────────────────
 
