@@ -75,63 +75,67 @@ function ComposerInner({
         isLoading={disabled}
         onSubmit={handleSend}
         className={cn(
-          'border-border bg-muted/50 relative rounded-2xl border shadow-sm',
-          'focus-within:border-ring focus-within:ring-ring/20 focus-within:ring-2',
+          'border-input bg-background w-full border px-3 py-1',
+          'shadow-[0_9px_9px_0px_rgba(0,0,0,0.01),0_2px_5px_0px_rgba(0,0,0,0.06)]',
           'transition-all duration-200',
         )}
       >
         <PromptInputTextarea
           data-testid="composer-input"
           placeholder={placeholder}
-          className="min-h-[52px] px-4 pt-3 pb-12 text-sm"
+          className="min-h-[44px] text-base"
           autoFocus
         />
-        <PromptInputActions className="absolute right-3 bottom-3 flex items-center gap-2">
-          {/* Model selector */}
-          {onModelChange && (
-            <ModelSelector
-              currentProvider={provider}
-              currentModel={model}
-              onModelChange={onModelChange}
-            />
-          )}
+        <PromptInputActions className="mt-0 mb-2 flex h-auto items-center justify-between gap-2 sm:mt-5">
+          <div className="flex items-center gap-x-1.5">
+            {/* Model selector */}
+            {onModelChange && (
+              <ModelSelector
+                currentProvider={provider}
+                currentModel={model}
+                onModelChange={onModelChange}
+              />
+            )}
+          </div>
 
-          {/* Stop button — visible during streaming */}
-          <ThreadPrimitive.If running>
-            <ComposerPrimitive.Cancel asChild>
-              <PromptInputAction tooltip="Stop generation">
+          <div className="flex items-center gap-2">
+            {/* Stop button — visible during streaming */}
+            <ThreadPrimitive.If running>
+              <ComposerPrimitive.Cancel asChild>
+                <PromptInputAction tooltip="Stop generation">
+                  <Button
+                    data-testid="stop-generation-btn"
+                    variant="destructive"
+                    size="icon"
+                    className="h-9 w-9 rounded-full"
+                  >
+                    <Square className="h-3.5 w-3.5" fill="currentColor" />
+                  </Button>
+                </PromptInputAction>
+              </ComposerPrimitive.Cancel>
+            </ThreadPrimitive.If>
+
+            {/* Send button — visible when not streaming */}
+            <ThreadPrimitive.If running={false}>
+              <PromptInputAction tooltip="Send message">
                 <Button
-                  data-testid="stop-generation-btn"
-                  variant="destructive"
+                  data-testid="send-message-btn"
+                  variant={canSend ? 'default' : 'ghost'}
                   size="icon"
-                  className="h-8 w-8 rounded-full"
+                  disabled={!canSend}
+                  onClick={handleSend}
+                  className={cn(
+                    'h-9 w-9 rounded-full transition-all',
+                    canSend
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : 'text-muted-foreground',
+                  )}
                 >
-                  <Square className="h-3.5 w-3.5" fill="currentColor" />
+                  <ArrowUp className="h-4 w-4" />
                 </Button>
               </PromptInputAction>
-            </ComposerPrimitive.Cancel>
-          </ThreadPrimitive.If>
-
-          {/* Send button — visible when not streaming */}
-          <ThreadPrimitive.If running={false}>
-            <PromptInputAction tooltip="Send message">
-              <Button
-                data-testid="send-message-btn"
-                variant={canSend ? 'default' : 'ghost'}
-                size="icon"
-                disabled={!canSend}
-                onClick={handleSend}
-                className={cn(
-                  'h-8 w-8 rounded-full transition-all',
-                  canSend
-                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    : 'text-muted-foreground',
-                )}
-              >
-                <ArrowUp className="h-4 w-4" />
-              </Button>
-            </PromptInputAction>
-          </ThreadPrimitive.If>
+            </ThreadPrimitive.If>
+          </div>
         </PromptInputActions>
       </PromptInput>
     </div>
