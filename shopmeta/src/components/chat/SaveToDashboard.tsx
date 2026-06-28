@@ -1,24 +1,19 @@
 // src/components/chat/SaveToDashboard.tsx
 // "Save to Dashboard" button + dashboard picker shown below tool results in chat.
 // Creates a widget from the current ToolCallRenderer result via saveToDashboard server fn.
-//
-// Usage: place below a ToolCallRenderer when the tool call is run_select_query.
-// Props: the tool result rows, SQL query, and optional chart config.
+// Restyled with Tailwind classes (prompt-kit migration).
 
 import React, { useState, useCallback } from 'react'
 import { suggestChart } from '#/lib/utils/suggestChart'
 import type { WidgetType, ChartConfig } from '#/lib/widgets'
+import { cn } from '@/lib/utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface SaveToDashboardProps {
-  /** The SQL query that produced the result */
   sql: string
-  /** The result rows */
   rows: Array<Record<string, unknown>>
-  /** Optional override: list of dashboards the user can pick from */
   dashboards?: Array<{ id: string; name: string }>
-  /** Called after the widget is successfully saved. Receives the created widget ID. */
   onSaved?: (widgetId: string) => void
   className?: string
 }
@@ -42,7 +37,6 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
   const [savedWidgetId, setSavedWidgetId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Auto-suggest chart config from rows
   const suggestedChart = rows.length > 0 ? suggestChart(rows) : null
 
   const handleSave = useCallback(async () => {
@@ -73,7 +67,7 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
         type: widgetType,
         sql,
         chartConfig,
-        cachedRows: rows.slice(0, 1000), // seed with first 1000 rows
+        cachedRows: rows.slice(0, 1000),
       })
 
       setSavedWidgetId(widget.id)
@@ -92,18 +86,7 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
     return (
       <div
         data-testid="save-to-dashboard-saved"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '4px 10px',
-          borderRadius: '4px',
-          background: 'hsl(142 76% 36% / 0.15)',
-          border: '1px solid hsl(142 76% 36% / 0.4)',
-          color: 'hsl(142 76% 56%)',
-          fontSize: '0.78rem',
-          fontWeight: 600,
-        }}
+        className="inline-flex items-center gap-1.5 rounded border border-green-500/40 bg-green-500/15 px-2.5 py-1 text-xs font-semibold text-green-400"
       >
         Saved to dashboard
       </div>
@@ -117,20 +100,10 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
       <button
         data-testid="save-to-dashboard"
         onClick={() => setIsOpen(true)}
-        className={className}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '5px',
-          padding: '4px 10px',
-          fontSize: '0.78rem',
-          border: '1px solid hsl(var(--border, 240 3.7% 25%))',
-          borderRadius: '4px',
-          background: 'transparent',
-          color: 'hsl(var(--muted-foreground, 240 5% 64.9%))',
-          cursor: 'pointer',
-          transition: 'all 0.15s ease',
-        }}
+        className={cn(
+          'border-border text-muted-foreground inline-flex cursor-pointer items-center gap-1.5 rounded border bg-transparent px-2.5 py-1 text-xs transition-colors hover:text-foreground',
+          className,
+        )}
       >
         <span aria-hidden="true">+</span>
         Save to Dashboard
@@ -143,23 +116,14 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
   return (
     <div
       data-testid="save-to-dashboard-form"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        padding: '12px',
-        background: 'hsl(var(--muted, 240 4.8% 15.88%) / 0.5)',
-        border: '1px solid hsl(var(--border, 240 3.7% 25%))',
-        borderRadius: '6px',
-        fontSize: '0.82rem',
-      }}
+      className="bg-muted/50 border-border flex flex-col gap-2.5 rounded-md border p-3 text-[0.82rem]"
     >
-      <div style={{ fontWeight: 600, fontSize: '0.82rem' }}>Save to Dashboard</div>
+      <div className="text-[0.82rem] font-semibold">Save to Dashboard</div>
 
       {/* Dashboard picker */}
       {dashboards.length > 0 ? (
         <div>
-          <label htmlFor="dashboard-picker" style={{ fontSize: '0.72rem', color: 'hsl(var(--muted-foreground, 240 5% 64.9%))' }}>
+          <label htmlFor="dashboard-picker" className="text-muted-foreground text-xs">
             Dashboard
           </label>
           <select
@@ -167,16 +131,7 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
             data-testid="dashboard-picker"
             value={selectedDashboardId}
             onChange={(e) => setSelectedDashboardId(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '5px 8px',
-              marginTop: '3px',
-              background: 'hsl(var(--muted, 240 4.8% 15.88%))',
-              border: '1px solid hsl(var(--border, 240 3.7% 25%))',
-              borderRadius: '4px',
-              color: 'hsl(var(--foreground, 0 0% 98%))',
-              fontSize: '0.82rem',
-            }}
+            className="bg-muted border-border text-foreground mt-1 w-full rounded border px-2 py-1.5 text-[0.82rem]"
           >
             {dashboards.map((d) => (
               <option key={d.id} value={d.id}>{d.name}</option>
@@ -184,14 +139,14 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
           </select>
         </div>
       ) : (
-        <div style={{ color: 'hsl(var(--muted-foreground, 240 5% 64.9%))' }}>
-          No dashboards found. <a href="/dashboard" style={{ color: 'hsl(220 70% 65%)' }}>Create one</a>
+        <div className="text-muted-foreground">
+          No dashboards found. <a href="/dashboard" className="text-primary hover:underline">Create one</a>
         </div>
       )}
 
       {/* Widget name */}
       <div>
-        <label htmlFor="save-widget-name" style={{ fontSize: '0.72rem', color: 'hsl(var(--muted-foreground, 240 5% 64.9%))' }}>
+        <label htmlFor="save-widget-name" className="text-muted-foreground text-xs">
           Widget Name
         </label>
         <input
@@ -201,39 +156,25 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
           value={widgetName}
           onChange={(e) => setWidgetName(e.target.value)}
           placeholder="e.g. Monthly Revenue"
-          style={{
-            width: '100%',
-            marginTop: '3px',
-            padding: '5px 8px',
-            background: 'hsl(var(--muted, 240 4.8% 15.88%))',
-            border: '1px solid hsl(var(--border, 240 3.7% 25%))',
-            borderRadius: '4px',
-            color: 'hsl(var(--foreground, 0 0% 98%))',
-            fontSize: '0.82rem',
-            boxSizing: 'border-box',
-          }}
+          className="bg-muted border-border text-foreground mt-1 box-border w-full rounded border px-2 py-1.5 text-[0.82rem]"
         />
       </div>
 
       {/* Widget type */}
       <div>
-        <span style={{ fontSize: '0.72rem', color: 'hsl(var(--muted-foreground, 240 5% 64.9%))' }}>Type</span>
-        <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+        <span className="text-muted-foreground text-xs">Type</span>
+        <div className="mt-1 flex gap-1.5">
           {(['chart', 'table', 'kpi'] as WidgetType[]).map((t) => (
             <button
               key={t}
               data-testid={`save-type-${t}`}
               onClick={() => setWidgetType(t)}
-              style={{
-                padding: '3px 10px',
-                border: `1px solid ${widgetType === t ? 'hsl(220 70% 65%)' : 'hsl(var(--border, 240 3.7% 25%))'}`,
-                borderRadius: '4px',
-                background: widgetType === t ? 'hsl(220 70% 65% / 0.15)' : 'transparent',
-                color: widgetType === t ? 'hsl(220 70% 75%)' : 'hsl(var(--muted-foreground, 240 5% 64.9%))',
-                cursor: 'pointer',
-                fontSize: '0.75rem',
-                textTransform: 'capitalize',
-              }}
+              className={cn(
+                'cursor-pointer rounded border px-2.5 py-1 text-xs capitalize',
+                widgetType === t
+                  ? 'border-primary bg-primary/15 text-primary'
+                  : 'border-border text-muted-foreground bg-transparent hover:bg-muted',
+              )}
             >
               {t}
             </button>
@@ -244,25 +185,17 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
       {error && (
         <div
           data-testid="save-to-dashboard-error"
-          style={{ color: 'hsl(0 72% 70%)', fontSize: '0.78rem' }}
+          className="text-xs text-red-400"
         >
           {error}
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+      <div className="flex justify-end gap-1.5">
         <button
           data-testid="save-widget-cancel"
           onClick={() => setIsOpen(false)}
-          style={{
-            padding: '5px 12px',
-            border: '1px solid hsl(var(--border, 240 3.7% 25%))',
-            borderRadius: '4px',
-            background: 'transparent',
-            color: 'hsl(var(--muted-foreground, 240 5% 64.9%))',
-            cursor: 'pointer',
-            fontSize: '0.78rem',
-          }}
+          className="border-border text-muted-foreground cursor-pointer rounded border bg-transparent px-3 py-1.5 text-xs transition-colors hover:text-foreground"
         >
           Cancel
         </button>
@@ -270,16 +203,12 @@ export function SaveToDashboard({ sql, rows, dashboards = [], onSaved, className
           data-testid="save-widget"
           onClick={handleSave}
           disabled={saving || !selectedDashboardId}
-          style={{
-            padding: '5px 14px',
-            border: 'none',
-            borderRadius: '4px',
-            background: saving ? 'hsl(220 70% 50%)' : 'hsl(220 70% 60%)',
-            color: '#fff',
-            cursor: saving ? 'not-allowed' : 'pointer',
-            fontSize: '0.78rem',
-            fontWeight: 600,
-          }}
+          className={cn(
+            'rounded border-none px-3.5 py-1.5 text-xs font-semibold text-white',
+            saving
+              ? 'bg-primary/70 cursor-not-allowed'
+              : 'bg-primary hover:bg-primary/90 cursor-pointer',
+          )}
         >
           {saving ? 'Saving…' : 'Save Widget'}
         </button>

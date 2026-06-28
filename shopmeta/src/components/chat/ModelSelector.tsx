@@ -1,9 +1,11 @@
 // src/components/chat/ModelSelector.tsx
 // Dropdown for selecting the AI model/provider.
 // Shows all available models grouped by provider.
+// Restyled with Tailwind classes (prompt-kit migration).
 
 import { useState, useRef, useEffect } from 'react'
 import { modelList, type ModelInfo } from '#/lib/ai/providers'
+import { cn } from '@/lib/utils'
 
 interface ModelSelectorProps {
   currentProvider: string
@@ -68,7 +70,7 @@ export function ModelSelector({
   }, {})
 
   return (
-    <div ref={dropdownRef} style={{ position: 'relative' }}>
+    <div ref={dropdownRef} className="relative">
       {/* Trigger button */}
       <button
         id="model-selector-trigger"
@@ -77,25 +79,16 @@ export function ModelSelector({
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.4rem',
-          padding: '0.35rem 0.65rem',
-          borderRadius: '0.5rem',
-          border: '1px solid rgba(255,255,255,0.12)',
-          background: isOpen ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
-          color: 'inherit',
-          cursor: disabled ? 'not-allowed' : 'pointer',
-          fontSize: '0.8rem',
-          opacity: disabled ? 0.5 : 1,
-          transition: 'background 0.15s ease',
-          whiteSpace: 'nowrap',
-        }}
+        className={cn(
+          'border-border/50 flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-[0.8rem] transition-colors',
+          isOpen ? 'bg-muted' : 'bg-muted/30 hover:bg-muted/60',
+          disabled && 'cursor-not-allowed opacity-50',
+          !disabled && 'cursor-pointer',
+        )}
       >
         <span>{providerIcons[currentProvider] ?? '🤖'}</span>
-        <span style={{ fontWeight: 500 }}>{currentInfo?.label ?? currentModel}</span>
-        <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>{isOpen ? '▲' : '▼'}</span>
+        <span className="font-medium">{currentInfo?.label ?? currentModel}</span>
+        <span className="text-[0.65rem] opacity-50">{isOpen ? '▲' : '▼'}</span>
       </button>
 
       {/* Dropdown */}
@@ -103,33 +96,11 @@ export function ModelSelector({
         <div
           role="listbox"
           data-testid="model-dropdown"
-          style={{
-            position: 'absolute',
-            bottom: 'calc(100% + 0.5rem)',
-            left: 0,
-            minWidth: '220px',
-            background: 'hsl(220 13% 13%)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '0.75rem',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            zIndex: 100,
-            overflow: 'hidden',
-            animation: 'fadeInUp 0.12s ease',
-          }}
+          className="bg-popover border-border absolute bottom-[calc(100%+0.5rem)] left-0 z-50 min-w-[220px] overflow-hidden rounded-xl border shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-150"
         >
           {Object.entries(grouped).map(([provider, models]) => (
             <div key={provider}>
-              <div
-                style={{
-                  padding: '0.4rem 0.75rem',
-                  fontSize: '0.65rem',
-                  fontWeight: 500,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  opacity: 0.4,
-                  color: 'inherit',
-                }}
-              >
+              <div className="px-3 py-1.5 text-[0.65rem] font-medium uppercase tracking-widest opacity-40">
                 {providerIcons[provider]} {providerLabels[provider] ?? provider}
               </div>
               {models.map((info) => {
@@ -144,28 +115,17 @@ export function ModelSelector({
                       onModelChange(info.provider, info.model)
                       setIsOpen(false)
                     }}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '0.45rem 0.75rem 0.45rem 1.25rem',
-                      background: isSelected ? 'rgba(99,102,241,0.15)' : 'transparent',
-                      border: 'none',
-                      color: 'inherit',
-                      cursor: 'pointer',
-                      fontSize: '0.85rem',
-                      transition: 'background 0.1s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)'
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-                    }}
+                    className={cn(
+                      'block w-full cursor-pointer border-none text-left text-[0.85rem] transition-colors',
+                      'px-3 py-2 pl-5',
+                      isSelected
+                        ? 'bg-primary/15 font-semibold'
+                        : 'bg-transparent font-normal hover:bg-muted',
+                    )}
                   >
-                    <div style={{ fontWeight: isSelected ? 600 : 400 }}>{info.label}</div>
+                    <div>{info.label}</div>
                     {info.description && (
-                      <div style={{ fontSize: '0.7rem', opacity: 0.45, marginTop: '0.1rem' }}>
+                      <div className="mt-0.5 text-[0.7rem] opacity-45">
                         {info.description}
                       </div>
                     )}

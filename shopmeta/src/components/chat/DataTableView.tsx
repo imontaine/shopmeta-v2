@@ -1,5 +1,6 @@
 // src/components/chat/DataTableView.tsx
 // Query result data table using @tanstack/react-table v8.
+// Restyled with Tailwind classes (prompt-kit migration).
 //
 // Features:
 //  - Auto-generates columns from the keys of the first row object
@@ -24,21 +25,17 @@ import {
   type PaginationState,
 } from '@tanstack/react-table'
 import { formatCellValue } from '#/lib/utils/formatCellValue'
+import { cn } from '@/lib/utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type RowData = Record<string, unknown>
 
 export interface DataTableViewProps {
-  /** Array of row objects (auto-generates columns from keys) */
   rows: RowData[]
-  /** Number of rows per page. Default: 25 */
   pageSize?: number
-  /** Optional custom class name for the outer container */
   className?: string
-  /** Whether to show the column visibility toggle panel */
   showColumnToggle?: boolean
-  /** Max character length before cell value is truncated */
   cellMaxLength?: number
 }
 
@@ -46,16 +43,12 @@ export interface DataTableViewProps {
 
 function buildColumns(rows: RowData[], cellMaxLength: number): ColumnDef<RowData>[] {
   if (rows.length === 0) return []
-
-  // Derive column keys from the union of all row keys (first row is enough for most cases)
   const keys = Object.keys(rows[0]!)
-
   return keys.map((key) => ({
     id: key,
     accessorKey: key,
     header: key,
     cell: ({ getValue }) => formatCellValue(getValue(), { maxLength: cellMaxLength }),
-    // Enable sorting; first click → ascending (not descending)
     enableSorting: true,
     sortDescFirst: false,
   }))
@@ -107,13 +100,7 @@ export function DataTableView({
     return (
       <div
         data-testid="data-table-empty"
-        className={className}
-        style={{
-          padding: '32px 16px',
-          textAlign: 'center',
-          color: 'hsl(var(--muted-foreground, 240 5% 64.9%))',
-          fontSize: '0.9rem',
-        }}
+        className={cn('text-muted-foreground px-4 py-8 text-center text-sm', className)}
       >
         No results
       </div>
@@ -125,26 +112,17 @@ export function DataTableView({
   return (
     <div
       data-testid="data-table-view"
-      className={className}
-      style={{ width: '100%', overflow: 'hidden' }}
+      className={cn('w-full overflow-hidden', className)}
     >
       {/* Column Visibility Toggle */}
       {showColumnToggle && columns.length > 0 && (
-        <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="mb-2 flex justify-end">
           <button
             data-testid="column-toggle-button"
             onClick={() => setShowToggle((v) => !v)}
             aria-expanded={showToggle}
             aria-label="Toggle column visibility"
-            style={{
-              padding: '4px 10px',
-              fontSize: '0.78rem',
-              borderRadius: '4px',
-              border: '1px solid hsl(var(--border, 240 3.7% 25%))',
-              background: 'transparent',
-              color: 'hsl(var(--foreground, 0 0% 98%))',
-              cursor: 'pointer',
-            }}
+            className="border-border text-foreground cursor-pointer rounded border bg-transparent px-2.5 py-1 text-xs"
           >
             Columns
           </button>
@@ -154,29 +132,12 @@ export function DataTableView({
               data-testid="column-toggle-panel"
               role="group"
               aria-label="Column visibility"
-              style={{
-                position: 'absolute',
-                zIndex: 50,
-                background: 'hsl(var(--background, 240 10% 3.9%))',
-                border: '1px solid hsl(var(--border, 240 3.7% 25%))',
-                borderRadius: '6px',
-                padding: '8px',
-                marginTop: '28px',
-                minWidth: '140px',
-              }}
+              className="bg-background border-border absolute z-50 mt-7 min-w-[140px] rounded-md border p-2"
             >
               {table.getAllLeafColumns().map((col) => (
                 <label
                   key={col.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '3px 4px',
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
-                    color: 'hsl(var(--foreground, 0 0% 98%))',
-                  }}
+                  className="text-foreground flex cursor-pointer items-center gap-1.5 px-1 py-0.5 text-[0.8rem]"
                 >
                   <input
                     type="checkbox"
@@ -193,15 +154,11 @@ export function DataTableView({
       )}
 
       {/* Table */}
-      <div style={{ overflowX: 'auto' }}>
+      <div className="overflow-x-auto">
         <table
           data-testid="data-table"
           role="table"
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            fontSize: '0.82rem',
-          }}
+          className="w-full border-collapse text-[0.82rem]"
         >
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -221,19 +178,12 @@ export function DataTableView({
                           ? 'descending'
                           : 'none'
                       }
-                      style={{
-                        padding: '8px 10px',
-                        textAlign: 'left',
-                        borderBottom: '1px solid hsl(var(--border, 240 3.7% 25%))',
-                        background: 'hsl(var(--muted, 240 4.8% 15.88%))',
-                        fontWeight: 600,
-                        cursor: header.column.getCanSort() ? 'pointer' : 'default',
-                        userSelect: 'none',
-                        whiteSpace: 'nowrap',
-                        color: 'hsl(var(--foreground, 0 0% 98%))',
-                      }}
+                      className={cn(
+                        'bg-muted border-border text-foreground whitespace-nowrap border-b px-2.5 py-2 text-left font-semibold select-none',
+                        header.column.getCanSort() && 'cursor-pointer',
+                      )}
                     >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="flex items-center gap-1">
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {sorted === 'asc' && (
                           <span aria-hidden="true" data-testid={`sort-asc-${header.id}`}>↑</span>
@@ -255,23 +205,14 @@ export function DataTableView({
                 key={row.id}
                 role="row"
                 data-testid={`row-${rowIdx}`}
-                style={{
-                  borderBottom: '1px solid hsl(var(--border, 240 3.7% 25%) / 0.5)',
-                }}
+                className="border-border/50 border-b"
               >
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
                     role="cell"
                     data-testid={`cell-${rowIdx}-${cell.column.id}`}
-                    style={{
-                      padding: '6px 10px',
-                      color: 'hsl(var(--foreground, 0 0% 98%))',
-                      maxWidth: '320px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
+                    className="text-foreground max-w-[320px] truncate px-2.5 py-1.5"
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
@@ -286,22 +227,15 @@ export function DataTableView({
       {totalPages > 1 && (
         <div
           data-testid="pagination"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '8px 4px',
-            fontSize: '0.8rem',
-            color: 'hsl(var(--muted-foreground, 240 5% 64.9%))',
-          }}
+          className="text-muted-foreground flex items-center justify-between px-1 py-2 text-[0.8rem]"
         >
-          <div style={{ display: 'flex', gap: '4px' }}>
+          <div className="flex gap-1">
             <button
               data-testid="pagination-first"
               onClick={() => table.firstPage()}
               disabled={!table.getCanPreviousPage()}
               aria-label="First page"
-              style={paginationBtnStyle(!table.getCanPreviousPage())}
+              className={paginationBtnClass(!table.getCanPreviousPage())}
             >
               «
             </button>
@@ -310,7 +244,7 @@ export function DataTableView({
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
               aria-label="Previous page"
-              style={paginationBtnStyle(!table.getCanPreviousPage())}
+              className={paginationBtnClass(!table.getCanPreviousPage())}
             >
               ‹
             </button>
@@ -320,13 +254,13 @@ export function DataTableView({
             Page {currentPage} of {totalPages}
           </span>
 
-          <div style={{ display: 'flex', gap: '4px' }}>
+          <div className="flex gap-1">
             <button
               data-testid="pagination-next"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
               aria-label="Next page"
-              style={paginationBtnStyle(!table.getCanNextPage())}
+              className={paginationBtnClass(!table.getCanNextPage())}
             >
               ›
             </button>
@@ -335,7 +269,7 @@ export function DataTableView({
               onClick={() => table.lastPage()}
               disabled={!table.getCanNextPage()}
               aria-label="Last page"
-              style={paginationBtnStyle(!table.getCanNextPage())}
+              className={paginationBtnClass(!table.getCanNextPage())}
             >
               »
             </button>
@@ -346,12 +280,7 @@ export function DataTableView({
       {/* Row count summary */}
       <div
         data-testid="row-count"
-        style={{
-          fontSize: '0.75rem',
-          color: 'hsl(var(--muted-foreground, 240 5% 64.9%))',
-          padding: '2px 4px',
-          textAlign: 'right',
-        }}
+        className="text-muted-foreground px-1 py-0.5 text-right text-xs"
       >
         {rows.length.toLocaleString('en-US')} row{rows.length !== 1 ? 's' : ''}
       </div>
@@ -361,16 +290,11 @@ export function DataTableView({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function paginationBtnStyle(disabled: boolean): React.CSSProperties {
-  return {
-    padding: '2px 8px',
-    borderRadius: '4px',
-    border: '1px solid hsl(var(--border, 240 3.7% 25%))',
-    background: 'transparent',
-    color: disabled
-      ? 'hsl(var(--muted-foreground, 240 5% 64.9%))'
-      : 'hsl(var(--foreground, 0 0% 98%))',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-  }
+function paginationBtnClass(disabled: boolean): string {
+  return cn(
+    'border-border rounded border bg-transparent px-2 py-0.5 cursor-pointer',
+    disabled
+      ? 'text-muted-foreground cursor-not-allowed opacity-50'
+      : 'text-foreground',
+  )
 }

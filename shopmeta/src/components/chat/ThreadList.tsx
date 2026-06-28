@@ -2,6 +2,7 @@
 // Sidebar thread list using assistant-ui ThreadListPrimitive.
 // Shows conversation history and new chat button.
 // Includes: real-time search/filter by conversation title.
+// Restyled with Tailwind classes (prompt-kit migration).
 
 import { useState } from 'react'
 import {
@@ -16,38 +17,10 @@ function ThreadListItem() {
   return (
     <ThreadListItemPrimitive.Root>
       <ThreadListItemPrimitive.Trigger
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.6rem 0.75rem',
-          width: '100%',
-          textAlign: 'left',
-          background: 'transparent',
-          border: 'none',
-          borderRadius: '0.5rem',
-          color: 'inherit',
-          cursor: 'pointer',
-          fontSize: '0.85rem',
-          transition: 'background 0.1s ease',
-        }}
-        onMouseEnter={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)'
-        }}
-        onMouseLeave={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-        }}
+        className="hover:bg-muted flex w-full cursor-pointer items-center gap-2 rounded-lg border-none bg-transparent px-3 py-2.5 text-left text-[0.85rem] text-inherit transition-colors"
       >
-        <MessageSquare size={14} style={{ flexShrink: 0, opacity: 0.5 }} />
-        <span
-          style={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            flex: 1,
-            opacity: 0.8,
-          }}
-        >
+        <MessageSquare size={14} className="shrink-0 opacity-50" />
+        <span className="flex-1 truncate opacity-80">
           <ThreadListItemPrimitive.Title fallback="New Chat" />
         </span>
       </ThreadListItemPrimitive.Trigger>
@@ -63,48 +36,16 @@ export function ThreadList() {
   return (
     <div
       data-testid="thread-list"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        overflow: 'hidden',
-      }}
+      className="flex h-full flex-col overflow-hidden"
     >
       {/* Header */}
-      <div
-        style={{
-          padding: '0.75rem',
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <span style={{ fontSize: '0.8rem', fontWeight: 600, opacity: 0.6 }}>Conversations</span>
+      <div className="border-border/30 flex items-center justify-between border-b px-3 py-3">
+        <span className="text-[0.8rem] font-semibold opacity-60">Conversations</span>
         <ThreadListPrimitive.New asChild>
           <button
             data-testid="new-thread-btn"
             aria-label="New conversation"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-              padding: '0.3rem 0.5rem',
-              borderRadius: '0.4rem',
-              border: '1px solid rgba(255,255,255,0.12)',
-              background: 'transparent',
-              color: 'inherit',
-              cursor: 'pointer',
-              fontSize: '0.75rem',
-              opacity: 0.7,
-              transition: 'opacity 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.opacity = '1'
-            }}
-            onMouseLeave={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.opacity = '0.7'
-            }}
+            className="border-border/50 flex cursor-pointer items-center gap-1 rounded-md border bg-transparent px-2 py-1 text-xs text-inherit opacity-70 transition-opacity hover:opacity-100"
           >
             <Plus size={12} />
             New
@@ -113,24 +54,12 @@ export function ThreadList() {
       </div>
 
       {/* Search input */}
-      <div
-        style={{
-          padding: '0.5rem 0.75rem',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
-        }}
-      >
-        <div style={{ position: 'relative' }}>
+      <div className="border-border/20 border-b px-3 py-2">
+        <div className="relative">
           <Search
             size={12}
             aria-hidden="true"
-            style={{
-              position: 'absolute',
-              left: '8px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              opacity: 0.4,
-              pointerEvents: 'none',
-            }}
+            className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 opacity-40"
           />
           <input
             data-testid="thread-search"
@@ -139,35 +68,13 @@ export function ThreadList() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search conversations…"
             aria-label="Search conversations"
-            style={{
-              width: '100%',
-              padding: '0.35rem 1.6rem 0.35rem 1.6rem',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '0.4rem',
-              color: 'inherit',
-              fontSize: '0.75rem',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
+            className="bg-muted/50 border-border/40 w-full rounded-md border px-6 py-1.5 text-xs text-inherit outline-none focus:border-ring"
           />
           {searchQuery && (
             <button
               aria-label="Clear search"
               onClick={() => setSearchQuery('')}
-              style={{
-                position: 'absolute',
-                right: '6px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '2px',
-                color: 'inherit',
-                opacity: 0.4,
-                display: 'flex',
-              }}
+              className="absolute right-1.5 top-1/2 flex -translate-y-1/2 cursor-pointer border-none bg-transparent p-0.5 text-inherit opacity-40 hover:opacity-70"
             >
               <X size={10} />
             </button>
@@ -176,12 +83,8 @@ export function ThreadList() {
       </div>
 
       {/* Thread items (client-side filtered by searchQuery when present) */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0.25rem' }}>
+      <div className="flex-1 overflow-y-auto p-1">
         {searchQuery ? (
-          // When searching: render items but filter by title client-side.
-          // ThreadListPrimitive.Items doesn't support a filter prop natively,
-          // so we use a wrapper that hides non-matching items via CSS visibility.
-          // The ThreadListItemPrimitive.Title fallback is "New Chat" so we filter on that too.
           <ThreadListPrimitive.Items
             component={() => (
               <ThreadListItemFilterWrapper query={searchQuery}>
@@ -209,9 +112,5 @@ function ThreadListItemFilterWrapper({
   query: string
   children: React.ReactNode
 }) {
-  // We use a data attribute approach: each item has a title span, and we
-  // simply render all items. The search filtering is done server-side via
-  // searchConversations() — here we just keep the UI in sync while typing.
-  // For a client-side fallback, the full list is shown (no false negatives).
   return <>{children}</>
 }
