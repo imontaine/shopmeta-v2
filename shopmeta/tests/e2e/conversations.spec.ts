@@ -24,6 +24,7 @@ const TEST_PASSWORD = 'Test1234!'
 async function registerAndLandOnChat(page: Page) {
   const email = uniqueEmail()
   await page.goto('/register')
+  await expect(page.locator('.auth-page')).toHaveAttribute('data-hydrated', 'true', { timeout: 10000 })
   await page.fill('[name=name]', 'Conversation E2E User')
   await page.fill('[name=email]', email)
   await page.fill('[name=password]', TEST_PASSWORD)
@@ -208,8 +209,10 @@ test.describe('Conversation CRUD E2E', () => {
       await registerAndLandOnChat(page)
 
       // Create first conversation and rename it
-      await page.click('#new-chat-btn')
+      const newChatBtn = page.locator('#new-chat-btn')
+      await newChatBtn.click()
       await expect(page).toHaveURL(/\/chat\?conversationId=/, { timeout: 10000 })
+      await expect(newChatBtn).toBeEnabled({ timeout: 5000 })
 
       const convList = page.locator('#conversation-list')
       const firstItem = convList.locator('[data-conversation-id]').first()
@@ -220,10 +223,13 @@ test.describe('Conversation CRUD E2E', () => {
       await page.locator(`#conv-rename-btn-${firstId}`).click()
       await page.locator(`#conv-rename-${firstId}`).fill('Revenue Report Q4')
       await page.locator(`#conv-rename-${firstId}`).press('Enter')
+      await expect(page.locator(`#conv-rename-${firstId}`)).not.toBeVisible({ timeout: 5000 })
+      await expect(firstItem.locator('.conv-item-title')).toHaveText('Revenue Report Q4', { timeout: 5000 })
 
       // Create second conversation
-      await page.click('#new-chat-btn')
-      await expect(convList.locator('[data-conversation-id]')).toHaveCount(2, { timeout: 5000 })
+      await expect(newChatBtn).toBeEnabled({ timeout: 5000 })
+      await newChatBtn.click()
+      await expect(convList.locator('[data-conversation-id]')).toHaveCount(2, { timeout: 10000 })
 
       const secondItem = convList.locator('[data-conversation-id]').first()
       await secondItem.hover()
@@ -232,6 +238,8 @@ test.describe('Conversation CRUD E2E', () => {
       await page.locator(`#conv-rename-btn-${secondId}`).click()
       await page.locator(`#conv-rename-${secondId}`).fill('Customer Churn Analysis')
       await page.locator(`#conv-rename-${secondId}`).press('Enter')
+      await expect(page.locator(`#conv-rename-${secondId}`)).not.toBeVisible({ timeout: 5000 })
+      await expect(secondItem.locator('.conv-item-title')).toHaveText('Customer Churn Analysis', { timeout: 5000 })
 
       // Search for "revenue"
       await page.fill('#conv-search-input', 'revenue')

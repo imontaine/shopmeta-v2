@@ -6,7 +6,7 @@
 // Empty state: centered input with heading + suggestion chips.
 // Conversation state: messages on top, input pinned to bottom.
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   AssistantRuntimeProvider,
   useLocalRuntime,
@@ -207,7 +207,6 @@ function ConversationState({ provider, model, onModelChange }: ConversationState
 function ChatContent({ conversationId }: { conversationId?: string }) {
   const [provider, setProvider] = useState(DEFAULT_PROVIDER)
   const [model, setModel] = useState(DEFAULT_MODEL)
-  const [hasMessages, setHasMessages] = useState(false)
 
   // On mount, load the org's default agent and apply its model/provider.
   // If no default agent is set, use the app defaults.
@@ -225,7 +224,12 @@ function ChatContent({ conversationId }: { conversationId?: string }) {
       })
   }, [])
 
-  const adapter = createAdapter(provider, model, conversationId)
+  // Memoize the adapter so its reference remains stable across renders.
+  // This prevents useLocalRuntime from resetting messages/re-initializing on every render.
+  const adapter = useMemo(() => {
+    return createAdapter(provider, model, conversationId)
+  }, [provider, model, conversationId])
+  
   const runtime = useLocalRuntime(adapter)
 
   const handleModelChange = useCallback((newProvider: string, newModel: string) => {
@@ -239,8 +243,6 @@ function ChatContent({ conversationId }: { conversationId?: string }) {
         provider={provider}
         model={model}
         onModelChange={handleModelChange}
-        onHasMessagesChange={setHasMessages}
-        hasMessages={hasMessages}
       />
     </AssistantRuntimeProvider>
   )
@@ -251,27 +253,26 @@ interface ChatContentInnerProps {
   provider: string
   model: string
   onModelChange: (provider: string, model: string) => void
-  onHasMessagesChange: (hasMessages: boolean) => void
-  hasMessages: boolean
 }
 
 function ChatContentInner({
   provider,
   model,
   onModelChange,
-  onHasMessagesChange,
-  hasMessages,
 }: ChatContentInnerProps) {
   const threadRuntime = useThreadRuntime()
+  const [hasMessages, setHasMessages] = useState(false)
 
-  // Track whether the thread has any messages
+  // Track whether the thread has any messages.
+  // State is local to ChatContentInner so changes do not re-render ChatContent,
+  // keeping the local runtime reference stable.
   useEffect(() => {
     const unsubscribe = threadRuntime.subscribe(() => {
       const messages = threadRuntime.getState().messages
-      onHasMessagesChange(messages.length > 0)
+      setHasMessages(messages.length > 0)
     })
     return unsubscribe
-  }, [threadRuntime, onHasMessagesChange])
+  }, [threadRuntime])
 
   // Handle suggestion click — send the suggestion as a message
   const handleSuggestionClick = useCallback(

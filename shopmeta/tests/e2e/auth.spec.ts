@@ -12,6 +12,11 @@ function uniqueEmail() {
 
 const TEST_PASSWORD = 'Test1234!'
 
+async function gotoAuthPage(page: any, path: string) {
+  await page.goto(path)
+  await expect(page.locator('.auth-page')).toHaveAttribute('data-hydrated', 'true', { timeout: 10000 })
+}
+
 // ─── E2E Tests ────────────────────────────────────────────────────────────────
 
 test.describe('Authentication E2E', () => {
@@ -19,7 +24,7 @@ test.describe('Authentication E2E', () => {
     test('user can register and land on /chat', async ({ page }) => {
       const email = uniqueEmail()
 
-      await page.goto('/register')
+      await gotoAuthPage(page, '/register')
       await expect(page).toHaveTitle(/ShopMeta/)
 
       // Fill the registration form
@@ -36,7 +41,7 @@ test.describe('Authentication E2E', () => {
     })
 
     test('shows error when passwords do not match', async ({ page }) => {
-      await page.goto('/register')
+      await gotoAuthPage(page, '/register')
 
       await page.fill('[name=name]', 'Test User')
       await page.fill('[name=email]', uniqueEmail())
@@ -54,7 +59,7 @@ test.describe('Authentication E2E', () => {
       const email = uniqueEmail()
 
       // First registration
-      await page.goto('/register')
+      await gotoAuthPage(page, '/register')
       await page.fill('[name=name]', 'First User')
       await page.fill('[name=email]', email)
       await page.fill('[name=password]', TEST_PASSWORD)
@@ -67,7 +72,7 @@ test.describe('Authentication E2E', () => {
       await expect(page).toHaveURL(/\/login/, { timeout: 5000 })
 
       // Try to register again with same email
-      await page.goto('/register')
+      await gotoAuthPage(page, '/register')
       await page.fill('[name=name]', 'Second User')
       await page.fill('[name=email]', email)
       await page.fill('[name=password]', TEST_PASSWORD)
@@ -83,7 +88,7 @@ test.describe('Authentication E2E', () => {
       const email = uniqueEmail()
 
       // Register first
-      await page.goto('/register')
+      await gotoAuthPage(page, '/register')
       await page.fill('[name=name]', 'Login Test User')
       await page.fill('[name=email]', email)
       await page.fill('[name=password]', TEST_PASSWORD)
@@ -94,6 +99,7 @@ test.describe('Authentication E2E', () => {
       // Logout
       await page.click('#logout-btn')
       await expect(page).toHaveURL(/\/login/, { timeout: 5000 })
+      await expect(page.locator('.auth-page')).toHaveAttribute('data-hydrated', 'true', { timeout: 10000 })
 
       // Log back in
       await page.fill('[name=email]', email)
@@ -107,7 +113,7 @@ test.describe('Authentication E2E', () => {
       const email = uniqueEmail()
 
       // Register first
-      await page.goto('/register')
+      await gotoAuthPage(page, '/register')
       await page.fill('[name=name]', 'Bad Login User')
       await page.fill('[name=email]', email)
       await page.fill('[name=password]', TEST_PASSWORD)
@@ -118,6 +124,7 @@ test.describe('Authentication E2E', () => {
       // Logout
       await page.click('#logout-btn')
       await expect(page).toHaveURL(/\/login/, { timeout: 5000 })
+      await expect(page.locator('.auth-page')).toHaveAttribute('data-hydrated', 'true', { timeout: 10000 })
 
       // Try wrong password
       await page.fill('[name=email]', email)
@@ -134,7 +141,7 @@ test.describe('Authentication E2E', () => {
       const email = uniqueEmail()
 
       // Register + land on chat
-      await page.goto('/register')
+      await gotoAuthPage(page, '/register')
       await page.fill('[name=name]', 'Logout Test User')
       await page.fill('[name=email]', email)
       await page.fill('[name=password]', TEST_PASSWORD)
@@ -170,7 +177,7 @@ test.describe('Authentication E2E', () => {
       const email = uniqueEmail()
 
       // Register a user first so the email exists
-      await page.goto('/register')
+      await gotoAuthPage(page, '/register')
       await page.fill('[name=name]', 'Reset Test User')
       await page.fill('[name=email]', email)
       await page.fill('[name=password]', TEST_PASSWORD)
@@ -181,7 +188,7 @@ test.describe('Authentication E2E', () => {
       await expect(page).toHaveURL(/\/login/, { timeout: 5000 })
 
       // Go to forgot password
-      await page.goto('/forgot-password')
+      await gotoAuthPage(page, '/forgot-password')
       await page.fill('[name=email]', email)
       await page.click('#forgot-password-submit')
 
@@ -190,7 +197,7 @@ test.describe('Authentication E2E', () => {
     })
 
     test('reset-password page without token shows invalid link', async ({ page }) => {
-      await page.goto('/reset-password')
+      await gotoAuthPage(page, '/reset-password')
       // Should show "Invalid link" since no token param
       await expect(page.locator('h1')).toContainText(/invalid link/i)
     })
@@ -201,7 +208,7 @@ test.describe('Authentication E2E', () => {
       const email = uniqueEmail()
 
       // Register
-      await page.goto('/register')
+      await gotoAuthPage(page, '/register')
       await page.fill('[name=name]', 'Redirect Test User')
       await page.fill('[name=email]', email)
       await page.fill('[name=password]', TEST_PASSWORD)

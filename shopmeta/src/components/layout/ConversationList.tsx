@@ -273,6 +273,26 @@ export function ConversationList({ collapsed, onMobileClose }: ConversationListP
   const renameMutation = useMutation({
     mutationFn: ({ id, title }: { id: string; title: string }) =>
       renameConversation({ data: { id, title } }),
+    onMutate: async ({ id, title }) => {
+      await queryClient.cancelQueries({ queryKey: CONVERSATIONS_QUERY_KEY })
+      const previousConvs = queryClient.getQueryData([...CONVERSATIONS_QUERY_KEY, { search: searchQuery }])
+      queryClient.setQueryData(
+        [...CONVERSATIONS_QUERY_KEY, { search: searchQuery }],
+        (old: any) => {
+          if (!old) return old
+          return old.map((c: any) => c.id === id ? { ...c, title } : c)
+        }
+      )
+      return { previousConvs }
+    },
+    onError: (err, newTodo, context) => {
+      if (context) {
+        queryClient.setQueryData(
+          [...CONVERSATIONS_QUERY_KEY, { search: searchQuery }],
+          context.previousConvs
+        )
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY })
     },

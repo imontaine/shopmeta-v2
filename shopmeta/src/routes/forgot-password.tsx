@@ -2,7 +2,7 @@
 // Forgot Password page — request a password reset email
 
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { forgetPassword } from '#/lib/auth/client'
 
 export const Route = createFileRoute('/forgot-password')({
@@ -13,6 +13,8 @@ function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isHydrated, setIsHydrated] = useState(false)
+  useEffect(() => { setIsHydrated(true) }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -41,7 +43,7 @@ function ForgotPasswordPage() {
   }
 
   return (
-    <div className="auth-page">
+    <div className="auth-page" data-hydrated={isHydrated ? 'true' : 'false'}>
       <div className="auth-card">
         <div className="auth-brand">
           <div className="auth-logo">

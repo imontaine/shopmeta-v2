@@ -22,6 +22,7 @@ const TEST_PASSWORD = 'Test1234!'
 async function loginFreshUser(page: Page): Promise<string> {
   const email = uniqueEmail()
   await page.goto('/register')
+  await expect(page.locator('.auth-page')).toHaveAttribute('data-hydrated', 'true', { timeout: 10000 })
   await page.fill('[name=name]', 'Layout E2E User')
   await page.fill('[name=email]', email)
   await page.fill('[name=password]', TEST_PASSWORD)

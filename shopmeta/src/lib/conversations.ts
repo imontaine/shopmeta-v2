@@ -93,17 +93,24 @@ async function requireOrgSession() {
   if (!orgId) {
     // Fallback: look up the first org the user belongs to via the member table.
     // This handles freshly-registered users whose session doesn't have an active org yet.
-    try {
-      const { member } = await import('#/lib/db/schema')
-      const { db } = await import('#/lib/db/index')
-      const rows = await db
-        .select({ orgId: member.organizationId })
-        .from(member)
-        .where(eq(member.userId, session.user.id))
-        .limit(1)
-      orgId = rows[0]?.orgId ?? null
-    } catch {
-      // DB unavailable — fall through to error below
+    if (process.env['DATABASE_URL']) {
+      try {
+        const { member } = await import('#/lib/db/schema')
+        const { db } = await import('#/lib/db/index')
+        const rows = await db
+          .select({ orgId: member.organizationId })
+          .from(member)
+          .where(eq(member.userId, session.user.id))
+          .limit(1)
+        orgId = rows[0]?.orgId ?? null
+      } catch {
+        // DB unavailable — fall through to error below
+      }
+    } else if (globalThis.__betterAuthMemDb) {
+      const memberRow = globalThis.__betterAuthMemDb.member.find(
+        (m: any) => m.userId === session.user.id
+      )
+      orgId = (memberRow?.organizationId as string) ?? null
     }
   }
 

@@ -125,9 +125,14 @@ async function buildAuth(): Promise<ReturnType<typeof betterAuth>> {
       },
     },
 
-    trustedOrigins: [
-      process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3000',
-    ],
+    trustedOrigins:
+      process.env['NODE_ENV'] === 'production'
+        ? [process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3000']
+        : [
+            // In development, trust any localhost origin regardless of port
+            // (Vite may auto-pick 3001, 3002, etc. if 3000 is taken)
+            'http://localhost:*',
+          ],
     baseURL: process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3000',
     secret: process.env['BETTER_AUTH_SECRET'] ?? 'fallback-dev-secret-change-in-production',
   })

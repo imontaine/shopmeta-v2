@@ -24,6 +24,7 @@ const TEST_PASSWORD = 'Test1234!'
 async function registerAndGoToChat(page: Page) {
   const email = uniqueEmail()
   await page.goto('/register')
+  await expect(page.locator('.auth-page')).toHaveAttribute('data-hydrated', 'true', { timeout: 10000 })
   await page.fill('[name=name]', 'Chat E2E User')
   await page.fill('[name=email]', email)
   await page.fill('[name=password]', TEST_PASSWORD)
@@ -77,7 +78,7 @@ async function typeAndSend(page: Page, text: string) {
   const input = page.locator('[data-testid="composer-input"]')
   await expect(input).toBeVisible({ timeout: 5000 })
   await input.click()
-  await input.fill(text)
+  await input.pressSequentially(text)
   // Wait for send button to become enabled (React state update after fill)
   await expect(page.locator('[data-testid="send-message-btn"]')).toBeEnabled({ timeout: 5000 })
   await page.locator('[data-testid="send-message-btn"]').click()

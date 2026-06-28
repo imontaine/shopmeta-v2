@@ -69,7 +69,7 @@ function RegisterPage() {
   }
 
   return (
-    <div className="auth-page">
+    <div className="auth-page" data-hydrated={isHydrated ? 'true' : 'false'}>
       <div className="auth-card">
         {/* Logo / Brand */}
         <div className="auth-brand">
@@ -159,7 +159,7 @@ function RegisterPage() {
             type="submit"
             id="register-submit"
             className="auth-btn-primary"
-            disabled={loading || !isHydrated}
+            disabled={loading}
           >
             {loading ? (
               <span className="auth-spinner" aria-hidden="true" />

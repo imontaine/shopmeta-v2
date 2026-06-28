@@ -54,7 +54,7 @@ function LoginPage() {
   }
 
   return (
-    <div className="auth-page">
+    <div className="auth-page" data-hydrated={isHydrated ? 'true' : 'false'}>
       <div className="auth-card">
         {/* Logo / Brand */}
         <div className="auth-brand">
@@ -121,7 +121,7 @@ function LoginPage() {
             type="submit"
             id="login-submit"
             className="auth-btn-primary"
-            disabled={loading || !isHydrated}
+            disabled={loading}
           >
             {loading ? (
               <span className="auth-spinner" aria-hidden="true" />

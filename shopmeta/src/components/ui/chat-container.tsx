@@ -24,16 +24,18 @@ function ChatContainerRoot({
   ...props
 }: ChatContainerRootProps) {
   return (
-    <StickToBottom
-      className={cn("flex min-h-0 overflow-y-auto", className)}
-      resize="smooth"
-      initial="instant"
-      role="log"
-      aria-label="Chat messages"
-      {...props}
-    >
-      {children}
-    </StickToBottom>
+    <div className={cn("flex flex-1 flex-col min-h-0 overflow-hidden", className)}>
+      <StickToBottom
+        className="flex-1 overflow-y-auto"
+        resize="smooth"
+        initial="instant"
+        role="log"
+        aria-label="Chat messages"
+        {...props}
+      >
+        {children}
+      </StickToBottom>
+    </div>
   )
 }
 
@@ -43,12 +45,11 @@ function ChatContainerContent({
   ...props
 }: ChatContainerContentProps) {
   return (
-    <StickToBottom.Content
-      className={cn("flex w-full flex-col", className)}
-      {...props}
-    >
-      {children}
-    </StickToBottom.Content>
+    <div className={cn("flex w-full flex-col", className)}>
+      <StickToBottom.Content {...props}>
+        {children}
+      </StickToBottom.Content>
+    </div>
   )
 }
 

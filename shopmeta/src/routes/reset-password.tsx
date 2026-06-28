@@ -2,7 +2,7 @@
 // Reset Password page — handles the token from the email link
 
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { resetPassword } from '#/lib/auth/client'
 
 type SearchParams = {
@@ -22,10 +22,12 @@ function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isHydrated, setIsHydrated] = useState(false)
+  useEffect(() => { setIsHydrated(true) }, [])
 
   if (!token) {
     return (
-      <div className="auth-page">
+      <div className="auth-page" data-hydrated={isHydrated ? 'true' : 'false'}>
         <div className="auth-card">
           <div className="auth-brand">
             <h1 className="auth-title">Invalid link</h1>
@@ -85,7 +87,7 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="auth-page">
+    <div className="auth-page" data-hydrated={isHydrated ? 'true' : 'false'}>
       <div className="auth-card">
         <div className="auth-brand">
           <div className="auth-logo">
