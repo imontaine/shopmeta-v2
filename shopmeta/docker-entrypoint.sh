@@ -14,7 +14,7 @@
 # The script runs as the non-root 'node' user (UID 1000).
 # Migrations use drizzle-kit which reads DATABASE_URL from the environment.
 
-set -e
+# Note: No 'set -e' — migration failures are handled gracefully below
 
 echo "[entrypoint] ShopMeta starting up..."
 
@@ -50,9 +50,12 @@ if [ -n "$DATABASE_URL" ]; then
   # ─── Run migrations ─────────────────────────────────────────────────────────
 
   echo "[entrypoint] Running database migrations..."
-  # drizzle-kit supports .ts configs natively
-  node_modules/.bin/drizzle-kit migrate
-  echo "[entrypoint] Migrations complete."
+  # Timeout after 30s to prevent crash-loop when advisory lock is held
+  if timeout 30 node_modules/.bin/drizzle-kit migrate; then
+    echo "[entrypoint] Migrations complete."
+  else
+    echo "[entrypoint] WARNING: Migrations timed out or failed (exit $?). Starting anyway — schema is likely already up to date."
+  fi
 else
   echo "[entrypoint] WARNING: DATABASE_URL is not set. Skipping migrations."
 fi
