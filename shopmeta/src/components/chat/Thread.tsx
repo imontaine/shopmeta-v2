@@ -22,7 +22,7 @@ import {
   MessageActions,
   MessageAction,
 } from '@/components/ui/message'
-import { Loader } from '@/components/ui/loader'
+import { ThinkingBar } from '@/components/ui/thinking-bar'
 import { RefreshCw, Copy, Check } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Markdown } from '@/components/ui/markdown'
@@ -104,6 +104,13 @@ function AssistantMessage() {
             className="bg-primary/10 text-primary border-border mt-0.5 h-7 w-7 border text-xs"
           />
           <div className="min-w-0 flex-1 space-y-2">
+            {/* ThinkingBar — shown while streaming on the last message */}
+            <MessagePrimitive.If last>
+              <MessagePrimitive.InProgress>
+                <ThinkingBar text="Searching" className="py-1" />
+              </MessagePrimitive.InProgress>
+            </MessagePrimitive.If>
+
             <MessageContent className="bg-transparent p-0 text-foreground">
               <MessagePrimitive.Content
                 components={{
@@ -137,21 +144,7 @@ function AssistantMessage() {
   )
 }
 
-// ─── Loading Indicator ──────────────────────────────────────────────────────
-
-function LoadingMessage() {
-  return (
-    <div className="mb-6 flex gap-3">
-      <div className="bg-primary/10 text-primary border-border mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs">
-        S
-      </div>
-      <div className="flex items-center gap-2 py-2">
-        <Loader variant="dots" size="sm" className="text-muted-foreground" />
-        <span className="text-muted-foreground text-sm">Searching…</span>
-      </div>
-    </div>
-  )
-}
+// ─── Loading Indicator (unused — ThinkingBar is embedded in AssistantMessage) ─
 
 // ─── Thread ─────────────────────────────────────────────────────────────────
 

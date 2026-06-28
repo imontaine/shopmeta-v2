@@ -110,6 +110,14 @@ vi.mock('@/components/ui/loader', () => ({
   Loader: () => <span>loading...</span>,
 }))
 
+vi.mock('@/components/ui/thinking-bar', () => {
+  const React = require('react')
+  return {
+    ThinkingBar: ({ text }: { text?: string; className?: string }) =>
+      React.createElement('div', { 'data-testid': 'thinking-bar' }, text ?? 'Thinking'),
+  }
+})
+
 // Mock lucide-react
 vi.mock('lucide-react', () => ({
   Send: () => <span>→</span>,
@@ -124,6 +132,7 @@ vi.mock('lucide-react', () => ({
   ArrowUp: () => <span>↑</span>,
   Copy: () => <span>⎘</span>,
   Check: () => <span>✓</span>,
+  ChevronRight: () => <span>›</span>,
 }))
 
 
