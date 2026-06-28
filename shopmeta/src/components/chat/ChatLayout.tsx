@@ -54,8 +54,14 @@ function createAdapter(provider: string, model: string, conversationId?: string)
         signal: abortSignal,
       })
 
-      if (!response.ok || !response.body) {
-        throw new Error(`Chat API error: ${response.status}`)
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => 'Unknown error')
+        console.error('[ChatAdapter] API error:', response.status, errorBody)
+        throw new Error(`Chat API error: ${response.status} — ${errorBody}`)
+      }
+
+      if (!response.body) {
+        throw new Error('Chat API returned no body')
       }
 
       const reader = response.body.getReader()
@@ -75,10 +81,25 @@ function createAdapter(provider: string, model: string, conversationId?: string)
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue
             const data = line.slice(6).trim()
-            if (data === '[DONE]') break
+            if (data === '[DONE]') continue
 
             try {
-              const parsed = JSON.parse(data) as { delta?: string; text?: string }
+              const parsed = JSON.parse(data) as {
+                type?: string
+                delta?: string
+                text?: string
+                error?: { message?: string }
+              }
+
+              // Handle @tanstack/ai RUN_ERROR events
+              if (parsed.type === 'RUN_ERROR') {
+                const msg = parsed.error?.message ?? 'Unknown server error'
+                console.error('[ChatAdapter] RUN_ERROR:', msg)
+                throw new Error(msg)
+              }
+
+              // Only process TEXT_MESSAGE_CONTENT chunks (which carry delta)
+              // Also handle generic delta/text for compatibility
               const chunk = parsed.delta ?? parsed.text ?? ''
               if (chunk) {
                 fullText += chunk
@@ -86,13 +107,24 @@ function createAdapter(provider: string, model: string, conversationId?: string)
                   content: [{ type: 'text' as const, text: fullText }],
                 }
               }
-            } catch {
-              // Skip unparseable chunks
+            } catch (e) {
+              // Re-throw RUN_ERROR, skip parse errors
+              if (e instanceof Error && e.message !== 'Unknown server error') {
+                if (!(e instanceof SyntaxError)) throw e
+              }
             }
           }
         }
       } finally {
         reader.releaseLock()
+      }
+
+      // If we got text, yield a final result with complete status
+      if (fullText) {
+        yield {
+          content: [{ type: 'text' as const, text: fullText }],
+          status: { type: 'complete' as const, reason: 'stop' as const },
+        }
       }
     },
   }

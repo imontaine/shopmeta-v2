@@ -83,16 +83,7 @@ export const Route = createFileRoute('/api/chat/stream')({
           ]),
         })
 
-        const sseResponse = toServerSentEventsResponse(stream)
-
-        return new Response(sseResponse.body, {
-          status: 200,
-          headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-          },
-        })
+        return toServerSentEventsResponse(stream)
       },
     },
   },
