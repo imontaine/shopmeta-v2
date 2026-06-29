@@ -274,6 +274,23 @@ function ChatContentInner({
     return unsubscribe
   }, [threadRuntime])
 
+  // ── Keyboard shortcuts ──────────────────────────────────────────────
+  // Ctrl+/ (or Cmd+/) → focus the composer input
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // Ctrl/Cmd + / → focus composer
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault()
+        const textarea = document.querySelector<HTMLTextAreaElement>(
+          '[data-testid="composer-input"]',
+        )
+        textarea?.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   // Handle suggestion click — send the suggestion as a message
   const handleSuggestionClick = useCallback(
     (text: string) => {

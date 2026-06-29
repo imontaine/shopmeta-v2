@@ -159,7 +159,6 @@ body {
 
 .dark {
   --bg-base: #171716;
-  --sidebar: #212111;
   --bg-surface: #2a2a2a;
   --bg-elevated: #333333;
   --border: #3a3a3c;
@@ -192,7 +191,7 @@ body {
   --chart-4: #3a3a3c;
   --chart-5: #2a2a2a;
 
-  --sidebar: #1f1f1f;
+  --sidebar: #212111;
   --sidebar-foreground: #f0f0f0;
   --sidebar-primary: #f0f0f0;
   --sidebar-primary-foreground: #1f1f1f;

@@ -10,6 +10,7 @@
 //  - aria-live region for streaming status announcements
 //  - Keyboard navigation between messages (Alt+↑/↓)
 
+import { useState } from 'react'
 import {
   ThreadPrimitive,
   MessagePrimitive,
@@ -31,7 +32,16 @@ import {
   MessageAction,
 } from '@/components/ui/message'
 import { DotsLoader } from '@/components/ui/loader'
-import { RefreshCw, Copy, Pencil, Check, X } from 'lucide-react'
+import {
+  RefreshCw,
+  Copy,
+  Pencil,
+  Check,
+  X,
+  ThumbsUp,
+  ThumbsDown,
+  ChevronDown,
+} from 'lucide-react'
 import { Markdown } from '@/components/ui/markdown'
 import { cn } from '@/lib/utils'
 
@@ -44,6 +54,42 @@ function MarkdownText({ text }: { text: string }) {
     >
       {text}
     </Markdown>
+  )
+}
+
+// ─── Reasoning Panel ────────────────────────────────────────────────────────
+// Collapsible panel that shows the model's chain-of-thought reasoning.
+// Auto-expands during streaming, auto-collapses when complete.
+
+function ReasoningPanel({ text }: { text: string; status: { type: string } }) {
+  const [isExpanded, setIsExpanded] = useState(true)
+  const isStreaming = useThread((state) => state.isRunning)
+
+  return (
+    <div className="mb-2">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-md px-1 py-0.5 text-sm transition-colors"
+        aria-label={isExpanded ? 'Collapse reasoning' : 'Expand reasoning'}
+      >
+        <ChevronDown
+          className={cn(
+            'h-3.5 w-3.5 transition-transform duration-200',
+            !isExpanded && '-rotate-90',
+          )}
+        />
+        <span className={cn(isStreaming && 'animate-pulse')}>
+          {isStreaming ? 'Thinking…' : 'Thought process'}
+        </span>
+      </button>
+      {isExpanded && (
+        <div className="border-muted-foreground/20 mt-1 ml-1 border-l-2 pl-3 animate-in fade-in-0 duration-200">
+          <Markdown className="prose prose-neutral dark:prose-invert text-muted-foreground max-w-none text-sm leading-relaxed">
+            {text}
+          </Markdown>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -200,6 +246,9 @@ function AssistantMessage() {
               <MessagePrimitive.Content
                 components={{
                   Text: ({ text }) => <MarkdownText text={text} />,
+                  Reasoning: ({ text, status }) => (
+                    <ReasoningPanel text={text} status={status} />
+                  ),
                 }}
               />
             </MessageContent>
@@ -232,6 +281,32 @@ function AssistantMessage() {
                     </button>
                   </MessageAction>
                 </ActionBarPrimitive.Reload>
+
+                {/* Thumbs Up */}
+                <ActionBarPrimitive.FeedbackPositive asChild>
+                  <MessageAction tooltip="Helpful">
+                    <button
+                      data-testid="feedback-positive-btn"
+                      aria-label="Mark as helpful"
+                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors data-[pressed]:text-green-500"
+                    >
+                      <ThumbsUp className="h-3.5 w-3.5" />
+                    </button>
+                  </MessageAction>
+                </ActionBarPrimitive.FeedbackPositive>
+
+                {/* Thumbs Down */}
+                <ActionBarPrimitive.FeedbackNegative asChild>
+                  <MessageAction tooltip="Not helpful">
+                    <button
+                      data-testid="feedback-negative-btn"
+                      aria-label="Mark as not helpful"
+                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors data-[pressed]:text-red-500"
+                    >
+                      <ThumbsDown className="h-3.5 w-3.5" />
+                    </button>
+                  </MessageAction>
+                </ActionBarPrimitive.FeedbackNegative>
               </ActionBarPrimitive.Root>
             </MessageActions>
           </div>
