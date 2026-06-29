@@ -133,7 +133,7 @@ function ComposerInner({
         <PromptInputTextarea
           data-testid="composer-input"
           placeholder={placeholder}
-          className="min-h-[44px] text-base"
+          className="min-h-[44px] px-6.5 text-base"
           autoFocus
         />
         <PromptInputActions className="flex items-center justify-between gap-2 mt-5 px-3 pb-3">

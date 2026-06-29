@@ -9,6 +9,11 @@
   box-sizing: border-box;
 }
 
+/* Custom spacing utility — Tailwind v4 doesn't generate px-6.5 by default */
+.px-6\.5 {
+  padding-inline: calc(var(--spacing) * 6.5);
+}
+
 /* ── Accessibility: prefers-reduced-motion ───────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
