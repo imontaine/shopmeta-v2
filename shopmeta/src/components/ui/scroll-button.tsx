@@ -46,7 +46,7 @@ function ScrollButton({
               <span className="bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
               <span className="bg-primary relative inline-flex h-2 w-2 rounded-full" />
             </span>
-            <span className="text-xs font-medium">New content</span>
+            <span className="text-sm font-medium">New content</span>
           </>
         )}
         <ChevronDown className="h-4 w-4" />

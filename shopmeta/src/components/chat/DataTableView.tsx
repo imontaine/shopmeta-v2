@@ -100,7 +100,7 @@ export function DataTableView({
     return (
       <div
         data-testid="data-table-empty"
-        className={cn('text-muted-foreground px-4 py-8 text-center text-sm', className)}
+        className={cn('text-muted-foreground px-4 py-8 text-center text-base', className)}
       >
         No results
       </div>
@@ -122,7 +122,7 @@ export function DataTableView({
             onClick={() => setShowToggle((v) => !v)}
             aria-expanded={showToggle}
             aria-label="Toggle column visibility"
-            className="border-border text-foreground cursor-pointer rounded border bg-transparent px-2.5 py-1 text-xs"
+            className="border-border text-foreground cursor-pointer rounded border bg-transparent px-2.5 py-1 text-sm"
           >
             Columns
           </button>
@@ -280,7 +280,7 @@ export function DataTableView({
       {/* Row count summary */}
       <div
         data-testid="row-count"
-        className="text-muted-foreground px-1 py-0.5 text-right text-xs"
+        className="text-muted-foreground px-1 py-0.5 text-right text-sm"
       >
         {rows.length.toLocaleString('en-US')} row{rows.length !== 1 ? 's' : ''}
       </div>

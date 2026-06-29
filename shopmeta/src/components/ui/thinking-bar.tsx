@@ -24,17 +24,17 @@ export function ThinkingBar({
       {onClick ? (
         <button
           onClick={onClick}
-          className="flex cursor-pointer items-center gap-1 rounded-md px-1 py-0.5 text-sm transition-colors hover:bg-accent"
+          className="flex cursor-pointer items-center gap-1 rounded-md px-1 py-0.5 text-base transition-colors hover:bg-accent"
         >
           <ChevronRight className="h-4 w-4" />
-          <TextShimmer className="text-muted-foreground text-sm font-normal">
+          <TextShimmer className="text-muted-foreground text-base font-normal">
             {text}
           </TextShimmer>
         </button>
       ) : (
         <div className="flex items-center gap-1 px-1 py-0.5">
           <ChevronRight className="h-4 w-4" />
-          <TextShimmer className="text-muted-foreground text-sm font-normal">
+          <TextShimmer className="text-muted-foreground text-base font-normal">
             {text}
           </TextShimmer>
         </div>
@@ -42,7 +42,7 @@ export function ThinkingBar({
       {onStop && (
         <button
           onClick={onStop}
-          className="text-muted-foreground hover:text-foreground cursor-pointer text-sm transition-colors"
+          className="text-muted-foreground hover:text-foreground cursor-pointer text-base transition-colors"
         >
           {stopLabel}
         </button>

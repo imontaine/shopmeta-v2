@@ -35,7 +35,7 @@ function CodeBlock({ children, className, code, language, ...props }: CodeBlockP
       data-testid="code-block"
       {...props}
     >
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/40 text-xs font-mono text-muted-foreground select-none">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/40 text-sm font-mono text-muted-foreground select-none">
         <span>{language || "code"}</span>
         {code && (
           <button

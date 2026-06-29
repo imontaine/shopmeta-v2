@@ -108,7 +108,7 @@ function AssistantMessage() {
             src=""
             alt="ShopMeta"
             fallback="S"
-            className="bg-primary/10 text-primary border-border mt-0.5 h-7 w-7 border text-xs"
+            className="bg-primary/10 text-primary border-border mt-0.5 h-7 w-7 border text-sm"
           />
           <div className="min-w-0 flex-1 space-y-2">
             {/* Dots loader — shown only while waiting for first token */}
@@ -124,9 +124,9 @@ function AssistantMessage() {
               />
             </MessageContent>
 
-            {/* Actions — always visible on last message, hover on others */}
-            <MessageActions className="text-muted-foreground flex items-center gap-1 transition-opacity duration-150">
-              <ActionBarPrimitive.Root hideWhenRunning autohide="not-last">
+            {/* Actions — always in DOM to reserve space (no CLS), visible on hover */}
+            <MessageActions className="text-muted-foreground flex h-8 items-center gap-1 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
+              <ActionBarPrimitive.Root hideWhenRunning>
                 {/* Copy */}
                 <ActionBarPrimitive.Copy asChild>
                   <MessageAction tooltip="Copy">

@@ -151,7 +151,7 @@ function EmptyState({ provider, model, onModelChange, onSuggestionClick }: Empty
           >
             Ask anything.
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <p className="text-muted-foreground mt-1 text-base">
             Get insights about your Magento store
           </p>
         </div>
@@ -169,7 +169,7 @@ function EmptyState({ provider, model, onModelChange, onSuggestionClick }: Empty
             <PromptSuggestion
               key={suggestion}
               onClick={() => onSuggestionClick(suggestion)}
-              className="text-muted-foreground hover:text-foreground border-border text-xs"
+              className="text-muted-foreground hover:text-foreground border-border text-sm"
             >
               {suggestion}
             </PromptSuggestion>

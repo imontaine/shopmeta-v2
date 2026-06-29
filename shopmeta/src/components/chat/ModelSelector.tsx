@@ -81,7 +81,7 @@ export function ModelSelector({
         aria-expanded={isOpen}
         className={cn(
           'border-input flex items-center gap-1.5 whitespace-nowrap rounded-full border bg-background px-2.5 py-1.5 text-[0.8rem] shadow-xs transition-colors',
-          isOpen ? 'bg-accent' : 'hover:bg-accent hover:text-accent-foreground',
+          isOpen ? 'bg-muted' : 'hover:bg-muted',
           disabled && 'cursor-not-allowed opacity-50',
           !disabled && 'cursor-pointer',
         )}

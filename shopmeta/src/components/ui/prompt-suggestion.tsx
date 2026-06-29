@@ -18,7 +18,7 @@ function PromptSuggestion({
       variant="outline"
       size="sm"
       className={cn(
-        "cursor-pointer rounded-full px-4 py-2 text-sm font-normal",
+        "cursor-pointer rounded-full px-4 py-2 text-base font-normal",
         className,
       )}
       {...props}
