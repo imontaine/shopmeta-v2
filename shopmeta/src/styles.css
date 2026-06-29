@@ -558,7 +558,7 @@ body {
   margin-left: var(--sidebar-width);
   transition: margin-left var(--sidebar-transition);
   height: 100dvh;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .app-main--expanded {
