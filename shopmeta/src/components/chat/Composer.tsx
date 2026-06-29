@@ -7,13 +7,13 @@
 // useComposerRuntime(). Inside it, we use PromptInput with a controlled value
 // and manually call composerRuntime.setText/send for assistant-ui integration.
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import {
   ComposerPrimitive,
   ThreadPrimitive,
   useComposerRuntime,
 } from '@assistant-ui/react'
-import { ArrowUp, Square } from 'lucide-react'
+import { ArrowUp, Square, Paperclip, X } from 'lucide-react'
 import { ModelSelector } from '#/components/chat/ModelSelector'
 import {
   PromptInput,
@@ -47,22 +47,43 @@ function ComposerInner({
   placeholder = 'Ask anything…',
 }: ComposerProps) {
   const [text, setText] = useState('')
+  const [files, setFiles] = useState<File[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const composerRuntime = useComposerRuntime()
 
-  const canSend = text.trim().length > 0 && !disabled
+  const canSend = (text.trim().length > 0 || files.length > 0) && !disabled
 
   const handleSend = useCallback(() => {
     if (!canSend) return
     const message = text.trim()
     if (onSend) {
       setText('')
+      setFiles([])
       onSend({ content: message })
     } else {
       composerRuntime.setText(message)
       composerRuntime.send()
       setText('')
+      setFiles([])
     }
   }, [canSend, text, onSend, composerRuntime])
+
+  const handleFileSelect = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files
+    if (selected) {
+      setFiles((prev) => [...prev, ...Array.from(selected)])
+    }
+    // Reset input so the same file can be re-selected
+    e.target.value = ''
+  }, [])
+
+  const handleFileRemove = useCallback((index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index))
+  }, [])
 
   return (
     <div
@@ -79,6 +100,36 @@ function ComposerInner({
           'transition-all duration-200',
         )}
       >
+        {/* File attachment chips */}
+        {files.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-3 pt-2">
+            {files.map((file, i) => (
+              <div
+                key={`${file.name}-${i}`}
+                className="bg-muted text-foreground flex items-center gap-1 rounded-md px-2 py-1 text-sm"
+              >
+                <span className="max-w-[120px] truncate">{file.name}</span>
+                <button
+                  onClick={() => handleFileRemove(i)}
+                  className="text-muted-foreground hover:text-foreground ml-0.5 cursor-pointer"
+                  aria-label={`Remove ${file.name}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+          accept="image/*,.pdf,.txt,.csv,.json,.md"
+        />
         <PromptInputTextarea
           data-testid="composer-input"
           placeholder={placeholder}
@@ -87,6 +138,19 @@ function ComposerInner({
         />
         <PromptInputActions className="flex items-center justify-between gap-2 mt-5 px-3 pb-3">
           <div className="flex items-center gap-x-1.5">
+            {/* File upload button */}
+            <PromptInputAction tooltip="Attach file">
+              <Button
+                data-testid="file-upload-btn"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={handleFileSelect}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+            </PromptInputAction>
+
             {/* Model selector */}
             {onModelChange && (
               <ModelSelector
