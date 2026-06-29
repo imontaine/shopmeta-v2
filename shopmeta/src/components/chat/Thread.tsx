@@ -15,6 +15,7 @@ import {
   ThreadPrimitive,
   MessagePrimitive,
   ActionBarPrimitive,
+  BranchPickerPrimitive,
   ComposerPrimitive,
   useThread,
 } from '@assistant-ui/react'
@@ -29,7 +30,6 @@ import {
   MessageAvatar,
   MessageContent,
   MessageActions,
-  MessageAction,
 } from '@/components/ui/message'
 import { DotsLoader } from '@/components/ui/loader'
 import {
@@ -41,9 +41,15 @@ import {
   ThumbsUp,
   ThumbsDown,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { Markdown } from '@/components/ui/markdown'
 import { cn } from '@/lib/utils'
+
+// ─── Shared action button style ─────────────────────────────────────────────
+const actionBtnClass =
+  'hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors inline-flex items-center justify-center'
 
 // ─── Markdown wrapper for assistant messages ────────────────────────────────
 
@@ -139,29 +145,21 @@ function UserMessage() {
             <MessageActions className="text-muted-foreground flex h-7 items-center gap-1 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
               <ActionBarPrimitive.Root>
                 {/* Edit */}
-                <ActionBarPrimitive.Edit asChild>
-                  <MessageAction tooltip="Edit">
-                    <button
-                      data-testid="edit-message-btn"
-                      aria-label="Edit message"
-                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                  </MessageAction>
+                <ActionBarPrimitive.Edit
+                  data-testid="edit-message-btn"
+                  aria-label="Edit message"
+                  className={actionBtnClass}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
                 </ActionBarPrimitive.Edit>
 
                 {/* Copy */}
-                <ActionBarPrimitive.Copy asChild>
-                  <MessageAction tooltip="Copy">
-                    <button
-                      data-testid="copy-user-message-btn"
-                      aria-label="Copy message"
-                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                    </button>
-                  </MessageAction>
+                <ActionBarPrimitive.Copy
+                  data-testid="copy-user-message-btn"
+                  aria-label="Copy message"
+                  className={actionBtnClass}
+                >
+                  <Copy className="h-3.5 w-3.5" />
                 </ActionBarPrimitive.Copy>
               </ActionBarPrimitive.Root>
             </MessageActions>
@@ -257,57 +255,62 @@ function AssistantMessage() {
             <MessageActions className="text-muted-foreground flex h-8 items-center gap-1 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
               <ActionBarPrimitive.Root hideWhenRunning>
                 {/* Copy */}
-                <ActionBarPrimitive.Copy asChild>
-                  <MessageAction tooltip="Copy">
-                    <button
-                      data-testid="copy-message-btn"
-                      aria-label="Copy message"
-                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                    </button>
-                  </MessageAction>
+                <ActionBarPrimitive.Copy
+                  data-testid="copy-message-btn"
+                  aria-label="Copy message"
+                  className={actionBtnClass}
+                >
+                  <Copy className="h-3.5 w-3.5" />
                 </ActionBarPrimitive.Copy>
 
                 {/* Regenerate */}
-                <ActionBarPrimitive.Reload asChild>
-                  <MessageAction tooltip="Regenerate">
-                    <button
-                      data-testid="regenerate-btn"
-                      aria-label="Regenerate response"
-                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    </button>
-                  </MessageAction>
+                <ActionBarPrimitive.Reload
+                  data-testid="regenerate-btn"
+                  aria-label="Regenerate response"
+                  className={actionBtnClass}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
                 </ActionBarPrimitive.Reload>
 
                 {/* Thumbs Up */}
-                <ActionBarPrimitive.FeedbackPositive asChild>
-                  <MessageAction tooltip="Helpful">
-                    <button
-                      data-testid="feedback-positive-btn"
-                      aria-label="Mark as helpful"
-                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors data-[pressed]:text-green-500"
-                    >
-                      <ThumbsUp className="h-3.5 w-3.5" />
-                    </button>
-                  </MessageAction>
+                <ActionBarPrimitive.FeedbackPositive
+                  data-testid="feedback-positive-btn"
+                  aria-label="Mark as helpful"
+                  className={cn(actionBtnClass, 'data-[pressed]:text-green-500')}
+                >
+                  <ThumbsUp className="h-3.5 w-3.5" />
                 </ActionBarPrimitive.FeedbackPositive>
 
                 {/* Thumbs Down */}
-                <ActionBarPrimitive.FeedbackNegative asChild>
-                  <MessageAction tooltip="Not helpful">
-                    <button
-                      data-testid="feedback-negative-btn"
-                      aria-label="Mark as not helpful"
-                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors data-[pressed]:text-red-500"
-                    >
-                      <ThumbsDown className="h-3.5 w-3.5" />
-                    </button>
-                  </MessageAction>
+                <ActionBarPrimitive.FeedbackNegative
+                  data-testid="feedback-negative-btn"
+                  aria-label="Mark as not helpful"
+                  className={cn(actionBtnClass, 'data-[pressed]:text-red-500')}
+                >
+                  <ThumbsDown className="h-3.5 w-3.5" />
                 </ActionBarPrimitive.FeedbackNegative>
               </ActionBarPrimitive.Root>
+
+              {/* Branch navigation — shows when multiple branches exist */}
+              <BranchPickerPrimitive.Root hideWhenSingleBranch>
+                <BranchPickerPrimitive.Previous
+                  data-testid="branch-prev-btn"
+                  aria-label="Previous branch"
+                  className={actionBtnClass}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </BranchPickerPrimitive.Previous>
+                <span className="text-muted-foreground text-xs tabular-nums">
+                  <BranchPickerPrimitive.Number />/<BranchPickerPrimitive.Count />
+                </span>
+                <BranchPickerPrimitive.Next
+                  data-testid="branch-next-btn"
+                  aria-label="Next branch"
+                  className={actionBtnClass}
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </BranchPickerPrimitive.Next>
+              </BranchPickerPrimitive.Root>
             </MessageActions>
           </div>
         </Message>
