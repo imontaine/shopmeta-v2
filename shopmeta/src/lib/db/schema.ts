@@ -97,7 +97,7 @@ export const conversations = pgTable(
     orgId: text('org_id').notNull(), // Organization (tenant)
     agentId: uuid('agent_id'), // Which agent config
     title: text('title').default('New Chat'),
-    model: text('model'), // e.g. 'gpt-4o', 'claude-sonnet'
+    model: text('model'), // e.g. 'gpt-4o', 'claude-sonnet-4-6'
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
   },

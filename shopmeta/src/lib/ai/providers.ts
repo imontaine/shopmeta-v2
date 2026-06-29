@@ -18,7 +18,7 @@ export const providers = {
     'o3': () => openaiText('o3'),
   },
   anthropic: {
-    'claude-sonnet-4': () => anthropicText('claude-sonnet-4'),
+    'claude-sonnet-4-6': () => anthropicText('claude-sonnet-4-6'),
     'claude-haiku-4-5': () => anthropicText('claude-haiku-4-5'),
   },
   // Google adapter — uses openaiText against the Gemini compatible endpoint
@@ -52,7 +52,7 @@ export const modelList: ModelInfo[] = [
   { provider: 'openai', model: 'gpt-4o', label: 'GPT-4o', description: 'Most capable OpenAI model' },
   { provider: 'openai', model: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Faster, cheaper' },
   { provider: 'openai', model: 'o3', label: 'o3', description: 'Advanced reasoning' },
-  { provider: 'anthropic', model: 'claude-sonnet-4', label: 'Claude Sonnet 4', description: 'Balanced power and speed' },
+  { provider: 'anthropic', model: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', description: 'Balanced power and speed' },
   { provider: 'anthropic', model: 'claude-haiku-4-5', label: 'Claude Haiku 4.5', description: 'Fastest Anthropic model' },
   { provider: 'google', model: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', description: 'Google flagship model' },
   { provider: 'google', model: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', description: 'Fast and efficient' },
