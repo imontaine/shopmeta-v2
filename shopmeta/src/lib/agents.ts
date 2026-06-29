@@ -8,7 +8,6 @@
 // - mcpServers is stored as JSONB: Array<{ name: string; url: string; transport?: string }>
 
 import { createServerFn } from '@tanstack/react-start'
-import { getRequestHeaders } from '@tanstack/react-start/server'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { getDb } from '#/lib/db/index'
@@ -74,39 +73,7 @@ function serializeAgent(a: {
 
 // ─── Auth helper ──────────────────────────────────────────────────────────────
 
-async function requireOrgSession() {
-  const { getAuth } = await import('#/lib/auth/auth')
-  const auth = await getAuth()
-  const headers = getRequestHeaders()
-  const session = await auth.api.getSession({ headers })
-  if (!session?.user) {
-    throw new Error('Unauthorized: no active session')
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let orgId = (session.session as any).activeOrganizationId as string | undefined | null
-
-  if (!orgId) {
-    try {
-      const { member } = await import('#/lib/db/schema')
-      const { db } = await import('#/lib/db/index')
-      const rows = await db
-        .select({ orgId: member.organizationId })
-        .from(member)
-        .where(eq(member.userId, session.user.id))
-        .limit(1)
-      orgId = rows[0]?.orgId ?? null
-    } catch {
-      // DB unavailable
-    }
-  }
-
-  if (!orgId) {
-    throw new Error('No active organization. Please join or create an organization.')
-  }
-
-  return { userId: session.user.id, orgId, user: session.user }
-}
+import { requireOrgSession } from '#/lib/auth/require-org-session'
 
 // ─── Zod input schemas ────────────────────────────────────────────────────────
 

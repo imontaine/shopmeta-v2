@@ -61,6 +61,7 @@ test.describe('Layout — Desktop (1440px)', () => {
     await expect(sidebarNavLink(page, 'Chat')).toBeVisible()
     await expect(sidebarNavLink(page, 'Dashboard')).toBeVisible()
     await expect(sidebarNavLink(page, 'Agents')).toBeVisible()
+    await expect(sidebarNavLink(page, 'Skills')).toBeVisible()
     await expect(sidebarNavLink(page, 'Settings')).toBeVisible()
   })
 

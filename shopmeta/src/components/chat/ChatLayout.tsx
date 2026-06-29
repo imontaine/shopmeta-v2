@@ -31,7 +31,7 @@ const SUGGESTIONS = [
 
 // ─── Chat Adapter Factory ─────────────────────────────────────────────────────
 
-function createAdapter(provider: string, model: string, conversationId?: string): ChatModelAdapter {
+function createAdapter(provider: string, model: string, conversationId?: string, agentId?: string, orgId?: string): ChatModelAdapter {
   return {
     async *run({ messages, abortSignal }) {
       const response = await fetch('/api/chat/stream', {
@@ -50,6 +50,8 @@ function createAdapter(provider: string, model: string, conversationId?: string)
           model,
           provider,
           conversationId,
+          agentId,
+          orgId,
         }),
         signal: abortSignal,
       })
@@ -207,6 +209,8 @@ function ConversationState({ provider, model, onModelChange }: ConversationState
 function ChatContent({ conversationId }: { conversationId?: string }) {
   const [provider, setProvider] = useState(DEFAULT_PROVIDER)
   const [model, setModel] = useState(DEFAULT_MODEL)
+  const [agentId, setAgentId] = useState<string | undefined>(undefined)
+  const [orgId, setOrgId] = useState<string | undefined>(undefined)
 
   // On mount, load the org's default agent and apply its model/provider.
   // If no default agent is set, use the app defaults.
@@ -217,6 +221,11 @@ function ChatContent({ conversationId }: { conversationId?: string }) {
         if (defaultAgent) {
           setProvider(defaultAgent.provider)
           setModel(defaultAgent.model)
+          setAgentId(defaultAgent.id)
+          setOrgId(defaultAgent.orgId)
+        } else if (agents.length > 0) {
+          // At least capture orgId from any agent
+          setOrgId(agents[0]!.orgId)
         }
       })
       .catch(() => {
@@ -227,8 +236,8 @@ function ChatContent({ conversationId }: { conversationId?: string }) {
   // Memoize the adapter so its reference remains stable across renders.
   // This prevents useLocalRuntime from resetting messages/re-initializing on every render.
   const adapter = useMemo(() => {
-    return createAdapter(provider, model, conversationId)
-  }, [provider, model, conversationId])
+    return createAdapter(provider, model, conversationId, agentId, orgId)
+  }, [provider, model, conversationId, agentId, orgId])
   
   const runtime = useLocalRuntime(adapter)
 

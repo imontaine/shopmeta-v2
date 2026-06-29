@@ -15,6 +15,13 @@
       "when": 1782371300000,
       "tag": "0001_better_auth_and_organizations",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782718888936,
+      "tag": "0002_fresh_morgan_stark",
+      "breakpoints": true
     }
   ]
 }

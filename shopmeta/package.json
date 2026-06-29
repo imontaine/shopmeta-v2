@@ -1,6 +1,6 @@
 {
   "name": "shopmeta",
-  "version": "0.2.16",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "imports": {
@@ -27,7 +27,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:e2e": "dotenv -e .env.e2e -- drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed-skills": "tsx src/lib/skills-sync.ts"
   },
   "dependencies": {
     "@assistant-ui/react": "^0.10.4",

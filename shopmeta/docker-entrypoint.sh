@@ -59,6 +59,19 @@ if [ -n "$DATABASE_URL" ]; then
   else
     echo "[entrypoint] WARNING: Migrations timed out or failed (exit $?). Starting anyway — schema is likely already up to date."
   fi
+
+  # ─── Seed bundled skills ─────────────────────────────────────────────────────
+  echo "[entrypoint] Syncing bundled skills..."
+  if node --input-type=module -e "
+    import { syncBundledSkills } from './dist/server/assets/skills-sync.js';
+    const r = await syncBundledSkills();
+    console.log('[entrypoint] Skills synced:', r.synced, 'removed:', r.removed);
+  " 2>/dev/null; then
+    echo "[entrypoint] Skills sync complete."
+  else
+    echo "[entrypoint] WARNING: Skills sync failed (exit $?). Starting anyway."
+  fi
+
 else
   echo "[entrypoint] WARNING: DATABASE_URL is not set. Skipping migrations."
 fi

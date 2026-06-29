@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { getAdapter } from '#/lib/ai/providers'
 import { createTenantMCPClients } from '#/lib/ai/mcp'
 import type { MCPServerConfig } from '#/lib/ai/mcp'
+import { compileSystemPrompt } from '#/lib/ai/compile-system-prompt'
 
 // ─── Input Schema ─────────────────────────────────────────────────────────────
 
@@ -45,6 +46,10 @@ export const ChatInputSchema = z.object({
   /** MCP servers to connect for tool calling. */
   mcpServers: z.array(MCPServerConfigSchema).optional(),
   signal: z.instanceof(AbortSignal).optional(),
+  /** Agent ID for skill injection. */
+  agentId: z.string().uuid().optional(),
+  /** Org ID for skill injection. */
+  orgId: z.string().optional(),
 })
 
 export type ChatInput = z.infer<typeof ChatInputSchema>
@@ -88,7 +93,9 @@ export const streamChat = createServerFn({ method: 'POST' })
           ? [{ type: 'text' as const, text: m.content }]
           : m.content,
       })),
-      system: data.systemInstructions,
+      system: data.orgId
+        ? await compileSystemPrompt(data.agentId ?? null, data.orgId, data.systemInstructions || '')
+        : data.systemInstructions,
       // Merge MCP tools with any static tools if needed
       tools: mcpTools.length > 0 ? (mcpTools as Parameters<typeof chat>[0]['tools']) : undefined,
       agentLoopStrategy: combineStrategies([

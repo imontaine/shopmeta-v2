@@ -74,6 +74,9 @@ COPY --from=builder --chown=node:node /app/vite.config.ts ./vite.config.ts
 COPY --from=builder --chown=node:node /app/drizzle ./drizzle
 COPY --from=builder --chown=node:node /app/drizzle.config.ts ./drizzle.config.ts
 
+# Copy bundled skills folder (synced to DB at startup)
+COPY --from=builder --chown=node:node /app/skills ./skills
+
 # Copy node_modules (needed for vite binary, vite plugins, and drizzle-kit)
 # and package.json (needed for pnpm/npm resolution)
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules

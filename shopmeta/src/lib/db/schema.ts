@@ -8,6 +8,8 @@ import {
   integer,
   boolean,
   index,
+  primaryKey,
+  unique,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
@@ -151,6 +153,46 @@ export const agents = pgTable(
   ],
 )
 
+// ─── Skills ───────────────────────────────────────
+export const skills = pgTable(
+  'skills',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: text('org_id').notNull(),
+    slug: text('slug').notNull(),
+    name: text('name').notNull(),
+    description: text('description'),
+    body: text('body').notNull(),
+    source: text('source').default('user').notNull(),
+    alwaysApply: boolean('always_apply').default(false).notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (table) => [
+    index('skills_org_id_idx').on(table.orgId),
+    index('skills_always_apply_idx').on(table.alwaysApply),
+    index('skills_source_idx').on(table.source),
+    unique('skills_org_slug_unique').on(table.orgId, table.slug),
+  ],
+)
+
+export const agentSkills = pgTable(
+  'agent_skills',
+  {
+    agentId: uuid('agent_id')
+      .notNull()
+      .references(() => agents.id, { onDelete: 'cascade' }),
+    skillId: uuid('skill_id')
+      .notNull()
+      .references(() => skills.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.agentId, table.skillId] }),
+    index('agent_skills_agent_id_idx').on(table.agentId),
+    index('agent_skills_skill_id_idx').on(table.skillId),
+  ],
+)
+
 // ─── Tenant Connections ───────────────────────────
 // Note: widgets references connections, so connections must be defined first
 export const connections = pgTable(
@@ -254,6 +296,7 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 
 export const agentsRelations = relations(agents, ({ many }) => ({
   conversations: many(conversations),
+  agentSkills: many(agentSkills),
 }))
 
 export const dashboardsRelations = relations(dashboards, ({ many }) => ({
@@ -279,5 +322,20 @@ export const usageRecordsRelations = relations(usageRecords, ({ one }) => ({
   conversation: one(conversations, {
     fields: [usageRecords.conversationId],
     references: [conversations.id],
+  }),
+}))
+
+export const skillsRelations = relations(skills, ({ many }) => ({
+  agentSkills: many(agentSkills),
+}))
+
+export const agentSkillsRelations = relations(agentSkills, ({ one }) => ({
+  agent: one(agents, {
+    fields: [agentSkills.agentId],
+    references: [agents.id],
+  }),
+  skill: one(skills, {
+    fields: [agentSkills.skillId],
+    references: [skills.id],
   }),
 }))

@@ -14,6 +14,13 @@ import {
 } from '#/lib/agents'
 import type { AgentRow, McpServerConfig } from '#/lib/agents'
 import { modelList } from '#/lib/ai/providers'
+import {
+  listSkills,
+  getAgentSkillIds,
+  setAgentSkills,
+} from '#/lib/skills'
+import type { SkillRow } from '#/lib/skills'
+import { bakeSkillIntoInstructions } from '#/lib/ai/compile-system-prompt'
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -95,6 +102,7 @@ interface AgentFormData {
   systemInstructions: string
   mcpServers: McpServerConfig[]
   isDefault: boolean
+  skillIds: string[]
 }
 
 const emptyForm: AgentFormData = {
@@ -105,6 +113,7 @@ const emptyForm: AgentFormData = {
   systemInstructions: '',
   mcpServers: [],
   isDefault: false,
+  skillIds: [],
 }
 
 interface ValidationErrors {
@@ -128,9 +137,10 @@ interface AgentFormProps {
   onCancel: () => void
   isSubmitting: boolean
   submitLabel: string
+  agentId?: string  // For loading existing skill attachments
 }
 
-function AgentForm({ initial, onSubmit, onCancel, isSubmitting, submitLabel }: AgentFormProps) {
+function AgentForm({ initial, onSubmit, onCancel, isSubmitting, submitLabel, agentId }: AgentFormProps) {
   const [form, setForm] = useState<AgentFormData>({ ...emptyForm, ...initial })
   const [touched, setTouched] = useState<Partial<Record<keyof AgentFormData, boolean>>>({})
   const [submitAttempted, setSubmitAttempted] = useState(false)
@@ -275,6 +285,23 @@ function AgentForm({ initial, onSubmit, onCancel, isSubmitting, submitLabel }: A
         disabled={isSubmitting}
       />
 
+      {/* Skills */}
+      <AgentSkillsSection
+        selectedSkillIds={form.skillIds}
+        onSkillsChange={(ids) => set('skillIds', ids)}
+        onBakeSkill={(skill) => {
+          set('systemInstructions', bakeSkillIntoInstructions(
+            form.systemInstructions,
+            skill.name,
+            skill.body,
+          ))
+          // Remove from dynamic attachments after baking
+          set('skillIds', form.skillIds.filter((id) => id !== skill.id))
+        }}
+        agentId={agentId}
+        disabled={isSubmitting}
+      />
+
       {/* Set as default */}
       <div className="agent-field agent-field--checkbox">
         <label className="agent-checkbox-label">
@@ -313,6 +340,110 @@ function AgentForm({ initial, onSubmit, onCancel, isSubmitting, submitLabel }: A
         </button>
       </div>
     </form>
+  )
+}
+// ─── Agent Skills Section ─────────────────────────────────────────────────────
+
+interface AgentSkillsSectionProps {
+  selectedSkillIds: string[]
+  onSkillsChange: (ids: string[]) => void
+  onBakeSkill: (skill: SkillRow) => void
+  agentId?: string
+  disabled?: boolean
+}
+
+function AgentSkillsSection({
+  selectedSkillIds,
+  onSkillsChange,
+  onBakeSkill,
+  agentId,
+  disabled,
+}: AgentSkillsSectionProps) {
+  const { data: allSkills = [] } = useQuery({
+    queryKey: ['skills'],
+    queryFn: () => listSkills({ data: {} }),
+  })
+
+  // Load existing skill attachments when editing an agent
+  const { data: existingSkillIds } = useQuery({
+    queryKey: ['agent-skills', agentId],
+    queryFn: () => getAgentSkillIds({ data: { agentId: agentId! } }),
+    enabled: !!agentId,
+  })
+
+  // Sync existing skills into form on first load
+  useState(() => {
+    if (existingSkillIds && existingSkillIds.length > 0 && selectedSkillIds.length === 0) {
+      onSkillsChange(existingSkillIds)
+    }
+  })
+
+  const toggleSkill = (skillId: string) => {
+    if (selectedSkillIds.includes(skillId)) {
+      onSkillsChange(selectedSkillIds.filter((id) => id !== skillId))
+    } else {
+      onSkillsChange([...selectedSkillIds, skillId])
+    }
+  }
+
+  if (allSkills.length === 0) return null
+
+  return (
+    <div className="agent-field" data-testid="agent-skills-section">
+      <label className="agent-label">Skills</label>
+      <p className="agent-field-hint" style={{ marginBottom: '0.5rem' }}>
+        Attach knowledge skills to this agent. Always-apply skills are included automatically.
+      </p>
+      <div className="agent-skills-list">
+        {allSkills.map((skill) => (
+          <div
+            key={skill.id}
+            className="agent-skill-row"
+          >
+            <label className="agent-skill-checkbox-label">
+              <input
+                data-testid={`agent-skill-checkbox-${skill.id}`}
+                type="checkbox"
+                checked={selectedSkillIds.includes(skill.id) || skill.alwaysApply}
+                onChange={() => toggleSkill(skill.id)}
+                disabled={disabled || skill.alwaysApply}
+                className="agent-checkbox"
+              />
+              <span className="agent-skill-name">{skill.name}</span>
+              {skill.source === 'bundled' && (
+                <span
+                  data-testid={`agent-skill-bundled-${skill.id}`}
+                  className="skill-badge skill-badge--bundled"
+                >
+                  Bundled
+                </span>
+              )}
+              {skill.alwaysApply && (
+                <span
+                  data-testid={`agent-skill-always-apply-${skill.id}`}
+                  className="skill-badge skill-badge--always-apply"
+                >
+                  Always Apply
+                </span>
+              )}
+            </label>
+            {skill.description && (
+              <span className="agent-skill-desc">{skill.description}</span>
+            )}
+            <button
+              data-testid={`agent-skill-bake-btn-${skill.id}`}
+              type="button"
+              className="agent-btn agent-btn--secondary agent-btn--sm"
+              onClick={() => onBakeSkill(skill)}
+              disabled={disabled}
+              title="Copy skill content into System Instructions"
+            >
+              Bake
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -542,7 +673,7 @@ export function AgentBuilder() {
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
   const handleCreate = async (form: AgentFormData) => {
-    await createMutation.mutateAsync({
+    const agent = await createMutation.mutateAsync({
       data: {
         name: form.name,
         description: form.description || undefined,
@@ -553,6 +684,14 @@ export function AgentBuilder() {
         isDefault: form.isDefault,
       },
     })
+    // Save skill attachments if any were selected
+    if (form.skillIds.length > 0 && agent?.id) {
+      try {
+        await setAgentSkills({ data: { agentId: agent.id, skillIds: form.skillIds } })
+      } catch {
+        addToast('error', 'Agent created but skills attachment failed')
+      }
+    }
   }
 
   const handleUpdate = async (form: AgentFormData) => {
@@ -568,6 +707,12 @@ export function AgentBuilder() {
         mcpServers: form.mcpServers,
       },
     })
+    // Save skill attachments
+    try {
+      await setAgentSkills({ data: { agentId: editingAgent.id, skillIds: form.skillIds } })
+    } catch {
+      addToast('error', 'Agent updated but skills attachment failed')
+    }
   }
 
   const handleEdit = (agent: AgentRow) => {
@@ -643,6 +788,7 @@ export function AgentBuilder() {
         <div className="agent-form-wrapper">
           <h3 className="agent-form-title">Edit Agent</h3>
           <AgentForm
+            agentId={editingAgent.id}
             initial={{
               name: editingAgent.name,
               description: editingAgent.description ?? '',

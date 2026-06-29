@@ -10,6 +10,7 @@
 import { chat, maxIterations, untilFinishReason, combineStrategies } from '@tanstack/ai'
 import { getAdapter } from '#/lib/ai/providers'
 import type { MCPClients } from '@tanstack/ai-mcp'
+import { compileSystemPrompt } from '#/lib/ai/compile-system-prompt'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +26,10 @@ export interface AgentLoopOptions {
   maxIterationsCount?: number
   /** MCP client pool (optional) */
   mcpClients?: MCPClients
+  /** Agent ID for skill injection */
+  agentId?: string
+  /** Org ID for skill injection */
+  orgId?: string
 }
 
 export interface AgentLoopResult {
@@ -56,6 +61,8 @@ export async function executeAgentLoop(options: AgentLoopOptions): Promise<Agent
     systemInstructions,
     maxIterationsCount = 15,
     mcpClients,
+    agentId,
+    orgId,
   } = options
 
   const adapter = getAdapter(provider, model)
@@ -89,7 +96,9 @@ export async function executeAgentLoop(options: AgentLoopOptions): Promise<Agent
           ? [{ type: 'text' as const, text: m.content }]
           : (m.content as Array<{ type: string; [key: string]: unknown }>),
       })),
-      system: systemInstructions,
+      system: orgId
+        ? await compileSystemPrompt(agentId ?? null, orgId, systemInstructions || '')
+        : systemInstructions,
       tools,
       // Use a custom tracking strategy combined with the finish reason strategy
       agentLoopStrategy: combineStrategies([

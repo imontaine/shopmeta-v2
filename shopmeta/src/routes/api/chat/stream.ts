@@ -8,6 +8,7 @@ import { getAdapter } from '#/lib/ai/providers'
 import { chat, toServerSentEventsResponse } from '@tanstack/ai'
 import { maxIterations, untilFinishReason, combineStrategies } from '@tanstack/ai'
 import { z } from 'zod'
+import { compileSystemPrompt } from '#/lib/ai/compile-system-prompt'
 
 const ChatRequestSchema = z.object({
   messages: z.array(
@@ -23,6 +24,8 @@ const ChatRequestSchema = z.object({
   provider: z.string().default('openai'),
   conversationId: z.string().uuid().optional(),
   systemInstructions: z.string().optional(),
+  agentId: z.string().uuid().optional(),
+  orgId: z.string().optional(),
 })
 
 export const Route = createFileRoute('/api/chat/stream')({
@@ -62,9 +65,14 @@ export const Route = createFileRoute('/api/chat/stream')({
         // Split out system messages vs conversation messages
         const systemMessages = parsed.messages.filter((m) => m.role === 'system')
         const conversationMessages = parsed.messages.filter((m) => m.role !== 'system')
-        const systemPrompt = systemMessages.map((m) =>
+        const baseSystemPrompt = systemMessages.map((m) =>
           typeof m.content === 'string' ? m.content : m.content.map((p) => p.text ?? '').join('')
-        ).join('\n') || parsed.systemInstructions
+        ).join('\n') || parsed.systemInstructions || ''
+
+        // Compile skills into system prompt
+        const systemPrompt = parsed.orgId
+          ? await compileSystemPrompt(parsed.agentId ?? null, parsed.orgId, baseSystemPrompt)
+          : baseSystemPrompt
 
         const messages = conversationMessages.map((m) => ({
           role: m.role as 'user' | 'assistant',
