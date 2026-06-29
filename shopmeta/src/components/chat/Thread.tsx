@@ -65,7 +65,7 @@ function StreamingDotsLoader() {
   })
 
   if (!isRunning || hasContent) return null
-  return <DotsLoader size="sm" className="py-2" />
+  return <DotsLoader size="sm" className="min-h-7 items-center" />
 }
 
 // ─── User Message ───────────────────────────────────────────────────────────
