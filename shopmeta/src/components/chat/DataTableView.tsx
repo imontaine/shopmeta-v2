@@ -137,7 +137,7 @@ export function DataTableView({
               {table.getAllLeafColumns().map((col) => (
                 <label
                   key={col.id}
-                  className="text-foreground flex cursor-pointer items-center gap-1.5 px-1 py-0.5 text-[0.8rem]"
+                  className="text-foreground flex cursor-pointer items-center gap-1.5 px-1 py-0.5 text-sm"
                 >
                   <input
                     type="checkbox"
@@ -158,7 +158,7 @@ export function DataTableView({
         <table
           data-testid="data-table"
           role="table"
-          className="w-full border-collapse text-[0.82rem]"
+          className="w-full border-collapse text-sm"
         >
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -227,7 +227,7 @@ export function DataTableView({
       {totalPages > 1 && (
         <div
           data-testid="pagination"
-          className="text-muted-foreground flex items-center justify-between px-1 py-2 text-[0.8rem]"
+          className="text-muted-foreground flex items-center justify-between px-1 py-2 text-sm"
         >
           <div className="flex gap-1">
             <button

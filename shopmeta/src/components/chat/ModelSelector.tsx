@@ -80,7 +80,7 @@ export function ModelSelector({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={cn(
-          'border-input flex items-center gap-1.5 whitespace-nowrap rounded-full border bg-background px-2.5 py-1.5 text-[0.8rem] shadow-xs transition-colors',
+          'border-input flex items-center gap-1.5 whitespace-nowrap rounded-full border bg-background px-2.5 py-1.5 text-sm shadow-xs transition-colors',
           isOpen ? 'bg-muted' : 'hover:bg-muted',
           disabled && 'cursor-not-allowed opacity-50',
           !disabled && 'cursor-pointer',
@@ -88,7 +88,7 @@ export function ModelSelector({
       >
         <span>{providerIcons[currentProvider] ?? '🤖'}</span>
         <span className="font-medium">{currentInfo?.label ?? currentModel}</span>
-        <span className="text-[0.65rem] opacity-50">{isOpen ? '▲' : '▼'}</span>
+        <span className="text-xs opacity-50">{isOpen ? '▲' : '▼'}</span>
       </button>
 
       {/* Dropdown */}
@@ -100,7 +100,7 @@ export function ModelSelector({
         >
           {Object.entries(grouped).map(([provider, models]) => (
             <div key={provider}>
-              <div className="px-3 py-1.5 text-[0.65rem] font-medium uppercase tracking-widest opacity-40">
+              <div className="px-3 py-1.5 text-xs font-medium uppercase tracking-widest opacity-40">
                 {providerIcons[provider]} {providerLabels[provider] ?? provider}
               </div>
               {models.map((info) => {
@@ -116,7 +116,7 @@ export function ModelSelector({
                       setIsOpen(false)
                     }}
                     className={cn(
-                      'block w-full cursor-pointer border-none text-left text-[0.85rem] transition-colors',
+                      'block w-full cursor-pointer border-none text-left text-sm transition-colors',
                       'px-3 py-2 pl-5',
                       isSelected
                         ? 'bg-primary/15 font-semibold'
@@ -125,7 +125,7 @@ export function ModelSelector({
                   >
                     <div>{info.label}</div>
                     {info.description && (
-                      <div className="mt-0.5 text-[0.7rem] opacity-45">
+                      <div className="mt-0.5 text-xs opacity-45">
                         {info.description}
                       </div>
                     )}
