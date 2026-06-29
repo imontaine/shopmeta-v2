@@ -201,6 +201,31 @@ body {
   --sidebar-ring: #f0f0f0;
 }
 
+/* ── Dark-mode scrollbar ─────────────────────────────────────────────────── */
+
+.dark * {
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a3c transparent;
+}
+
+.dark *::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dark *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  background-color: #3a3a3c;
+  border-radius: 3px;
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background-color: #4a4a4c;
+}
+
 /* ── Base layer ──────────────────────────────────────────────────────────── */
 
 @layer base {
