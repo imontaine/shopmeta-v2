@@ -14,6 +14,7 @@ import {
   ThreadPrimitive,
   MessagePrimitive,
   ActionBarPrimitive,
+  ComposerPrimitive,
   useThread,
 } from '@assistant-ui/react'
 import {
@@ -30,7 +31,7 @@ import {
   MessageAction,
 } from '@/components/ui/message'
 import { DotsLoader } from '@/components/ui/loader'
-import { RefreshCw, Copy } from 'lucide-react'
+import { RefreshCw, Copy, Pencil, Check, X } from 'lucide-react'
 import { Markdown } from '@/components/ui/markdown'
 import { cn } from '@/lib/utils'
 
@@ -77,18 +78,97 @@ function UserMessage() {
         data-testid="user-message"
         role="article"
         aria-label="Your message"
-        className="mb-6 flex justify-end animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
+        className="group/message mb-6 flex justify-end animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
       >
         <Message className="max-w-[75%] flex-row-reverse">
-          <MessageContent
-            className="bg-muted text-primary rounded-3xl px-5 py-2.5"
-            data-testid="user-message-content"
-          >
-            <MessagePrimitive.Content />
-          </MessageContent>
+          <div className="flex flex-col items-end gap-1">
+            <MessageContent
+              className="bg-muted text-primary rounded-3xl px-5 py-2.5"
+              data-testid="user-message-content"
+            >
+              <MessagePrimitive.Content />
+            </MessageContent>
+
+            {/* Actions — edit + copy, visible on hover */}
+            <MessageActions className="text-muted-foreground flex h-7 items-center gap-1 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
+              <ActionBarPrimitive.Root>
+                {/* Edit */}
+                <ActionBarPrimitive.Edit asChild>
+                  <MessageAction tooltip="Edit">
+                    <button
+                      data-testid="edit-message-btn"
+                      aria-label="Edit message"
+                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  </MessageAction>
+                </ActionBarPrimitive.Edit>
+
+                {/* Copy */}
+                <ActionBarPrimitive.Copy asChild>
+                  <MessageAction tooltip="Copy">
+                    <button
+                      data-testid="copy-user-message-btn"
+                      aria-label="Copy message"
+                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </MessageAction>
+                </ActionBarPrimitive.Copy>
+              </ActionBarPrimitive.Root>
+            </MessageActions>
+          </div>
         </Message>
       </div>
     </MessagePrimitive.Root>
+  )
+}
+
+// ─── User Edit Composer ─────────────────────────────────────────────────────
+// Replaces the user message bubble with an inline textarea when editing.
+// Save & Submit truncates the thread and re-runs with the updated message.
+
+function UserEditComposer() {
+  return (
+    <ComposerPrimitive.Root>
+      <div
+        data-testid="edit-composer"
+        className="mb-6 flex justify-end animate-in fade-in-0 duration-200"
+      >
+        <div className="w-full max-w-[75%]">
+          <div className="bg-muted rounded-2xl p-3">
+            <ComposerPrimitive.Input
+              className="bg-transparent text-primary w-full resize-none border-none text-base outline-none focus:ring-0"
+              data-testid="edit-composer-input"
+            />
+            <div className="mt-2 flex items-center justify-end gap-2">
+              <ComposerPrimitive.Cancel asChild>
+                <button
+                  data-testid="edit-cancel-btn"
+                  aria-label="Cancel editing"
+                  className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1.5 text-sm transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Cancel
+                </button>
+              </ComposerPrimitive.Cancel>
+              <ComposerPrimitive.Send asChild>
+                <button
+                  data-testid="edit-save-btn"
+                  aria-label="Save and resubmit"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  Save & Submit
+                </button>
+              </ComposerPrimitive.Send>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ComposerPrimitive.Root>
   )
 }
 
@@ -187,6 +267,7 @@ export function Thread({ className, isEmpty }: ThreadProps) {
               components={{
                 UserMessage,
                 AssistantMessage,
+                UserEditComposer,
               }}
             />
           </ChatContainerContent>
