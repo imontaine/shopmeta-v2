@@ -597,7 +597,7 @@ body {
   left: 0;
   bottom: 0;
   width: var(--sidebar-width);
-  background: var(--bg-surface);
+  background: var(--bg-base);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;

@@ -141,7 +141,7 @@ interface EmptyStateProps {
 
 function EmptyState({ provider, model, onModelChange, onSuggestionClick }: EmptyStateProps) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4">
+    <div className="flex flex-1 flex-col items-center justify-center px-4 animate-in fade-in duration-300">
       <div className="w-full max-w-[640px] space-y-6">
         {/* Heading */}
         <div className="text-center">
@@ -286,7 +286,7 @@ function ChatContentInner({
   return (
     <div
       data-testid="chat-layout"
-      className="mx-auto flex h-full w-full max-w-[720px] flex-col overflow-hidden"
+      className="mx-auto flex h-full w-full max-w-3xl flex-col overflow-hidden"
     >
       {hasMessages ? (
         <ConversationState

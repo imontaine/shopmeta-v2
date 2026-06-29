@@ -75,7 +75,7 @@ function ComposerInner({
         isLoading={disabled}
         onSubmit={handleSend}
         className={cn(
-          'w-full shadow-xs',
+          'w-full bg-popover p-0 pt-1 shadow-xs',
           'transition-all duration-200',
         )}
       >
@@ -85,7 +85,7 @@ function ComposerInner({
           className="min-h-[44px] text-base"
           autoFocus
         />
-        <PromptInputActions className="flex items-center justify-between gap-2 px-2 pt-2 pb-2">
+        <PromptInputActions className="flex items-center justify-between gap-2 mt-5 px-3 pb-3">
           <div className="flex items-center gap-x-1.5">
             {/* Model selector */}
             {onModelChange && (

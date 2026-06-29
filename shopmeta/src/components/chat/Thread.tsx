@@ -29,7 +29,7 @@ import {
   MessageActions,
   MessageAction,
 } from '@/components/ui/message'
-import { ThinkingBar } from '@/components/ui/thinking-bar'
+import { DotsLoader } from '@/components/ui/loader'
 import { RefreshCw, Copy } from 'lucide-react'
 import { Markdown } from '@/components/ui/markdown'
 import { cn } from '@/lib/utils'
@@ -39,21 +39,33 @@ import { cn } from '@/lib/utils'
 function MarkdownText({ text }: { text: string }) {
   return (
     <Markdown
-      className="prose prose-neutral dark:prose-invert max-w-none text-sm leading-relaxed break-words"
+      className="prose prose-neutral dark:prose-invert max-w-none leading-relaxed break-words"
     >
       {text}
     </Markdown>
   )
 }
 
-// ─── Streaming Thinking Bar ─────────────────────────────────────────────────
-// Replaces MessagePrimitive.InProgress which doesn't exist in @assistant-ui/react v0.10.50.
-// Uses useThread to detect if the thread is actively running.
+// ─── Streaming Dots Loader ──────────────────────────────────────────────────
+// Shows animated dots ONLY while waiting for the first token.
+// Once content starts streaming in, this disappears — no layout shift.
 
-function StreamingThinkingBar() {
+function StreamingDotsLoader() {
   const isRunning = useThread((state) => state.isRunning)
-  if (!isRunning) return null
-  return <ThinkingBar text="Searching" className="py-1" />
+  const hasContent = useThread((state) => {
+    const msgs = state.messages
+    if (msgs.length === 0) return false
+    const last = msgs[msgs.length - 1]
+    return (
+      last?.content?.some(
+        (p: { type: string; text?: string }) =>
+          p.type === 'text' && (p.text?.length ?? 0) > 0,
+      ) ?? false
+    )
+  })
+
+  if (!isRunning || hasContent) return null
+  return <DotsLoader size="sm" className="py-2" />
 }
 
 // ─── User Message ───────────────────────────────────────────────────────────
@@ -65,11 +77,11 @@ function UserMessage() {
         data-testid="user-message"
         role="article"
         aria-label="Your message"
-        className="mb-6 flex justify-end"
+        className="mb-6 flex justify-end animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
       >
         <Message className="max-w-[75%] flex-row-reverse">
           <MessageContent
-            className="bg-muted text-foreground rounded-2xl rounded-tr-sm px-4 py-2.5"
+            className="bg-muted text-primary rounded-3xl px-5 py-2.5"
             data-testid="user-message-content"
           >
             <MessagePrimitive.Content />
@@ -89,7 +101,7 @@ function AssistantMessage() {
         data-testid="assistant-message"
         role="article"
         aria-label="ShopMeta response"
-        className="group/message mb-6 scroll-mt-[60vh]"
+        className="group/message mb-6 scroll-mt-[60vh] animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
       >
         <Message>
           <MessageAvatar
@@ -99,9 +111,9 @@ function AssistantMessage() {
             className="bg-primary/10 text-primary border-border mt-0.5 h-7 w-7 border text-xs"
           />
           <div className="min-w-0 flex-1 space-y-2">
-            {/* ThinkingBar — shown while streaming on the last message */}
+            {/* Dots loader — shown only while waiting for first token */}
             <MessagePrimitive.If last>
-              <StreamingThinkingBar />
+              <StreamingDotsLoader />
             </MessagePrimitive.If>
 
             <MessageContent className="bg-transparent p-0 text-foreground">
@@ -112,38 +124,36 @@ function AssistantMessage() {
               />
             </MessageContent>
 
-            {/* Actions — visible on hover or on last message */}
-            <MessagePrimitive.If last={true}>
-              <MessageActions className="text-muted-foreground flex items-center gap-1 opacity-0 transition-opacity group-hover/message:opacity-100">
-                <ActionBarPrimitive.Root hideWhenRunning autohide="not-last">
-                  {/* Copy */}
-                  <ActionBarPrimitive.Copy asChild>
-                    <MessageAction tooltip="Copy">
-                      <button
-                        data-testid="copy-message-btn"
-                        aria-label="Copy message"
-                        className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </button>
-                    </MessageAction>
-                  </ActionBarPrimitive.Copy>
+            {/* Actions — always visible on last message, hover on others */}
+            <MessageActions className="text-muted-foreground flex items-center gap-1 transition-opacity duration-150">
+              <ActionBarPrimitive.Root hideWhenRunning autohide="not-last">
+                {/* Copy */}
+                <ActionBarPrimitive.Copy asChild>
+                  <MessageAction tooltip="Copy">
+                    <button
+                      data-testid="copy-message-btn"
+                      aria-label="Copy message"
+                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </MessageAction>
+                </ActionBarPrimitive.Copy>
 
-                  {/* Regenerate */}
-                  <ActionBarPrimitive.Reload asChild>
-                    <MessageAction tooltip="Regenerate">
-                      <button
-                        data-testid="regenerate-btn"
-                        aria-label="Regenerate response"
-                        className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                      </button>
-                    </MessageAction>
-                  </ActionBarPrimitive.Reload>
-                </ActionBarPrimitive.Root>
-              </MessageActions>
-            </MessagePrimitive.If>
+                {/* Regenerate */}
+                <ActionBarPrimitive.Reload asChild>
+                  <MessageAction tooltip="Regenerate">
+                    <button
+                      data-testid="regenerate-btn"
+                      aria-label="Regenerate response"
+                      className="hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </button>
+                  </MessageAction>
+                </ActionBarPrimitive.Reload>
+              </ActionBarPrimitive.Root>
+            </MessageActions>
           </div>
         </Message>
       </div>

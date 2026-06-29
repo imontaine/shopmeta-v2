@@ -80,8 +80,8 @@ export function ModelSelector({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={cn(
-          'border-border/50 flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-[0.8rem] transition-colors',
-          isOpen ? 'bg-muted' : 'bg-muted/30 hover:bg-muted/60',
+          'border-input flex items-center gap-1.5 whitespace-nowrap rounded-full border bg-background px-2.5 py-1.5 text-[0.8rem] shadow-xs transition-colors',
+          isOpen ? 'bg-accent' : 'hover:bg-accent hover:text-accent-foreground',
           disabled && 'cursor-not-allowed opacity-50',
           !disabled && 'cursor-pointer',
         )}
