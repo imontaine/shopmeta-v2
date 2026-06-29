@@ -158,7 +158,8 @@ body {
 /* ── Design tokens: Dark mode ────────────────────────────────────────────── */
 
 .dark {
-  --bg-base: #1f1f1f;
+  --bg-base: #171716;
+  --sidebar: #212111;
   --bg-surface: #2a2a2a;
   --bg-elevated: #333333;
   --border: #3a3a3c;
@@ -602,7 +603,7 @@ body {
   left: 0;
   bottom: 0;
   width: var(--sidebar-width);
-  background: var(--bg-base);
+  background: var(--sidebar);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
