@@ -286,6 +286,12 @@ body {
   40% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes typing {
+  0% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.3; transform: scale(0.8); }
+}
+
 /* ── Auth Pages ──────────────────────────────────────────────────────────── */
 
 .auth-page {
