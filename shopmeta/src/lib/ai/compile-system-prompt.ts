@@ -4,65 +4,22 @@
 // 2. Always-apply skills for the org (+ bundled always-apply)
 // 3. Skills explicitly attached to the agent
 //
+// ⚠️  SERVER-ONLY — imports DB + drizzle. Do NOT import this file from client components.
+//     Client-safe pure helpers live in ./skill-helpers.ts
+//
 // Design: split into pure + DB functions for testability.
 
 import { getDb } from '#/lib/db/index'
 import { skills, agentSkills } from '#/lib/db/schema'
 import { eq, and, or } from 'drizzle-orm'
 
-// ─── Pure types (importable by tests without DB deps) ─────────────────────────
+// ─── Re-export pure helpers from client-safe module ───────────────────────────
+// Server-side callers can still import everything from this single file.
+export type { SkillRecord } from '#/lib/ai/skill-helpers'
+export { assembleSkillsPrompt, bakeSkillIntoInstructions } from '#/lib/ai/skill-helpers'
 
-export interface SkillRecord {
-  id: string
-  name: string
-  description: string | null
-  body: string
-  alwaysApply: boolean
-}
-
-// ─── Pure function (unit-testable, no DB) ─────────────────────────────────────
-
-/**
- * Assembles skill content into the system prompt string.
- * Pure function — takes data in, returns string out. No side effects.
- */
-export function assembleSkillsPrompt(
-  baseInstructions: string,
-  activeSkills: SkillRecord[],
-): string {
-  let result = baseInstructions
-  if (activeSkills.length > 0) {
-    result += '\n\n<skills>\n'
-    for (const skill of activeSkills) {
-      result += `\n## ${skill.name}\n`
-      if (skill.description) result += `${skill.description}\n\n`
-      result += `${skill.body}\n`
-    }
-    result += '\n</skills>\n'
-  }
-  return result
-}
-
-// ─── Bake helper (pure, unit-testable) ────────────────────────────────────────
-
-/**
- * Bakes a skill's body into the agent's systemInstructions as a one-time copy.
- * Returns the updated instructions string.
- */
-export function bakeSkillIntoInstructions(
-  currentInstructions: string,
-  skillName: string,
-  skillBody: string,
-): string {
-  const parts = [
-    currentInstructions,
-    '',
-    `<!-- Baked from: ${skillName} (${new Date().toISOString()}) -->`,
-    '',
-    skillBody,
-  ].filter(Boolean)
-  return parts.join('\n')
-}
+// Local alias for use below
+import type { SkillRecord } from '#/lib/ai/skill-helpers'
 
 // ─── DB fetcher (integration-testable) ────────────────────────────────────────
 

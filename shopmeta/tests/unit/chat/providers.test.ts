@@ -34,7 +34,7 @@ describe('AI Provider Configuration', () => {
 
     test('has anthropic provider with expected models', () => {
       expect(providers).toHaveProperty('anthropic')
-      expect(providers.anthropic).toHaveProperty('claude-sonnet-4')
+      expect(providers.anthropic).toHaveProperty('claude-sonnet-4-6')
       expect(providers.anthropic).toHaveProperty('claude-haiku-4-5')
     })
 
@@ -66,8 +66,8 @@ describe('AI Provider Configuration', () => {
       expect((adapter as Record<string, unknown>).model).toBe('gpt-4o-mini')
     })
 
-    test('returns anthropic adapter for claude-sonnet-4', () => {
-      const adapter = getAdapter('anthropic', 'claude-sonnet-4')
+    test('returns anthropic adapter for claude-sonnet-4-6', () => {
+      const adapter = getAdapter('anthropic', 'claude-sonnet-4-6')
       expect(adapter).toBeTruthy()
       expect((adapter as Record<string, unknown>).__type).toBe('anthropic-text-adapter')
     })

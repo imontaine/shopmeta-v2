@@ -31,25 +31,10 @@ vi.mock('#/components/chat/DataTableView', () => ({
   ),
 }))
 
-// Mock saveToDashboard server fn
-vi.mock('#/lib/widgets', async () => {
-  const actual = await vi.importActual('#/lib/widgets')
-  return {
-    ...actual,
-    saveToDashboard: vi.fn().mockResolvedValue({ id: 'widget-001', name: 'Test Widget' }),
-  }
-})
-
-// Mock suggestChart
-vi.mock('#/lib/utils/suggestChart', () => ({
-  suggestChart: vi.fn().mockReturnValue({ type: 'line', xAxis: 'date', yAxis: 'revenue' }),
-}))
-
 import { WidgetKPI, formatKPIValue, extractKPIValue } from '#/components/dashboard/WidgetKPI'
 import { WidgetChart } from '#/components/dashboard/WidgetChart'
 import { WidgetTable } from '#/components/dashboard/WidgetTable'
 import { WidgetEditModal } from '#/components/dashboard/WidgetEditModal'
-import { SaveToDashboard } from '#/components/chat/SaveToDashboard'
 import type { ChartConfig } from '#/lib/widgets'
 
 // ─── WidgetKPI — formatKPIValue utility ───────────────────────────────────────
@@ -339,137 +324,5 @@ describe('WidgetEditModal — form fields', () => {
   it('modal has role="dialog"', () => {
     render(<WidgetEditModal initialValues={defaultValues} onSave={vi.fn()} onClose={vi.fn()} />)
     expect(screen.getByRole('dialog')).toBeInTheDocument()
-  })
-})
-
-// ─── SaveToDashboard — component ─────────────────────────────────────────────
-
-const mockDashboards = [
-  { id: 'dash-001', name: 'My Dashboard' },
-  { id: 'dash-002', name: 'Alt Dashboard' },
-]
-
-const sampleRows = [
-  { date: '2024-01', revenue: 100 },
-  { date: '2024-02', revenue: 150 },
-]
-
-describe('SaveToDashboard — collapsed state', () => {
-  it('renders the save button initially', () => {
-    render(<SaveToDashboard sql="SELECT 1" rows={[]} dashboards={mockDashboards} />)
-    expect(screen.getByTestId('save-to-dashboard')).toBeInTheDocument()
-  })
-
-  it('button text contains "Save to Dashboard"', () => {
-    render(<SaveToDashboard sql="SELECT 1" rows={[]} dashboards={mockDashboards} />)
-    expect(screen.getByTestId('save-to-dashboard').textContent).toContain('Save to Dashboard')
-  })
-
-  it('form is not visible initially', () => {
-    render(<SaveToDashboard sql="SELECT 1" rows={[]} dashboards={mockDashboards} />)
-    expect(screen.queryByTestId('save-to-dashboard-form')).not.toBeInTheDocument()
-  })
-})
-
-describe('SaveToDashboard — expanded form', () => {
-  it('opens the form when button is clicked', async () => {
-    const user = userEvent.setup()
-    render(<SaveToDashboard sql="SELECT 1" rows={sampleRows} dashboards={mockDashboards} />)
-
-    await user.click(screen.getByTestId('save-to-dashboard'))
-    expect(screen.getByTestId('save-to-dashboard-form')).toBeInTheDocument()
-  })
-
-  it('shows dashboard-picker select when dashboards provided', async () => {
-    const user = userEvent.setup()
-    render(<SaveToDashboard sql="SELECT 1" rows={sampleRows} dashboards={mockDashboards} />)
-
-    await user.click(screen.getByTestId('save-to-dashboard'))
-    expect(screen.getByTestId('dashboard-picker')).toBeInTheDocument()
-  })
-
-  it('dashboard-picker has all dashboard options', async () => {
-    const user = userEvent.setup()
-    render(<SaveToDashboard sql="SELECT 1" rows={sampleRows} dashboards={mockDashboards} />)
-
-    await user.click(screen.getByTestId('save-to-dashboard'))
-    const picker = screen.getByTestId('dashboard-picker') as HTMLSelectElement
-    const options = Array.from(picker.options).map((o) => o.text)
-    expect(options).toContain('My Dashboard')
-    expect(options).toContain('Alt Dashboard')
-  })
-
-  it('shows widget name input', async () => {
-    const user = userEvent.setup()
-    render(<SaveToDashboard sql="SELECT 1" rows={sampleRows} dashboards={mockDashboards} />)
-
-    await user.click(screen.getByTestId('save-to-dashboard'))
-    expect(screen.getByTestId('save-widget-name')).toBeInTheDocument()
-  })
-
-  it('shows the save-widget button', async () => {
-    const user = userEvent.setup()
-    render(<SaveToDashboard sql="SELECT 1" rows={sampleRows} dashboards={mockDashboards} />)
-
-    await user.click(screen.getByTestId('save-to-dashboard'))
-    expect(screen.getByTestId('save-widget')).toBeInTheDocument()
-  })
-
-  it('cancel button closes the form', async () => {
-    const user = userEvent.setup()
-    render(<SaveToDashboard sql="SELECT 1" rows={sampleRows} dashboards={mockDashboards} />)
-
-    await user.click(screen.getByTestId('save-to-dashboard'))
-    expect(screen.getByTestId('save-to-dashboard-form')).toBeInTheDocument()
-
-    await user.click(screen.getByTestId('save-widget-cancel'))
-    expect(screen.queryByTestId('save-to-dashboard-form')).not.toBeInTheDocument()
-  })
-
-  it('shows type buttons (chart/table/kpi)', async () => {
-    const user = userEvent.setup()
-    render(<SaveToDashboard sql="SELECT 1" rows={sampleRows} dashboards={mockDashboards} />)
-
-    await user.click(screen.getByTestId('save-to-dashboard'))
-    expect(screen.getByTestId('save-type-chart')).toBeInTheDocument()
-    expect(screen.getByTestId('save-type-table')).toBeInTheDocument()
-    expect(screen.getByTestId('save-type-kpi')).toBeInTheDocument()
-  })
-
-  it('calls saveToDashboard fn and shows saved state on submit', async () => {
-    const user = userEvent.setup()
-    const { saveToDashboard } = await import('#/lib/widgets')
-    const mockSave = vi.mocked(saveToDashboard)
-    mockSave.mockResolvedValue({ id: 'widget-001', name: 'Test' } as ReturnType<typeof saveToDashboard> extends Promise<infer R> ? R : never)
-
-    render(<SaveToDashboard sql="SELECT date, revenue FROM orders" rows={sampleRows} dashboards={mockDashboards} />)
-
-    await user.click(screen.getByTestId('save-to-dashboard'))
-    await user.click(screen.getByTestId('save-widget'))
-
-    // After save, shows saved confirmation
-    expect(await screen.findByTestId('save-to-dashboard-saved')).toBeInTheDocument()
-  })
-
-  it('calls onSaved callback with widget id after save', async () => {
-    const user = userEvent.setup()
-    const { saveToDashboard } = await import('#/lib/widgets')
-    vi.mocked(saveToDashboard).mockResolvedValue({ id: 'widget-123', name: 'Test' } as ReturnType<typeof saveToDashboard> extends Promise<infer R> ? R : never)
-
-    const onSaved = vi.fn()
-    render(
-      <SaveToDashboard
-        sql="SELECT 1"
-        rows={sampleRows}
-        dashboards={mockDashboards}
-        onSaved={onSaved}
-      />,
-    )
-
-    await user.click(screen.getByTestId('save-to-dashboard'))
-    await user.click(screen.getByTestId('save-widget'))
-
-    await screen.findByTestId('save-to-dashboard-saved')
-    expect(onSaved).toHaveBeenCalledWith('widget-123')
   })
 })

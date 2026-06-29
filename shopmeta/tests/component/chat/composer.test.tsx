@@ -126,6 +126,7 @@ vi.mock('lucide-react', () => ({
   ArrowUp: () => <span data-testid="arrow-up-icon">↑</span>,
   Plus: () => <span>+</span>,
   MessageSquare: () => <span>💬</span>,
+  Paperclip: () => <span data-testid="paperclip-icon">📎</span>,
 }))
 
 // Mock cn utility

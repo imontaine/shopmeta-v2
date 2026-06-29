@@ -20,7 +20,7 @@ import {
   setAgentSkills,
 } from '#/lib/skills'
 import type { SkillRow } from '#/lib/skills'
-import { bakeSkillIntoInstructions } from '#/lib/ai/compile-system-prompt'
+import { bakeSkillIntoInstructions } from '#/lib/ai/skill-helpers'
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 

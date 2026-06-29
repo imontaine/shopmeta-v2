@@ -2214,8 +2214,123 @@ body {
   white-space: nowrap;
 }
 
+/* ─── Skill Upload Zone ─────────────────────────────────────────────────────── */
+.skill-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 32px 24px;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  transition: border-color 0.2s, background 0.2s;
+  cursor: default;
+}
+.skill-upload-zone--dragover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--card));
+}
+.skill-upload-zone-icon {
+  color: var(--muted-foreground);
+  opacity: 0.6;
+}
+.skill-upload-zone--dragover .skill-upload-zone-icon {
+  color: var(--accent);
+  opacity: 1;
+}
+.skill-upload-zone-label {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--foreground);
+  margin: 0;
+}
+.skill-upload-zone-hint {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+.skill-upload-zone-hint code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  background: var(--muted);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.skill-upload-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* ─── Staged Skill Preview ───────────────────────────────────────────────────── */
+.skill-staged-preview {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.skill-staged-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 5%, var(--card));
+}
+.skill-staged-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 10px;
+}
+.skill-staged-files {
+  margin-top: 8px;
+}
+.skill-staged-files-label {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+.skill-staged-file-list {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.skill-staged-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.skill-staged-file code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+}
+.skill-staged-preview .skill-form {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* toast info variant */
+.agent-toast--info {
+  background: color-mix(in srgb, var(--accent) 12%, var(--popover));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--foreground);
+}
+
 @media (max-width: 768px) {
   .skills-page { padding: 0 16px 32px; }
   .skill-cards { grid-template-columns: 1fr; }
   .agent-skill-row { flex-wrap: wrap; }
+  .skill-upload-btns { flex-direction: column; align-items: stretch; }
+  .skill-upload-zone { padding: 24px 16px; }
 }

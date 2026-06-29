@@ -18,6 +18,9 @@ vi.mock('@assistant-ui/react', async () => {
 
   let mockMessages: Message[] = []
 
+  const passThrough = ({ children }: { children?: React.ReactNode; [key: string]: unknown }) =>
+    React.createElement(React.Fragment, null, children ?? null)
+
   return {
     __setMessages: (msgs: Message[]) => { mockMessages = msgs },
     ThreadPrimitive: {
@@ -48,26 +51,45 @@ vi.mock('@assistant-ui/react', async () => {
       },
       InProgress: ({ children }: { children: React.ReactNode }) =>
         React.createElement('span', { 'data-testid': 'in-progress' }, children),
-      // If — renders children unconditionally in test context
       If: ({ children }: { children: React.ReactNode; last?: boolean }) =>
         React.createElement(React.Fragment, null, children),
       Last: ({ children }: { children: React.ReactNode }) =>
         React.createElement(React.Fragment, null, children),
     },
     ActionBarPrimitive: {
-      Root: ({ children }: { children: React.ReactNode; hideWhenRunning?: boolean; autohide?: string }) =>
-        React.createElement(React.Fragment, null, children),
-      Reload: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) =>
-        React.createElement(React.Fragment, null, children),
-      Copy: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) =>
-        React.createElement(React.Fragment, null, children),
+      Root: passThrough,
+      Reload: passThrough,
+      Copy: passThrough,
+      Edit: passThrough,
+      FeedbackPositive: passThrough,
+      FeedbackNegative: passThrough,
+    },
+    BranchPickerPrimitive: {
+      Root: passThrough,
+      Previous: passThrough,
+      Next: passThrough,
+      Number: () => React.createElement('span', null, '1'),
+      Count: () => React.createElement('span', null, '1'),
+    },
+    ComposerPrimitive: {
+      Root: passThrough,
+      Input: (props: Record<string, unknown>) => React.createElement('textarea', props),
+      Cancel: passThrough,
+      Send: passThrough,
     },
     useThreadRuntime: () => ({
       subscribe: (_cb: () => void) => {
         return () => {}
       },
     }),
-    useThread: (selector: (state: { isRunning: boolean }) => unknown) => selector({ isRunning: false }),
+    useThread: (selector: (state: { isRunning: boolean; messages: Array<{ role: string; content: Array<{ type: string; text?: string }> }> }) => unknown) =>
+      selector({
+        isRunning: false,
+        messages: mockMessages.map(m => ({
+          role: m.role,
+          content: [{ type: 'text', text: m.content }],
+        })),
+      }),
   }
 })
 
@@ -143,6 +165,12 @@ vi.mock('lucide-react', () => ({
   Copy: () => <span>⎘</span>,
   Check: () => <span>✓</span>,
   ChevronRight: () => <span>›</span>,
+  ChevronLeft: () => <span>‹</span>,
+  X: () => <span>✕</span>,
+  // Action bar icons used by UserMessage / AssistantMessage
+  Pencil: () => <span data-testid="pencil-icon">✎</span>,
+  ThumbsUp: () => <span data-testid="thumbs-up-icon">👍</span>,
+  ThumbsDown: () => <span data-testid="thumbs-down-icon">👎</span>,
 }))
 
 
