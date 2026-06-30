@@ -16,6 +16,8 @@ import {
   updateMcpServer,
 } from '#/lib/mcp-servers'
 import type { McpServerRow } from '#/lib/mcp-servers'
+import { discoverMcpOAuth } from '#/lib/mcp-oauth'
+import type { McpOAuthDiscovery } from '#/lib/mcp-oauth'
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -146,7 +148,10 @@ function validate(f: FormState): Record<string, string> {
   }
   if (!f.trusted) e['trusted'] = 'You must confirm you trust this application'
   if (f.authType === 'apikey' && !f.apiKey.trim()) e['apiKey'] = 'API Key is required'
-  if (f.authType === 'oauth' && !f.clientId.trim()) e['clientId'] = 'Client ID is required'
+  // OAuth: clientId only required if the user filled in manual fields (not auto-discovery)
+  if (f.authType === 'oauth' && !f.clientId.trim() && (f.authUrl.trim() || f.tokenUrl.trim())) {
+    e['clientId'] = 'Client ID is required when manually specifying OAuth endpoints'
+  }
   if (f.authType === 'apikey' && f.headerFormat === 'custom' && !f.customHeader.trim()) {
     e['customHeader'] = 'Custom header name is required'
   }
@@ -172,12 +177,107 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
   const nameRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  // OAuth discovery state
+  const [oauthDiscovering, setOauthDiscovering] = useState(false)
+  const [oauthDiscovered, setOauthDiscovered] = useState<McpOAuthDiscovery | null>(null)
+  const [oauthDiscoverError, setOauthDiscoverError] = useState<string | null>(null)
+  const [oauthConnecting, setOauthConnecting] = useState(false)
+
   useEffect(() => {
     nameRef.current?.focus()
   }, [])
 
   const set = <K extends keyof FormState>(key: K, val: FormState[K]) =>
     setForm((p) => ({ ...p, [key]: val }))
+
+  // Generate PKCE code verifier + challenge (browser-side, no dependency needed)
+  async function generatePkce(): Promise<{ verifier: string; challenge: string }> {
+    const array = new Uint8Array(32)
+    crypto.getRandomValues(array)
+    const verifier = btoa(String.fromCharCode(...array))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+    const encoded = new TextEncoder().encode(verifier)
+    const digest = await crypto.subtle.digest('SHA-256', encoded)
+    const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+    return { verifier, challenge }
+  }
+
+  // Step 1: probe the MCP URL, discover OAuth metadata
+  async function handleDiscoverOAuth() {
+    const urlVal = form.url.trim()
+    if (!urlVal) { setErrors({ url: 'Enter the MCP Server URL first' }); return }
+    try { new URL(urlVal) } catch { setErrors({ url: 'Must be a valid URL' }); return }
+    setErrors({})
+    setOauthDiscovering(true)
+    setOauthDiscovered(null)
+    setOauthDiscoverError(null)
+    try {
+      const discovery = await discoverMcpOAuth({ data: { url: urlVal } })
+      setOauthDiscovered(discovery)
+    } catch (err) {
+      setOauthDiscoverError(err instanceof Error ? err.message : 'Discovery failed')
+    } finally {
+      setOauthDiscovering(false)
+    }
+  }
+
+  // Step 2: save the server record, then redirect to OAuth authorization page
+  async function handleConnectOAuth() {
+    const errs: Record<string, string> = {}
+    if (!form.name.trim()) errs['name'] = 'Name is required'
+    if (!form.trusted) errs['trusted'] = 'You must confirm you trust this application'
+    if (Object.keys(errs).length > 0) { setErrors(errs); return }
+
+    if (!oauthDiscovered) return
+    setOauthConnecting(true)
+    setErrors({})
+    try {
+      // Save the server with authType=oauth (no token yet — token comes after callback)
+      const saved = await onSubmit({
+        ...form,
+        authType: 'oauth',
+        clientId: oauthDiscovered.clientId,
+        authUrl: oauthDiscovered.authorizationEndpoint,
+        tokenUrl: oauthDiscovered.tokenEndpoint,
+      }) as McpServerRow
+
+      if (!saved?.id) throw new Error('Failed to save MCP server')
+
+      // Generate PKCE
+      const { verifier, challenge } = await generatePkce()
+
+      // Build the callback URL
+      const redirectUri = `${window.location.origin}/api/mcp/oauth-callback`
+
+      // Encode state (base64url)
+      const stateObj = {
+        mcpServerId: saved.id,
+        codeVerifier: verifier,
+        tokenEndpoint: oauthDiscovered.tokenEndpoint,
+        clientId: oauthDiscovered.clientId,
+        redirectUri,
+      }
+      const state = btoa(JSON.stringify(stateObj))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+
+      // Build authorization URL
+      const authUrl = new URL(oauthDiscovered.authorizationEndpoint)
+      authUrl.searchParams.set('response_type', 'code')
+      authUrl.searchParams.set('client_id', oauthDiscovered.clientId)
+      authUrl.searchParams.set('redirect_uri', redirectUri)
+      authUrl.searchParams.set('state', state)
+      authUrl.searchParams.set('code_challenge', challenge)
+      authUrl.searchParams.set('code_challenge_method', 'S256')
+      if (form.scope) authUrl.searchParams.set('scope', form.scope)
+
+      // Redirect to authorization server
+      window.location.href = authUrl.toString()
+    } catch (err) {
+      setOauthDiscoverError(err instanceof Error ? err.message : 'Connection failed')
+      setOauthConnecting(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -535,13 +635,89 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
             </div>
           )}
 
-          {/* OAuth panel */}
+          {/* OAuth panel — two modes:
+              1. Auto-discover (for servers like ClickHouse Cloud that use dynamic OAuth/PKCE)
+              2. Manual (for servers where you already have client credentials)
+          */}
           {form.authType === 'oauth' && (
             <div className="mcp-auth-panel" role="tabpanel">
+
+              {/* Auto-discover mode */}
+              <div className="mcp-oauth-discover-section">
+                <div className="mcp-oauth-discover-header">
+                  <div>
+                    <p className="mcp-oauth-discover-title">Connect with OAuth</p>
+                    <p className="mcp-oauth-discover-hint">
+                      For servers like ClickHouse Cloud — we'll auto-discover the auth server and redirect you to log in.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="conn-btn conn-btn--primary"
+                    onClick={handleDiscoverOAuth}
+                    disabled={isSubmitting || oauthDiscovering || oauthConnecting}
+                    data-testid="mcp-discover-oauth-btn"
+                  >
+                    {oauthDiscovering && <span className="conn-spinner" />}
+                    {oauthDiscovering ? 'Discovering…' : 'Discover OAuth'}
+                  </button>
+                </div>
+
+                {oauthDiscoverError && (
+                  <div className="mcp-oauth-error">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span>{oauthDiscoverError}</span>
+                  </div>
+                )}
+
+                {oauthDiscovered && (
+                  <div className="mcp-oauth-discovered">
+                    <div className="mcp-oauth-discovered-badge">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      OAuth endpoints discovered
+                    </div>
+                    <div className="mcp-oauth-endpoints">
+                      <span className="mcp-oauth-endpoint-label">Auth:</span>
+                      <code className="mcp-oauth-endpoint-url">{oauthDiscovered.authorizationEndpoint}</code>
+                    </div>
+                    <div className="mcp-oauth-endpoints">
+                      <span className="mcp-oauth-endpoint-label">Token:</span>
+                      <code className="mcp-oauth-endpoint-url">{oauthDiscovered.tokenEndpoint}</code>
+                    </div>
+                    {oauthDiscovered.clientId && (
+                      <div className="mcp-oauth-endpoints">
+                        <span className="mcp-oauth-endpoint-label">Client ID:</span>
+                        <code className="mcp-oauth-endpoint-url">{oauthDiscovered.clientId}</code>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="conn-btn conn-btn--primary mcp-oauth-connect-btn"
+                      onClick={handleConnectOAuth}
+                      disabled={isSubmitting || oauthConnecting}
+                      data-testid="mcp-connect-oauth-btn"
+                    >
+                      {oauthConnecting && <span className="conn-spinner" />}
+                      {oauthConnecting ? 'Saving & redirecting…' : 'Connect with OAuth →'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="mcp-oauth-divider">
+                <span>or configure manually</span>
+              </div>
+
+              {/* Manual fields (collapsed by default — only shown if user needs them) */}
               <div className="conn-form-grid">
                 <div className="conn-field">
                   <label className="conn-label" htmlFor="mcp-client-id">
-                    Client ID <span className="mcp-required">*</span>
+                    Client ID <span className="mcp-label-optional">(optional if using auto-discover)</span>
                   </label>
                   <input
                     id="mcp-client-id"
@@ -773,6 +949,23 @@ export function McpServersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const { toasts, add: addToast } = useToast()
 
+  // Handle OAuth callback results (?oauth_success=1 or ?oauth_error=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const success = params.get('oauth_success')
+    const oauthError = params.get('oauth_error')
+    if (success) {
+      addToast('success', 'MCP server connected via OAuth successfully!')
+      queryClient.invalidateQueries({ queryKey: ['mcp-servers'] })
+      // Clean up the URL
+      window.history.replaceState({}, '', '/mcp-servers')
+    } else if (oauthError) {
+      addToast('error', `OAuth connection failed: ${decodeURIComponent(oauthError)}`)
+      window.history.replaceState({}, '', '/mcp-servers')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const { data: servers = [], isLoading, isError, error } = useQuery({
     queryKey: ['mcp-servers'],
     // Wrap in try/catch so schema/migration errors (table/column not existing)
@@ -790,6 +983,7 @@ export function McpServersPage() {
     },
     retry: false,
   })
+
 
   const createMutation = useMutation({
     mutationFn: (f: FormState) => createMcpServer({ data: formToPayload(f) }),
@@ -919,11 +1113,18 @@ export function McpServersPage() {
             {view === 'create' && (
               <McpServerForm
                 title="New MCP Server"
-                onSubmit={createMutation.mutateAsync}
+                onSubmit={async (f) => {
+                  // For OAuth flow: we need the raw server row returned without
+                  // triggering setView('list') — mutateAsync fires onSuccess too.
+                  // Use mutateAsync here; the OAuth handler will redirect before
+                  // the list view is rendered.
+                  return await createMutation.mutateAsync(f)
+                }}
                 onCancel={handleCancel}
                 submitLabel="Add MCP Server"
                 isSubmitting={createMutation.isPending}
               />
+
             )}
 
             {/* Edit form */}

@@ -24,6 +24,7 @@ import { Route as AuthenticatedMcpServersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
+import { Route as ApiMcpOauthCallbackRouteImport } from './routes/api/mcp/oauth-callback'
 import { Route as ApiChatStreamRouteImport } from './routes/api/chat/stream'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedDevStyleTesterRouteImport } from './routes/_authenticated/dev/style-tester'
@@ -102,6 +103,11 @@ const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiMcpOauthCallbackRoute = ApiMcpOauthCallbackRouteImport.update({
+  id: '/api/mcp/oauth-callback',
+  path: '/api/mcp/oauth-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatStreamRoute = ApiChatStreamRouteImport.update({
   id: '/api/chat/stream',
   path: '/api/chat/stream',
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/dev/style-tester': typeof AuthenticatedDevStyleTesterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
+  '/api/mcp/oauth-callback': typeof ApiMcpOauthCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/dev/style-tester': typeof AuthenticatedDevStyleTesterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
+  '/api/mcp/oauth-callback': typeof ApiMcpOauthCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/_authenticated/dev/style-tester': typeof AuthenticatedDevStyleTesterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
+  '/api/mcp/oauth-callback': typeof ApiMcpOauthCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/dev/style-tester'
     | '/api/auth/$'
     | '/api/chat/stream'
+    | '/api/mcp/oauth-callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/dev/style-tester'
     | '/api/auth/$'
     | '/api/chat/stream'
+    | '/api/mcp/oauth-callback'
   id:
     | '__root__'
     | '/'
@@ -237,6 +248,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dev/style-tester'
     | '/api/auth/$'
     | '/api/chat/stream'
+    | '/api/mcp/oauth-callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -251,6 +263,7 @@ export interface RootRouteChildren {
   ApiSignOutRoute: typeof ApiSignOutRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiChatStreamRoute: typeof ApiChatStreamRoute
+  ApiMcpOauthCallbackRoute: typeof ApiMcpOauthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -360,6 +373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/mcp/oauth-callback': {
+      id: '/api/mcp/oauth-callback'
+      path: '/api/mcp/oauth-callback'
+      fullPath: '/api/mcp/oauth-callback'
+      preLoaderRoute: typeof ApiMcpOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat/stream': {
       id: '/api/chat/stream'
       path: '/api/chat/stream'
@@ -420,6 +440,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSignOutRoute: ApiSignOutRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiChatStreamRoute: ApiChatStreamRoute,
+  ApiMcpOauthCallbackRoute: ApiMcpOauthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
