@@ -20,11 +20,13 @@ import { Route as ApiSignOutRouteImport } from './routes/api/sign-out'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as AuthenticatedSkillsRouteImport } from './routes/_authenticated/skills'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedMcpServersRouteImport } from './routes/_authenticated/mcp-servers'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
 import { Route as ApiChatStreamRouteImport } from './routes/api/chat/stream'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthenticatedDevStyleTesterRouteImport } from './routes/_authenticated/dev/style-tester'
 
 const SignOutRoute = SignOutRouteImport.update({
   id: '/sign-out',
@@ -80,6 +82,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedMcpServersRoute = AuthenticatedMcpServersRouteImport.update({
+  id: '/mcp-servers',
+  path: '/mcp-servers',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -105,6 +112,12 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedDevStyleTesterRoute =
+  AuthenticatedDevStyleTesterRouteImport.update({
+    id: '/dev/style-tester',
+    path: '/dev/style-tester',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -116,10 +129,12 @@ export interface FileRoutesByFullPath {
   '/agents': typeof AuthenticatedAgentsRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/mcp-servers': typeof AuthenticatedMcpServersRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/skills': typeof AuthenticatedSkillsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/sign-out': typeof ApiSignOutRoute
+  '/dev/style-tester': typeof AuthenticatedDevStyleTesterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
 }
@@ -133,10 +148,12 @@ export interface FileRoutesByTo {
   '/agents': typeof AuthenticatedAgentsRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/mcp-servers': typeof AuthenticatedMcpServersRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/skills': typeof AuthenticatedSkillsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/sign-out': typeof ApiSignOutRoute
+  '/dev/style-tester': typeof AuthenticatedDevStyleTesterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
 }
@@ -152,10 +169,12 @@ export interface FileRoutesById {
   '/_authenticated/agents': typeof AuthenticatedAgentsRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/mcp-servers': typeof AuthenticatedMcpServersRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/skills': typeof AuthenticatedSkillsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/sign-out': typeof ApiSignOutRoute
+  '/_authenticated/dev/style-tester': typeof AuthenticatedDevStyleTesterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
 }
@@ -171,10 +190,12 @@ export interface FileRouteTypes {
     | '/agents'
     | '/chat'
     | '/dashboard'
+    | '/mcp-servers'
     | '/settings'
     | '/skills'
     | '/api/health'
     | '/api/sign-out'
+    | '/dev/style-tester'
     | '/api/auth/$'
     | '/api/chat/stream'
   fileRoutesByTo: FileRoutesByTo
@@ -188,10 +209,12 @@ export interface FileRouteTypes {
     | '/agents'
     | '/chat'
     | '/dashboard'
+    | '/mcp-servers'
     | '/settings'
     | '/skills'
     | '/api/health'
     | '/api/sign-out'
+    | '/dev/style-tester'
     | '/api/auth/$'
     | '/api/chat/stream'
   id:
@@ -206,10 +229,12 @@ export interface FileRouteTypes {
     | '/_authenticated/agents'
     | '/_authenticated/chat'
     | '/_authenticated/dashboard'
+    | '/_authenticated/mcp-servers'
     | '/_authenticated/settings'
     | '/_authenticated/skills'
     | '/api/health'
     | '/api/sign-out'
+    | '/_authenticated/dev/style-tester'
     | '/api/auth/$'
     | '/api/chat/stream'
   fileRoutesById: FileRoutesById
@@ -307,6 +332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/mcp-servers': {
+      id: '/_authenticated/mcp-servers'
+      path: '/mcp-servers'
+      fullPath: '/mcp-servers'
+      preLoaderRoute: typeof AuthenticatedMcpServersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -342,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/dev/style-tester': {
+      id: '/_authenticated/dev/style-tester'
+      path: '/dev/style-tester'
+      fullPath: '/dev/style-tester'
+      preLoaderRoute: typeof AuthenticatedDevStyleTesterRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -349,16 +388,20 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedMcpServersRoute: typeof AuthenticatedMcpServersRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSkillsRoute: typeof AuthenticatedSkillsRoute
+  AuthenticatedDevStyleTesterRoute: typeof AuthenticatedDevStyleTesterRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAgentsRoute: AuthenticatedAgentsRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedMcpServersRoute: AuthenticatedMcpServersRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSkillsRoute: AuthenticatedSkillsRoute,
+  AuthenticatedDevStyleTesterRoute: AuthenticatedDevStyleTesterRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -381,12 +424,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
