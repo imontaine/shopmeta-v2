@@ -8,10 +8,10 @@
 // - mcpServers is stored as JSONB: Array<{ name: string; url: string; transport?: string }>
 
 import { createServerFn } from '@tanstack/react-start'
-import { eq, and, sql } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { getDb } from '#/lib/db/index'
-import { agents, agentMcpServers } from '#/lib/db/schema'
+import { agents } from '#/lib/db/schema'
 
 // ─── MCP Server config schema ─────────────────────────────────────────────────
 
@@ -156,42 +156,21 @@ export const createAgent = createServerFn({ method: 'POST' })
 
 /**
  * Lists all agents for the org.
- * Includes catalogMcpServerCount from agent_mcp_servers join table.
  */
 export const listAgents = createServerFn({ method: 'GET' })
   .validator((data: unknown) => z.object({}).parse(data ?? {}))
   .handler(async () => {
     const { orgId } = await requireOrgSession()
     const db = getDb()
-
     const rows = await db
-      .select({
-        id: agents.id,
-        orgId: agents.orgId,
-        name: agents.name,
-        description: agents.description,
-        model: agents.model,
-        provider: agents.provider,
-        systemInstructions: agents.systemInstructions,
-        mcpServers: agents.mcpServers,
-        temperature: agents.temperature,
-        maxTokens: agents.maxTokens,
-        isDefault: agents.isDefault,
-        createdAt: agents.createdAt,
-        catalogMcpServerCount: sql<number>`(
-          SELECT COUNT(*) FROM ${agentMcpServers}
-          WHERE ${agentMcpServers.agentId} = ${agents.id}
-        )`.mapWith(Number),
-      })
+      .select()
       .from(agents)
       .where(eq(agents.orgId, orgId))
-
-    return rows.map(serializeAgent)
+    return rows.map((r) => serializeAgent({ ...r, catalogMcpServerCount: 0 }))
   })
 
 /**
  * Gets a single agent by ID (org-scoped).
- * Includes catalogMcpServerCount.
  */
 export const getAgent = createServerFn({ method: 'GET' })
   .validator((data: unknown) => GetAgentInput.parse(data))
@@ -200,24 +179,7 @@ export const getAgent = createServerFn({ method: 'GET' })
     const db = getDb()
 
     const [agent] = await db
-      .select({
-        id: agents.id,
-        orgId: agents.orgId,
-        name: agents.name,
-        description: agents.description,
-        model: agents.model,
-        provider: agents.provider,
-        systemInstructions: agents.systemInstructions,
-        mcpServers: agents.mcpServers,
-        temperature: agents.temperature,
-        maxTokens: agents.maxTokens,
-        isDefault: agents.isDefault,
-        createdAt: agents.createdAt,
-        catalogMcpServerCount: sql<number>`(
-          SELECT COUNT(*) FROM ${agentMcpServers}
-          WHERE ${agentMcpServers.agentId} = ${agents.id}
-        )`.mapWith(Number),
-      })
+      .select()
       .from(agents)
       .where(and(eq(agents.id, data.id), eq(agents.orgId, orgId)))
 
@@ -225,7 +187,7 @@ export const getAgent = createServerFn({ method: 'GET' })
       throw new Error(`Agent not found: ${data.id}`)
     }
 
-    return serializeAgent(agent)
+    return serializeAgent({ ...agent, catalogMcpServerCount: 0 })
   })
 
 /**

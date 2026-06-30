@@ -196,16 +196,24 @@ export const agentSkills = pgTable(
 // ─── MCP Servers Catalog ─────────────────────────
 // Org-level catalog of reusable MCP server configs.
 // Agents reference these via the agent_mcp_servers join table.
+// authType: 'none' | 'apikey' | 'oauth'
+// authConfig (JSONB):
+//   apikey: { headerFormat: 'bearer' | 'basic' | 'custom', key: string, customHeader?: string }
+//   oauth:  { clientId, clientSecret, authUrl, tokenUrl, scope }
 export const mcpServers = pgTable(
   'mcp_servers',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     orgId: text('org_id').notNull(),
-    name: text('name').notNull(),                // Human-readable label, e.g. "ClickHouse Prod"
-    serverName: text('server_name').notNull(),  // MCP server identifier/prefix, e.g. "clickhouse"
+    name: text('name').notNull(),                     // Human-readable label
+    serverName: text('server_name').notNull(),        // Tool prefix identifier
     url: text('url').notNull(),
-    transport: text('transport').default('http').notNull(), // http | sse | stdio
+    transport: text('transport').default('streamable-http').notNull(), // streamable-http | sse
     description: text('description'),
+    iconUrl: text('icon_url'),                        // Optional icon (min 128x128)
+    authType: text('auth_type').default('none').notNull(), // none | apikey | oauth
+    authConfig: jsonb('auth_config'),                 // Encrypted-at-rest auth credentials
+    trusted: boolean('trusted').default(false).notNull(), // User trust checkbox
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
   },

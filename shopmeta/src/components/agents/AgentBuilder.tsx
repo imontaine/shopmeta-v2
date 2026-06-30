@@ -4,7 +4,7 @@
 // All server calls go through TanStack Query + server functions from src/lib/agents.ts
 
 import { useState, useEffect, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   listAgents,
   createAgent,
@@ -23,8 +23,6 @@ import type { SkillRow } from '#/lib/skills'
 import { bakeSkillIntoInstructions } from '#/lib/ai/skill-helpers'
 import {
   listMcpServers,
-  createMcpServer,
-  deleteMcpServer,
   setAgentMcpServers,
   getAgentMcpServerIds,
 } from '#/lib/mcp-servers'
@@ -305,6 +303,7 @@ function AgentForm({ initial, onSubmit, onCancel, isSubmitting, submitLabel, age
   )
 }
 // ─── Agent MCP Section (catalog picker) ──────────────────────────────────────
+// Picker only — users manage the catalog on the /mcp-servers page.
 
 interface AgentMcpSectionProps {
   selectedMcpServerIds: string[]
@@ -313,34 +312,12 @@ interface AgentMcpSectionProps {
   disabled?: boolean
 }
 
-interface AddMcpServerFormState {
-  name: string
-  serverName: string
-  url: string
-  transport: 'http' | 'sse' | 'stdio'
-  description: string
-}
-
-const emptyAddForm: AddMcpServerFormState = {
-  name: '',
-  serverName: '',
-  url: '',
-  transport: 'http',
-  description: '',
-}
-
 function AgentMcpSection({
   selectedMcpServerIds,
   onMcpServersChange,
   agentId,
   disabled,
 }: AgentMcpSectionProps) {
-  const queryClient = useQueryClient()
-  const [showAdd, setShowAdd] = useState(false)
-  const [addForm, setAddForm] = useState<AddMcpServerFormState>(emptyAddForm)
-  const [addError, setAddError] = useState<string | null>(null)
-  const nameRef = useRef<HTMLInputElement>(null)
-
   const { data: allServers = [] } = useQuery({
     queryKey: ['mcp-servers'],
     queryFn: () => listMcpServers({ data: {} }),
@@ -353,34 +330,13 @@ function AgentMcpSection({
     enabled: !!agentId,
   })
 
-  // Sync existing IDs into form state once the query resolves (runs on data arrival)
+  // Sync existing IDs into form state once the query resolves
   useEffect(() => {
     if (existingIds && existingIds.length > 0 && selectedMcpServerIds.length === 0) {
       onMcpServersChange(existingIds)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingIds])
-
-  const createMutation = useMutation({
-    mutationFn: (d: Parameters<typeof createMcpServer>[0]) => createMcpServer(d),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['mcp-servers'] })
-      setShowAdd(false)
-      setAddForm(emptyAddForm)
-      setAddError(null)
-    },
-    onError: (err) =>
-      setAddError(err instanceof Error ? err.message : 'Failed to add MCP server'),
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteMcpServer({ data: { id } }),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['mcp-servers'] })
-      // Also deselect if was selected
-      onMcpServersChange(selectedMcpServerIds.filter((sid) => sid !== id))
-    },
-  })
 
   const toggleServer = (id: string) => {
     if (selectedMcpServerIds.includes(id)) {
@@ -390,56 +346,27 @@ function AgentMcpSection({
     }
   }
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setAddError(null)
-    if (!addForm.name.trim()) { setAddError('Name is required'); return }
-    if (!addForm.serverName.trim()) { setAddError('Server name is required'); return }
-    if (!addForm.url.trim()) { setAddError('URL is required'); return }
-    if (!/^[a-z0-9_-]+$/.test(addForm.serverName)) {
-      setAddError('Server name must be lowercase alphanumeric with dashes/underscores')
-      return
-    }
-    try { new URL(addForm.url) } catch { setAddError('URL must be valid'); return }
-
-    await createMutation.mutateAsync({
-      data: {
-        name: addForm.name.trim(),
-        serverName: addForm.serverName.trim(),
-        url: addForm.url.trim(),
-        transport: addForm.transport,
-        description: addForm.description.trim() || undefined,
-      },
-    })
-  }
-
-  const handleShowAdd = () => {
-    setShowAdd(true)
-    setTimeout(() => nameRef.current?.focus(), 50)
-  }
+  const transportLabel = (t: string) =>
+    t === 'streamable-http' ? 'Streamable HTTPS' : t === 'sse' ? 'SSE' : t
 
   return (
     <div className="agent-field" data-testid="agent-mcp-section">
       <div className="agent-mcp-header">
         <label className="agent-label">MCP Servers</label>
-        <button
-          type="button"
+        <a
+          href="/mcp-servers"
           className="agent-btn agent-btn--secondary agent-btn--sm"
-          onClick={handleShowAdd}
-          disabled={disabled || showAdd}
-          data-testid="agent-mcp-add-btn"
+          target="_blank"
+          rel="noreferrer"
         >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Add to catalog
-        </button>
+          Manage catalog ↗
+        </a>
       </div>
       <p className="agent-field-hint" style={{ marginBottom: '0.5rem' }}>
-        Select MCP servers from your catalog to connect to this agent.
+        Select MCP servers from your catalog. Add or manage servers on the{' '}
+        <a href="/mcp-servers" className="agent-link">MCP Servers</a> page.
       </p>
 
-      {/* Catalog list */}
       {allServers.length > 0 ? (
         <div className="agent-mcp-list" data-testid="agent-mcp-list">
           {allServers.map((server) => (
@@ -459,7 +386,7 @@ function AgentMcpSection({
                     <span className="agent-mcp-tag">{server.serverName}</span>
                     <span className="agent-mcp-url">{server.url}</span>
                     <span className={`agent-mcp-transport agent-mcp-transport--${server.transport}`}>
-                      {server.transport}
+                      {transportLabel(server.transport)}
                     </span>
                   </span>
                   {server.description && (
@@ -467,147 +394,21 @@ function AgentMcpSection({
                   )}
                 </div>
               </label>
-              <button
-                type="button"
-                className="agent-card-btn agent-card-btn--danger"
-                onClick={() => deleteMutation.mutate(server.id)}
-                disabled={disabled || deleteMutation.isPending}
-                title={`Remove ${server.name} from catalog`}
-                data-testid={`agent-mcp-delete-${server.id}`}
-                aria-label={`Delete ${server.name}`}
-              >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                </svg>
-              </button>
             </div>
           ))}
         </div>
       ) : (
-        !showAdd && (
-          <div className="agent-mcp-empty" data-testid="agent-mcp-empty">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-            <span>No MCP servers in catalog yet. Add one to get started.</span>
-          </div>
-        )
-      )}
-
-      {/* Inline add-to-catalog form */}
-      {showAdd && (
-        <form
-          className="agent-mcp-add-form"
-          onSubmit={handleAdd}
-          data-testid="agent-mcp-add-form"
-          noValidate
-        >
-          <div className="agent-mcp-add-form-title">Add MCP Server to Catalog</div>
-          <div className="agent-mcp-add-grid">
-            <div className="agent-field">
-              <label className="agent-label" htmlFor="mcp-add-name">
-                Display Name <span className="agent-required" aria-hidden="true">*</span>
-              </label>
-              <input
-                id="mcp-add-name"
-                ref={nameRef}
-                data-testid="agent-mcp-add-name"
-                className="agent-input"
-                type="text"
-                placeholder="e.g. ClickHouse Prod"
-                value={addForm.name}
-                onChange={(e) => setAddForm((p) => ({ ...p, name: e.target.value }))}
-                disabled={createMutation.isPending}
-              />
-            </div>
-            <div className="agent-field">
-              <label className="agent-label" htmlFor="mcp-add-server-name">
-                Server Name <span className="agent-required" aria-hidden="true">*</span>
-                <span className="agent-label-hint"> (tool prefix, e.g. clickhouse)</span>
-              </label>
-              <input
-                id="mcp-add-server-name"
-                data-testid="agent-mcp-add-server-name"
-                className="agent-input"
-                type="text"
-                placeholder="e.g. clickhouse"
-                value={addForm.serverName}
-                onChange={(e) => setAddForm((p) => ({ ...p, serverName: e.target.value.toLowerCase() }))}
-                disabled={createMutation.isPending}
-              />
-            </div>
-            <div className="agent-field">
-              <label className="agent-label" htmlFor="mcp-add-url">
-                URL <span className="agent-required" aria-hidden="true">*</span>
-              </label>
-              <input
-                id="mcp-add-url"
-                data-testid="agent-mcp-add-url"
-                className="agent-input"
-                type="url"
-                placeholder="https://mcp.example.com"
-                value={addForm.url}
-                onChange={(e) => setAddForm((p) => ({ ...p, url: e.target.value }))}
-                disabled={createMutation.isPending}
-              />
-            </div>
-            <div className="agent-field">
-              <label className="agent-label" htmlFor="mcp-add-transport">Transport</label>
-              <select
-                id="mcp-add-transport"
-                data-testid="agent-mcp-add-transport"
-                className="agent-select"
-                value={addForm.transport}
-                onChange={(e) => setAddForm((p) => ({ ...p, transport: e.target.value as 'http' | 'sse' | 'stdio' }))}
-                disabled={createMutation.isPending}
-              >
-                <option value="http">HTTP</option>
-                <option value="sse">SSE</option>
-                <option value="stdio">stdio</option>
-              </select>
-            </div>
-          </div>
-          <div className="agent-field">
-            <label className="agent-label" htmlFor="mcp-add-description">
-              Description <span className="agent-label-optional">(optional)</span>
-            </label>
-            <input
-              id="mcp-add-description"
-              data-testid="agent-mcp-add-description"
-              className="agent-input"
-              type="text"
-              placeholder="What this server provides"
-              value={addForm.description}
-              onChange={(e) => setAddForm((p) => ({ ...p, description: e.target.value }))}
-              disabled={createMutation.isPending}
-            />
-          </div>
-          {addError && (
-            <p className="agent-field-error" role="alert">{addError}</p>
-          )}
-          <div className="agent-mcp-add-actions">
-            <button
-              type="button"
-              className="agent-btn agent-btn--cancel"
-              onClick={() => { setShowAdd(false); setAddForm(emptyAddForm); setAddError(null) }}
-              disabled={createMutation.isPending}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="agent-btn agent-btn--primary"
-              disabled={createMutation.isPending}
-              data-testid="agent-mcp-add-submit"
-            >
-              {createMutation.isPending ? <span className="agent-spinner" /> : null}
-              Add to Catalog
-            </button>
-          </div>
-        </form>
+        <div className="agent-mcp-empty" data-testid="agent-mcp-empty">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
+          <span>
+            No MCP servers in catalog.{' '}
+            <a href="/mcp-servers" className="agent-link">Add one on the MCP Servers page.</a>
+          </span>
+        </div>
       )}
     </div>
   )

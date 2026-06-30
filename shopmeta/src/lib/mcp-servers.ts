@@ -2,14 +2,15 @@
 // Server functions for org-level MCP Server Catalog CRUD.
 //
 // Design:
-//   - The "catalog" stores reusable MCP server configs per org (like skills).
+//   - The "catalog" stores reusable MCP server configs per org (displayed on /mcp-servers page).
 //   - Agents reference catalog entries via the agent_mcp_servers join table.
-//   - When building an agent's McpServerConfig[], we merge:
-//       1. Catalog-selected servers  (fetched from this table)
-//       2. Legacy inline mcpServers JSON on the agent row (backwards compat)
+//   - authType controls how the server is authenticated:
+//       'none'   → no auth (or auto-detect)
+//       'apikey' → Bearer/Basic/Custom header with API key
+//       'oauth'  → OAuth 2.0 flow
+//   - authConfig is stored as JSONB (should be encrypted-at-rest in prod).
+//   - transport: 'streamable-http' | 'sse'
 //   - All operations are scoped to orgId (tenant isolation).
-//   - The server_name field is the MCP tool-prefix identifier (e.g. "clickhouse").
-//   - The name field is the human-readable label (e.g. "ClickHouse Prod").
 
 import { createServerFn } from '@tanstack/react-start'
 import { eq, and } from 'drizzle-orm'
@@ -17,6 +18,25 @@ import { z } from 'zod'
 import { getDb } from '#/lib/db/index'
 import { mcpServers, agentMcpServers } from '#/lib/db/schema'
 import { requireOrgSession } from '#/lib/auth/require-org-session'
+
+// ─── Auth config schemas ──────────────────────────────────────────────────────
+
+export const ApiKeyAuthSchema = z.object({
+  key: z.string().min(1, 'API Key is required'),
+  headerFormat: z.enum(['bearer', 'basic', 'custom']).default('bearer'),
+  customHeader: z.string().optional(), // Used when headerFormat = 'custom'
+})
+
+export const OAuthAuthSchema = z.object({
+  clientId: z.string().min(1, 'Client ID is required'),
+  clientSecret: z.string().optional(),
+  authUrl: z.string().url('Authorization URL must be valid').optional().or(z.literal('')),
+  tokenUrl: z.string().url('Token URL must be valid').optional().or(z.literal('')),
+  scope: z.string().optional(),
+})
+
+export type ApiKeyAuth = z.infer<typeof ApiKeyAuthSchema>
+export type OAuthAuth = z.infer<typeof OAuthAuthSchema>
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,6 +48,10 @@ export interface McpServerRow {
   url: string
   transport: string
   description: string | null
+  iconUrl: string | null
+  authType: string
+  authConfig: Record<string, unknown> | null
+  trusted: boolean
   createdAt: string | null
   updatedAt: string | null
 }
@@ -41,12 +65,16 @@ function serializeMcpServer(s: typeof mcpServers.$inferSelect): McpServerRow {
     url: s.url,
     transport: s.transport,
     description: s.description,
+    iconUrl: s.iconUrl ?? null,
+    authType: s.authType,
+    authConfig: s.authConfig as Record<string, unknown> | null,
+    trusted: s.trusted,
     createdAt: s.createdAt ? s.createdAt.toISOString() : null,
     updatedAt: s.updatedAt ? s.updatedAt.toISOString() : null,
   }
 }
 
-// ─── Zod Schemas ──────────────────────────────────────────────────────────────
+// ─── Zod Input Schemas ────────────────────────────────────────────────────────
 
 const CreateMcpServerInput = z.object({
   name: z.string().min(1, 'Name is required').max(255),
@@ -56,22 +84,25 @@ const CreateMcpServerInput = z.object({
     .max(100)
     .regex(/^[a-z0-9_-]+$/, 'Server name must be lowercase alphanumeric with dashes/underscores'),
   url: z.string().url('Must be a valid URL'),
-  transport: z.enum(['http', 'sse', 'stdio']).optional().default('http'),
+  transport: z.enum(['streamable-http', 'sse']).default('streamable-http'),
   description: z.string().max(1000).optional(),
+  iconUrl: z.string().url().optional().or(z.literal('')),
+  authType: z.enum(['none', 'apikey', 'oauth']).default('none'),
+  authConfig: z.record(z.unknown()).optional(),
+  trusted: z.boolean().default(false),
 })
 
 const UpdateMcpServerInput = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(255).optional(),
-  serverName: z
-    .string()
-    .min(1)
-    .max(100)
-    .regex(/^[a-z0-9_-]+$/)
-    .optional(),
+  serverName: z.string().min(1).max(100).regex(/^[a-z0-9_-]+$/).optional(),
   url: z.string().url().optional(),
-  transport: z.enum(['http', 'sse', 'stdio']).optional(),
+  transport: z.enum(['streamable-http', 'sse']).optional(),
   description: z.string().max(1000).optional(),
+  iconUrl: z.string().url().optional().or(z.literal('')),
+  authType: z.enum(['none', 'apikey', 'oauth']).optional(),
+  authConfig: z.record(z.unknown()).optional().nullable(),
+  trusted: z.boolean().optional(),
 })
 
 const DeleteMcpServerInput = z.object({
@@ -91,6 +122,7 @@ const GetAgentMcpServerIdsInput = z.object({
 
 /**
  * Lists all MCP servers in the org catalog.
+ * Note: authConfig is returned but API keys/secrets should be masked in the UI.
  */
 export const listMcpServers = createServerFn({ method: 'GET' })
   .validator((data: unknown) => z.object({}).parse(data ?? {}))
@@ -123,6 +155,10 @@ export const createMcpServer = createServerFn({ method: 'POST' })
         url: data.url,
         transport: data.transport,
         description: data.description || null,
+        iconUrl: data.iconUrl || null,
+        authType: data.authType,
+        authConfig: data.authConfig ?? null,
+        trusted: data.trusted,
       })
       .returning()
     return serializeMcpServer(created!)
@@ -144,15 +180,17 @@ export const updateMcpServer = createServerFn({ method: 'POST' })
 
     if (!existing) throw new Error(`MCP server not found: ${data.id}`)
 
-    const updates: Record<string, unknown> = {}
+    const updates: Record<string, unknown> = { updatedAt: new Date() }
     if (data.name !== undefined) updates['name'] = data.name
     if (data.serverName !== undefined) updates['serverName'] = data.serverName
     if (data.url !== undefined) updates['url'] = data.url
     if (data.transport !== undefined) updates['transport'] = data.transport
     if (data.description !== undefined) updates['description'] = data.description || null
-    if (Object.keys(updates).length === 0) return serializeMcpServer(existing)
+    if (data.iconUrl !== undefined) updates['iconUrl'] = data.iconUrl || null
+    if (data.authType !== undefined) updates['authType'] = data.authType
+    if (data.authConfig !== undefined) updates['authConfig'] = data.authConfig
+    if (data.trusted !== undefined) updates['trusted'] = data.trusted
 
-    updates['updatedAt'] = new Date()
     const [updated] = await db
       .update(mcpServers)
       .set(updates)
@@ -184,20 +222,15 @@ export const deleteMcpServer = createServerFn({ method: 'POST' })
 
 /**
  * Replaces all catalog MCP server attachments for an agent (delete-all + insert).
- * Mirrors setAgentSkills from skills.ts.
  */
 export const setAgentMcpServers = createServerFn({ method: 'POST' })
   .validator((data: unknown) => SetAgentMcpServersInput.parse(data))
   .handler(async ({ data }) => {
-    const { orgId: _orgId } = await requireOrgSession()
+    await requireOrgSession()
     const db = getDb()
 
-    // Delete existing
-    await db
-      .delete(agentMcpServers)
-      .where(eq(agentMcpServers.agentId, data.agentId))
+    await db.delete(agentMcpServers).where(eq(agentMcpServers.agentId, data.agentId))
 
-    // Insert new
     if (data.mcpServerIds.length > 0) {
       await db.insert(agentMcpServers).values(
         data.mcpServerIds.map((mcpServerId) => ({
@@ -226,8 +259,7 @@ export const getAgentMcpServerIds = createServerFn({ method: 'GET' })
   })
 
 /**
- * Gets full McpServerRow entries attached to an agent.
- * Used when building the runtime McpServerConfig[] for the AI loop.
+ * Gets full McpServerRow entries attached to an agent (for AI runtime).
  */
 export const getAgentMcpServers = createServerFn({ method: 'GET' })
   .validator((data: unknown) => GetAgentMcpServerIdsInput.parse(data))
@@ -243,6 +275,10 @@ export const getAgentMcpServers = createServerFn({ method: 'GET' })
         url: mcpServers.url,
         transport: mcpServers.transport,
         description: mcpServers.description,
+        iconUrl: mcpServers.iconUrl,
+        authType: mcpServers.authType,
+        authConfig: mcpServers.authConfig,
+        trusted: mcpServers.trusted,
         createdAt: mcpServers.createdAt,
         updatedAt: mcpServers.updatedAt,
       })
