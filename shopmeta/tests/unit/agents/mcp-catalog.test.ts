@@ -2,6 +2,18 @@
 // Unit tests for the MCP Server Catalog feature in the agent builder.
 // Tests validation logic, schema parsing, and server selection logic.
 // Mirrors the patterns in form-validation.test.ts.
+//
+// WHY THE ERROR-HANDLING BUG WASN'T CAUGHT BY THESE TESTS
+// ────────────────────────────────────────────────────────
+// This file tests UI validation logic (form errors, server name format, etc.)
+// but never calls the real listMcpServers server function or simulates what
+// happens when the DB throws an error. The tests here copy schema logic inline
+// rather than importing it, so schema changes (like serverName becoming optional)
+// don't fail here even when the real code changes.
+//
+// The missing coverage: tests/unit/mcp/list-servers-error-handling.test.ts
+// Added after the production bug was found. It simulates DB errors using the
+// exact error format that postgres.js produces ("Failed query: SELECT ...").
 
 import { describe, test, expect } from 'vitest'
 import { z } from 'zod'
@@ -43,16 +55,22 @@ function validateAddMcpForm(form: {
 }
 
 // ─── Mirror the mcp-servers.ts Zod schema ────────────────────────────────────
+// NOTE: Keep this in sync with CreateMcpServerInput in src/lib/mcp-servers.ts
+// If the real schema changes and these tests still pass, they are LYING.
+// Prefer importing the real schema in future tests — see list-servers-error-handling.test.ts
+// for the pattern of testing the handler logic directly.
 
 const CreateMcpServerInputSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
+  // serverName is optional — server derives it from name via slugify if blank
   serverName: z
     .string()
-    .min(1, 'Server name is required')
     .max(100)
-    .regex(/^[a-z0-9_-]+$/, 'Server name must be lowercase alphanumeric with dashes/underscores'),
+    .regex(/^[a-z0-9_-]*$/, 'Server name must be lowercase alphanumeric with dashes/underscores')
+    .optional()
+    .or(z.literal('')),
   url: z.string().url('Must be a valid URL'),
-  transport: z.enum(['http', 'sse', 'stdio']).optional().default('http'),
+  transport: z.enum(['streamable-http', 'sse']).optional().default('streamable-http'),
   description: z.string().max(1000).optional(),
 })
 
@@ -164,7 +182,7 @@ describe('CreateMcpServer Zod schema', () => {
       url: 'https://mcp.example.com',
     })
     expect(result.name).toBe('ClickHouse Prod')
-    expect(result.transport).toBe('http') // default
+    expect(result.transport).toBe('streamable-http') // default
     expect(result.description).toBeUndefined()
   })
 
@@ -181,14 +199,15 @@ describe('CreateMcpServer Zod schema', () => {
     expect(result.description).toBe('Staging Postgres MCP')
   })
 
-  test('stdio transport is valid', () => {
-    const result = CreateMcpServerInputSchema.parse({
-      name: 'Local Dev',
-      serverName: 'local',
-      url: 'https://localhost:3001',
-      transport: 'stdio',
-    })
-    expect(result.transport).toBe('stdio')
+  test('stdio transport is NOT valid (only streamable-http and sse are supported)', () => {
+    expect(() =>
+      CreateMcpServerInputSchema.parse({
+        name: 'Local Dev',
+        serverName: 'local',
+        url: 'https://localhost:3001',
+        transport: 'stdio',
+      }),
+    ).toThrow()
   })
 
   test('invalid transport → throws', () => {
