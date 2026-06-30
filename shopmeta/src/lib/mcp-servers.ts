@@ -78,11 +78,13 @@ function serializeMcpServer(s: typeof mcpServers.$inferSelect): McpServerRow {
 
 const CreateMcpServerInput = z.object({
   name: z.string().min(1, 'Name is required').max(255),
+  // serverName is optional — if blank the server derives it from name
   serverName: z
     .string()
-    .min(1, 'Server name is required')
     .max(100)
-    .regex(/^[a-z0-9_-]+$/, 'Server name must be lowercase alphanumeric with dashes/underscores'),
+    .regex(/^[a-z0-9_-]*$/, 'Server name must be lowercase alphanumeric with dashes/underscores')
+    .optional()
+    .or(z.literal('')),
   url: z.string().url('Must be a valid URL'),
   transport: z.enum(['streamable-http', 'sse']).default('streamable-http'),
   description: z.string().max(1000).optional(),
@@ -129,12 +131,21 @@ export const listMcpServers = createServerFn({ method: 'GET' })
   .handler(async () => {
     const { orgId } = await requireOrgSession()
     const db = getDb()
-    const rows = await db
-      .select()
-      .from(mcpServers)
-      .where(eq(mcpServers.orgId, orgId))
-      .orderBy(mcpServers.name)
-    return rows.map(serializeMcpServer)
+    try {
+      const rows = await db
+        .select()
+        .from(mcpServers)
+        .where(eq(mcpServers.orgId, orgId))
+        .orderBy(mcpServers.name)
+      return rows.map(serializeMcpServer)
+    } catch (err) {
+      // PostgreSQL error 42P01 = "undefined_table" — the mcp_servers table does not
+      // exist yet (migration 0004 pending). Return an empty list rather than crashing
+      // so the UI shows the "no servers yet" empty state instead of an error banner.
+      const pgCode = (err as { code?: string }).code
+      if (pgCode === '42P01') return []
+      throw err
+    }
   })
 
 /**
@@ -146,12 +157,17 @@ export const createMcpServer = createServerFn({ method: 'POST' })
     const { orgId } = await requireOrgSession()
     const db = getDb()
 
+    // Derive serverName from name if not provided (slugify: lowercase, dashes for spaces)
+    const derivedServerName = (data.serverName && data.serverName.trim())
+      ? data.serverName.trim()
+      : data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 100)
+
     const [created] = await db
       .insert(mcpServers)
       .values({
         orgId,
         name: data.name,
-        serverName: data.serverName,
+        serverName: derivedServerName,
         url: data.url,
         transport: data.transport,
         description: data.description || null,
