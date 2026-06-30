@@ -167,7 +167,10 @@ interface McpFormProps {
 function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitLabel, isSubmitting }: McpFormProps) {
   const [form, setForm] = useState<FormState>(initial)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [iconError, setIconError] = useState<string | null>(null)
+  const [iconMode, setIconMode] = useState<'upload' | 'url'>('upload')
   const nameRef = useRef<HTMLInputElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     nameRef.current?.focus()
@@ -189,33 +192,158 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
       <h3 className="conn-form-title">{title}</h3>
       <form className="conn-form" onSubmit={handleSubmit} noValidate>
 
-        {/* Icon URL */}
+        {/* Icon — Upload or URL */}
         <div className="conn-field">
-          <label className="conn-label" htmlFor="mcp-icon-url">
-            Icon URL <span className="mcp-label-optional">(optional — min 128×128 px)</span>
-          </label>
-          <div className="mcp-icon-row">
-            <div className="mcp-icon-thumb">
+          <div className="mcp-icon-field-header">
+            <label className="conn-label">
+              Icon <span className="mcp-label-optional">(optional — minimum 128 x 128 px)</span>
+            </label>
+            <div className="mcp-icon-mode-tabs">
+              <button
+                type="button"
+                className={`mcp-icon-mode-tab${iconMode === 'upload' ? ' mcp-icon-mode-tab--active' : ''}`}
+                onClick={() => setIconMode('upload')}
+              >
+                Upload
+              </button>
+              <button
+                type="button"
+                className={`mcp-icon-mode-tab${iconMode === 'url' ? ' mcp-icon-mode-tab--active' : ''}`}
+                onClick={() => setIconMode('url')}
+              >
+                URL
+              </button>
+            </div>
+          </div>
+
+          <div className="mcp-icon-upload-row">
+            {/* Preview */}
+            <button
+              type="button"
+              className="mcp-icon-thumb mcp-icon-thumb--clickable"
+              onClick={() => iconMode === 'upload' && fileRef.current?.click()}
+              title={iconMode === 'upload' ? 'Click to upload icon' : undefined}
+              aria-label={form.iconUrl ? 'Icon preview — click to change' : 'Click to upload icon'}
+              disabled={isSubmitting}
+            >
               {form.iconUrl ? (
-                <img src={form.iconUrl} alt="" className="mcp-icon-thumb-img" />
+                <img src={form.iconUrl} alt="Icon preview" className="mcp-icon-thumb-img" />
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" />
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
+                <span className="mcp-icon-thumb-placeholder">
+                  {iconMode === 'upload' ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                  )}
+                </span>
+              )}
+            </button>
+
+            {/* Hidden file input */}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+              style={{ display: 'none' }}
+              disabled={isSubmitting}
+              data-testid="mcp-icon-file"
+              onChange={async (e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                setIconError(null)
+                // Validate dimensions
+                const dataUrl = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader()
+                  reader.onload = (ev) => resolve(ev.target!.result as string)
+                  reader.onerror = reject
+                  reader.readAsDataURL(file)
+                })
+                // For SVG skip dimension check (vector — always scalable)
+                if (file.type === 'image/svg+xml') {
+                  set('iconUrl', dataUrl)
+                  return
+                }
+                const img = new Image()
+                img.onload = () => {
+                  if (img.naturalWidth < 128 || img.naturalHeight < 128) {
+                    setIconError(
+                      `Image too small: ${img.naturalWidth}x${img.naturalHeight}px. Minimum 128x128 px required.`,
+                    )
+                    // Reset file input so user can try again
+                    if (fileRef.current) fileRef.current.value = ''
+                  } else {
+                    set('iconUrl', dataUrl)
+                  }
+                }
+                img.onerror = () => setIconError('Failed to read image. Please try a different file.')
+                img.src = dataUrl
+              }}
+            />
+
+            {/* Right side: upload button or URL input */}
+            <div className="mcp-icon-upload-right">
+              {iconMode === 'upload' ? (
+                <>
+                  <button
+                    type="button"
+                    className="conn-btn conn-btn--cancel mcp-icon-upload-btn"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={isSubmitting}
+                    data-testid="mcp-icon-upload-btn"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    {form.iconUrl ? 'Replace image' : 'Choose image'}
+                  </button>
+                  {form.iconUrl && (
+                    <button
+                      type="button"
+                      className="conn-btn conn-btn--cancel mcp-icon-remove-btn"
+                      onClick={() => {
+                        set('iconUrl', '')
+                        setIconError(null)
+                        if (fileRef.current) fileRef.current.value = ''
+                      }}
+                      disabled={isSubmitting}
+                      aria-label="Remove icon"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  )}
+                  <p className="mcp-icon-hint">PNG, JPG, WebP, GIF or SVG — min 128x128 px</p>
+                </>
+              ) : (
+                <input
+                  id="mcp-icon-url"
+                  className="conn-input"
+                  type="url"
+                  placeholder="https://example.com/icon.png"
+                  value={form.iconUrl}
+                  onChange={(e) => {
+                    set('iconUrl', e.target.value)
+                    setIconError(null)
+                  }}
+                  disabled={isSubmitting}
+                  data-testid="mcp-icon-url"
+                />
               )}
             </div>
-            <input
-              id="mcp-icon-url"
-              className="conn-input"
-              type="url"
-              placeholder="https://example.com/icon.png"
-              value={form.iconUrl}
-              onChange={(e) => set('iconUrl', e.target.value)}
-              disabled={isSubmitting}
-              data-testid="mcp-icon-url"
-            />
           </div>
+
+          {iconError && <p className="mcp-field-error">{iconError}</p>}
         </div>
 
         {/* Name + Server Name */}

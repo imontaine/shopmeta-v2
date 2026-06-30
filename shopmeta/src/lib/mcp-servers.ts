@@ -139,13 +139,16 @@ export const listMcpServers = createServerFn({ method: 'GET' })
         .orderBy(mcpServers.name)
       return rows.map(serializeMcpServer)
     } catch (err) {
-      // PostgreSQL error 42P01 = "undefined_table" — the mcp_servers table does not
-      // exist yet (migration 0004 pending). Return an empty list rather than crashing
-      // so the UI shows the "no servers yet" empty state instead of an error banner.
       const pgCode = (err as { code?: string }).code
-      if (pgCode === '42P01') return []
+      // 42P01 = table doesn't exist (migration 0004 never ran)
+      // 42703 = column doesn't exist (migration 0003 ran but 0004 didn't, so
+      //         icon_url / auth_type / auth_config / trusted columns are missing)
+      // In both cases return [] so the UI shows the empty state, not an error banner.
+      // The user will be able to add servers once the migration runs.
+      if (pgCode === '42P01' || pgCode === '42703') return []
       throw err
     }
+
   })
 
 /**
