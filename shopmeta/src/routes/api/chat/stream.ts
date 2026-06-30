@@ -80,7 +80,7 @@ export const Route = createFileRoute('/api/chat/stream')({
             const { getDb } = await import('#/lib/db/index')
             const { mcpServers, agentMcpServers } = await import('#/lib/db/schema')
             const { eq, and } = await import('drizzle-orm')
-            const { mcpRowToClientOptions } = await import('#/lib/mcp-servers')
+            const { mcpRowToClientOptions } = await import('#/lib/mcp-client-options.server')
             const { createMCPClients, MCPConnectionError, DuplicateToolNameError } = await import('@tanstack/ai-mcp')
 
             const db = getDb()

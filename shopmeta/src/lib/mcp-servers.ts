@@ -18,7 +18,6 @@ import { z } from 'zod'
 import { getDb } from '#/lib/db/index'
 import { mcpServers, agentMcpServers } from '#/lib/db/schema'
 import { requireOrgSession } from '#/lib/auth/require-org-session'
-import { DrizzleOAuthProvider } from '#/lib/mcp-oauth-provider'
 
 // --- Auth config schemas ------------------------------------------------------
 
@@ -321,96 +320,4 @@ export const getAgentMcpServers = createServerFn({ method: 'GET' })
       .where(eq(agentMcpServers.agentId, data.agentId))
     return rows.map(serializeMcpServer)
   })
-
-// --- Auth - MCPClientOptions conversion --------------------------------------
-
-/**
- * Converts a McpServerRow from the DB catalog into MCPClientOptions
- * for use with createMCPClients() from @tanstack/ai-mcp.
- *
- * Handles all auth types:
- *   'none'   - no headers, no authProvider
- *   'apikey' - static Authorization header injected via transport.headers
- *   'oauth'  - authProvider: DrizzleOAuthProvider (SDK handles token injection
- *              and auto-refresh on 401 - no manual token management needed)
- *
- * The redirect URL is derived from the request origin so it works on
- * local dev, staging, and production without configuration.
- *
- * @param row         - McpServerRow from the catalog
- * @param orgId       - Org ID for tenant scoping
- * @param redirectUrl - OAuth callback URL (e.g. `${origin}/api/mcp/oauth-callback`)
- */
-export function mcpRowToClientOptions(
-  row: McpServerRow,
-  orgId: string,
-  redirectUrl: string,
-): import('@tanstack/ai-mcp').MCPClientOptions {
-  const type = row.transport === 'sse' ? 'sse' : 'http'
-  const prefix = row.serverName || row.name
-
-  if (row.authType === 'oauth') {
-    return {
-      transport: {
-        type,
-        url: row.url,
-        authProvider: new DrizzleOAuthProvider(row.id, orgId, redirectUrl),
-      },
-      prefix,
-    }
-  }
-
-  if (row.authType === 'apikey') {
-    const cfg = row.authConfig as {
-      key?: string
-      headerFormat?: 'bearer' | 'basic' | 'custom'
-      customHeader?: string
-    } | null
-
-    const headers: Record<string, string> = {}
-    if (cfg?.key) {
-      if (cfg.headerFormat === 'basic') {
-        headers['Authorization'] = `Basic ${cfg.key}`
-      } else if (cfg.headerFormat === 'custom' && cfg.customHeader) {
-        headers[cfg.customHeader] = cfg.key
-      } else {
-        headers['Authorization'] = `Bearer ${cfg.key}`
-      }
-    }
-    return {
-      transport: {
-        type,
-        url: row.url,
-        headers: Object.keys(headers).length > 0 ? headers : undefined,
-      },
-      prefix,
-    }
-  }
-
-  // authType = 'none'
-  return {
-    transport: { type, url: row.url },
-    prefix,
-  }
-}
-
-/**
- * @deprecated Use mcpRowToClientOptions() instead.
- * Legacy wrapper kept for any code that still calls mcpRowToServerConfig.
- * Will be removed in a future cleanup.
- */
-export async function mcpRowToServerConfig(
-  row: McpServerRow,
-  orgId: string,
-): Promise<import('#/lib/ai/mcp').MCPServerConfig> {
-  const options = mcpRowToClientOptions(row, orgId, 'https://app.shopmeta.app/api/mcp/oauth-callback')
-  const transport = options.transport as { type?: string; url: string; headers?: Record<string, string> }
-  return {
-    name: options.prefix ?? row.serverName,
-    url: transport.url,
-    transportType: transport.type === 'sse' ? 'sse' : 'http',
-    headers: transport.headers,
-  }
-}
-
 
