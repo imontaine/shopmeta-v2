@@ -1,30 +1,25 @@
-// src/routes/api/mcp/oauth-callback.ts
+﻿// src/routes/api/mcp/oauth-callback.ts
 // OAuth 2.0 callback route for MCP server authentication.
 //
 // The browser is redirected here after the user completes the OAuth flow
 // at the MCP server's authorization server (e.g., ClickHouse Cloud login).
 //
-// URL: /api/mcp/oauth-callback?code=<code>&state=<state>
+// URL: /api/mcp/oauth-callback?code=<code>&state=<sdk_state>&app_state=<our_state>
 //
-// The `state` parameter is a base64-encoded JSON object stored in
-// sessionStorage on the client before the redirect:
-// {
-//   mcpServerId: string      // The DB ID of the MCP server being authorized
-//   codeVerifier: string     // PKCE code verifier (generated before redirect)
-//   tokenEndpoint: string    // Token endpoint URL (discovered via RFC 8414)
-//   clientId: string         // Client ID from DCR
-//   redirectUri: string      // This callback URL (must match what was registered)
-// }
+// The `app_state` parameter is a base64url-encoded JSON object set by
+// /api/mcp/oauth/start containing: { mcpServerId, orgId }
 //
-// After successful token exchange, the access token is stored in the
-// mcp_servers.auth_config JSONB column and the user is redirected back
-// to /mcp-servers with a success indicator.
+// The SDK handles: codeVerifier lookup, token exchange, token persistence
+// (via DrizzleOAuthProvider which it calls internally). We just decode
+// app_state and delegate everything else to auth().
 
 import { createFileRoute } from '@tanstack/react-router'
 import { requireOrgSession } from '#/lib/auth/require-org-session'
 import { getDb } from '#/lib/db/index'
 import { mcpServers } from '#/lib/db/schema'
 import { and, eq } from 'drizzle-orm'
+import { DrizzleOAuthProvider } from '#/lib/mcp-oauth-provider'
+import { auth } from '@modelcontextprotocol/sdk/client/auth.js'
 
 export const Route = createFileRoute('/api/mcp/oauth-callback')({
   server: {
@@ -32,11 +27,11 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
       GET: async ({ request }: { request: Request }) => {
         const url = new URL(request.url)
         const code = url.searchParams.get('code')
-        const stateParam = url.searchParams.get('state')
+        const appStateParam = url.searchParams.get('app_state')
         const error = url.searchParams.get('error')
         const errorDesc = url.searchParams.get('error_description')
 
-        // Handle OAuth error response
+        // Handle OAuth error response from AS
         if (error) {
           const msg = encodeURIComponent(errorDesc ?? error)
           return new Response(null, {
@@ -45,35 +40,34 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
           })
         }
 
-        if (!code || !stateParam) {
+        if (!code || !appStateParam) {
           return new Response(null, {
             status: 302,
-            headers: { Location: '/mcp-servers?oauth_error=Missing+code+or+state' },
+            headers: { Location: '/mcp-servers?oauth_error=Missing+code+or+app_state' },
           })
         }
 
-        // Decode state
-        let state: {
-          mcpServerId: string
-          codeVerifier: string
-          tokenEndpoint: string
-          clientId: string
-          redirectUri: string
-        }
+        // Decode our app_state (set by /api/mcp/oauth/start)
+        let appState: { mcpServerId: string; orgId: string }
         try {
-          state = JSON.parse(Buffer.from(stateParam, 'base64url').toString('utf8'))
+          appState = JSON.parse(Buffer.from(appStateParam, 'base64url').toString('utf8'))
+          if (!appState.mcpServerId || !appState.orgId) throw new Error('Missing fields')
         } catch {
           return new Response(null, {
             status: 302,
-            headers: { Location: '/mcp-servers?oauth_error=Invalid+state+parameter' },
+            headers: { Location: '/mcp-servers?oauth_error=Invalid+app_state+parameter' },
           })
         }
 
-        // Verify session
-        let orgId: string
+        // Verify session matches the org from app_state
         try {
           const session = await requireOrgSession()
-          orgId = session.orgId
+          if (session.orgId !== appState.orgId) {
+            return new Response(null, {
+              status: 302,
+              headers: { Location: '/mcp-servers?oauth_error=Session+org+mismatch' },
+            })
+          }
         } catch {
           return new Response(null, {
             status: 302,
@@ -81,71 +75,77 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
           })
         }
 
-        // Exchange code for token
-        let tokens: { access_token: string; refresh_token?: string; expires_in?: number; token_type?: string; scope?: string }
+        // Load server row
+        const db = getDb()
+        const [server] = await db
+          .select({ url: mcpServers.url, oauthState: mcpServers.oauthState })
+          .from(mcpServers)
+          .where(and(
+            eq(mcpServers.id, appState.mcpServerId),
+            eq(mcpServers.orgId, appState.orgId),
+          ))
+          .limit(1)
+
+        if (!server) {
+          return new Response(null, {
+            status: 302,
+            headers: { Location: '/mcp-servers?oauth_error=MCP+server+not+found' },
+          })
+        }
+
+        // Reconstruct the same redirectUrl used in /oauth/start.
+        // The SDK requires it to match exactly what was used for PKCE + DCR.
+        const origin = new URL(request.url).origin
+        const redirectUrl = `${origin}/api/mcp/oauth-callback`
+
+        // Delegate token exchange to the SDK.
+        // auth() with authorizationCode set will:
+        //   1. Read provider.discoveryState() - skip re-discovery (cached in oauthState)
+        //   2. Read provider.clientInformation() - skip DCR (already in oauthClientInfo)
+        //   3. Read provider.codeVerifier() - the stored PKCE verifier from oauthState
+        //   4. Call exchangeAuthorization() - POST to token endpoint
+        //   5. Call provider.saveTokens() - persists to mcp_servers.auth_config
+        //   6. Return 'AUTHORIZED'
+        const provider = new DrizzleOAuthProvider(appState.mcpServerId, appState.orgId, redirectUrl)
+
         try {
-          const body = new URLSearchParams({
-            grant_type: 'authorization_code',
-            code,
-            code_verifier: state.codeVerifier,
-            client_id: state.clientId,
-            redirect_uri: state.redirectUri,
+          const result = await auth(provider, {
+            serverUrl: server.url,
+            authorizationCode: code,
           })
 
-          const tokenRes = await fetch(state.tokenEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString(),
-          })
-
-          if (!tokenRes.ok) {
-            const errBody = await tokenRes.text()
-            throw new Error(`Token endpoint ${tokenRes.status}: ${errBody}`)
+          if (result !== 'AUTHORIZED') {
+            return new Response(null, {
+              status: 302,
+              headers: { Location: '/mcp-servers?oauth_error=Token+exchange+did+not+complete' },
+            })
           }
-
-          tokens = await tokenRes.json() as typeof tokens
         } catch (err) {
           const msg = encodeURIComponent(err instanceof Error ? err.message : 'Token exchange failed')
+          console.error('[oauth-callback] Token exchange failed:', err)
           return new Response(null, {
             status: 302,
             headers: { Location: `/mcp-servers?oauth_error=${msg}` },
           })
         }
 
-        // Store token in DB — include tokenEndpoint + clientId so resolveOAuthToken
-        // can refresh without re-discovering the auth server
+        // Clear the transient codeVerifier from oauthState (security hygiene).
+        // Keep the AS discovery cache fields so refresh works without re-discovery.
         try {
-          const db = getDb()
-          await db
-            .update(mcpServers)
-            .set({
-              authType: 'oauth',
-              authConfig: {
-                accessToken: tokens.access_token,
-                refreshToken: tokens.refresh_token,
-                expiresIn: tokens.expires_in,
-                tokenType: tokens.token_type ?? 'Bearer',
-                scope: tokens.scope,
-                issuedAt: Date.now(),
-                // Persist these so auto-refresh works without re-discovery
-                tokenEndpoint: state.tokenEndpoint,
-                clientId: state.clientId,
-              },
-              updatedAt: new Date(),
-            })
+          const currentState = (server.oauthState ?? {}) as Record<string, unknown>
+          const { codeVerifier: _removed, ...persistedState } = currentState
+          await db.update(mcpServers)
+            .set({ oauthState: persistedState })
             .where(and(
-              eq(mcpServers.id, state.mcpServerId),
-              eq(mcpServers.orgId, orgId),
+              eq(mcpServers.id, appState.mcpServerId),
+              eq(mcpServers.orgId, appState.orgId),
             ))
         } catch (err) {
-          const msg = encodeURIComponent(err instanceof Error ? err.message : 'Failed to save token')
-          return new Response(null, {
-            status: 302,
-            headers: { Location: `/mcp-servers?oauth_error=${msg}` },
-          })
+          // Non-fatal — tokens are already saved
+          console.error('[oauth-callback] Failed to clear codeVerifier:', err)
         }
 
-        // Success redirect
+        // Success
         return new Response(null, {
           status: 302,
           headers: { Location: '/mcp-servers?oauth_success=1' },

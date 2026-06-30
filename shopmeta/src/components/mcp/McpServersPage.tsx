@@ -16,8 +16,6 @@ import {
   updateMcpServer,
 } from '#/lib/mcp-servers'
 import type { McpServerRow } from '#/lib/mcp-servers'
-import { discoverMcpOAuth } from '#/lib/mcp-oauth'
-import type { McpOAuthDiscovery } from '#/lib/mcp-oauth'
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -57,12 +55,6 @@ interface FormState {
   apiKey: string
   headerFormat: HeaderFormat
   customHeader: string
-  // OAuth
-  clientId: string
-  clientSecret: string
-  authUrl: string
-  tokenUrl: string
-  scope: string
   // Trust
   trusted: boolean
 }
@@ -78,11 +70,6 @@ const emptyForm: FormState = {
   apiKey: '',
   headerFormat: 'bearer',
   customHeader: '',
-  clientId: '',
-  clientSecret: '',
-  authUrl: '',
-  tokenUrl: '',
-  scope: '',
   trusted: false,
 }
 
@@ -94,15 +81,8 @@ function formToPayload(f: FormState) {
       headerFormat: f.headerFormat,
       ...(f.headerFormat === 'custom' ? { customHeader: f.customHeader } : {}),
     }
-  } else if (f.authType === 'oauth') {
-    authConfig = {
-      clientId: f.clientId,
-      clientSecret: f.clientSecret || undefined,
-      authUrl: f.authUrl || undefined,
-      tokenUrl: f.tokenUrl || undefined,
-      scope: f.scope || undefined,
-    }
   }
+  // For oauth: no authConfig at save time — SDK writes tokens after the OAuth flow
   return {
     name: f.name.trim(),
     serverName: f.serverName.trim(),
@@ -129,11 +109,6 @@ function rowToForm(r: McpServerRow): FormState {
     apiKey: (cfg['key'] as string) ?? '',
     headerFormat: ((cfg['headerFormat'] as HeaderFormat) ?? 'bearer'),
     customHeader: (cfg['customHeader'] as string) ?? '',
-    clientId: (cfg['clientId'] as string) ?? '',
-    clientSecret: (cfg['clientSecret'] as string) ?? '',
-    authUrl: (cfg['authUrl'] as string) ?? '',
-    tokenUrl: (cfg['tokenUrl'] as string) ?? '',
-    scope: (cfg['scope'] as string) ?? '',
     trusted: r.trusted,
   }
 }
@@ -148,10 +123,6 @@ function validate(f: FormState): Record<string, string> {
   }
   if (!f.trusted) e['trusted'] = 'You must confirm you trust this application'
   if (f.authType === 'apikey' && !f.apiKey.trim()) e['apiKey'] = 'API Key is required'
-  // OAuth: clientId only required if the user filled in manual fields (not auto-discovery)
-  if (f.authType === 'oauth' && !f.clientId.trim() && (f.authUrl.trim() || f.tokenUrl.trim())) {
-    e['clientId'] = 'Client ID is required when manually specifying OAuth endpoints'
-  }
   if (f.authType === 'apikey' && f.headerFormat === 'custom' && !f.customHeader.trim()) {
     e['customHeader'] = 'Custom header name is required'
   }
@@ -177,11 +148,9 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
   const nameRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // OAuth discovery state
-  const [oauthDiscovering, setOauthDiscovering] = useState(false)
-  const [oauthDiscovered, setOauthDiscovered] = useState<McpOAuthDiscovery | null>(null)
-  const [oauthDiscoverError, setOauthDiscoverError] = useState<string | null>(null)
+  // OAuth connect state
   const [oauthConnecting, setOauthConnecting] = useState(false)
+  const [oauthError, setOauthError] = useState<string | null>(null)
 
   useEffect(() => {
     nameRef.current?.focus()
@@ -190,91 +159,34 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
   const set = <K extends keyof FormState>(key: K, val: FormState[K]) =>
     setForm((p) => ({ ...p, [key]: val }))
 
-  // Generate PKCE code verifier + challenge (browser-side, no dependency needed)
-  async function generatePkce(): Promise<{ verifier: string; challenge: string }> {
-    const array = new Uint8Array(32)
-    crypto.getRandomValues(array)
-    const verifier = btoa(String.fromCharCode(...array))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-    const encoded = new TextEncoder().encode(verifier)
-    const digest = await crypto.subtle.digest('SHA-256', encoded)
-    const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-    return { verifier, challenge }
-  }
-
-  // Step 1: probe the MCP URL, discover OAuth metadata
-  async function handleDiscoverOAuth() {
-    const urlVal = form.url.trim()
-    if (!urlVal) { setErrors({ url: 'Enter the MCP Server URL first' }); return }
-    try { new URL(urlVal) } catch { setErrors({ url: 'Must be a valid URL' }); return }
-    setErrors({})
-    setOauthDiscovering(true)
-    setOauthDiscovered(null)
-    setOauthDiscoverError(null)
-    try {
-      const discovery = await discoverMcpOAuth({ data: { url: urlVal } })
-      setOauthDiscovered(discovery)
-    } catch (err) {
-      setOauthDiscoverError(err instanceof Error ? err.message : 'Discovery failed')
-    } finally {
-      setOauthDiscovering(false)
-    }
-  }
-
-  // Step 2: save the server record, then redirect to OAuth authorization page
-  async function handleConnectOAuth() {
-    const errs: Record<string, string> = {}
-    if (!form.name.trim()) errs['name'] = 'Name is required'
-    if (!form.trusted) errs['trusted'] = 'You must confirm you trust this application'
-    if (Object.keys(errs).length > 0) { setErrors(errs); return }
-
-    if (!oauthDiscovered) return
+  // Called after the server is saved with authType='oauth'
+  // Posts to /api/mcp/oauth/start which handles SDK auth() flow and returns an authorizationUrl
+  async function handleConnectOAuth(mcpServerId: string) {
     setOauthConnecting(true)
-    setErrors({})
+    setOauthError(null)
     try {
-      // Save the server with authType=oauth (no token yet — token comes after callback)
-      const saved = await onSubmit({
-        ...form,
-        authType: 'oauth',
-        clientId: oauthDiscovered.clientId,
-        authUrl: oauthDiscovered.authorizationEndpoint,
-        tokenUrl: oauthDiscovered.tokenEndpoint,
-      }) as McpServerRow
-
-      if (!saved?.id) throw new Error('Failed to save MCP server')
-
-      // Generate PKCE
-      const { verifier, challenge } = await generatePkce()
-
-      // Build the callback URL
-      const redirectUri = `${window.location.origin}/api/mcp/oauth-callback`
-
-      // Encode state (base64url)
-      const stateObj = {
-        mcpServerId: saved.id,
-        codeVerifier: verifier,
-        tokenEndpoint: oauthDiscovered.tokenEndpoint,
-        clientId: oauthDiscovered.clientId,
-        redirectUri,
+      const res = await fetch('/api/mcp/oauth-start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mcpServerId }),
+      })
+      const data = await res.json() as { authorizationUrl?: string; alreadyAuthorized?: boolean; error?: string }
+      if (!res.ok || data.error) {
+        throw new Error(data.error ?? `Server error ${res.status}`)
       }
-      const state = btoa(JSON.stringify(stateObj))
-        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-
-      // Build authorization URL
-      const authUrl = new URL(oauthDiscovered.authorizationEndpoint)
-      authUrl.searchParams.set('response_type', 'code')
-      authUrl.searchParams.set('client_id', oauthDiscovered.clientId)
-      authUrl.searchParams.set('redirect_uri', redirectUri)
-      authUrl.searchParams.set('state', state)
-      authUrl.searchParams.set('code_challenge', challenge)
-      authUrl.searchParams.set('code_challenge_method', 'S256')
-      if (form.scope) authUrl.searchParams.set('scope', form.scope)
-
-      // Redirect to authorization server
-      window.location.href = authUrl.toString()
+      if (data.alreadyAuthorized) {
+        // Token still valid — no redirect needed, just close form
+        onCancel()
+        return
+      }
+      if (data.authorizationUrl) {
+        // Redirect user to OAuth authorization server
+        window.location.href = data.authorizationUrl
+        return
+      }
+      throw new Error('No authorization URL returned')
     } catch (err) {
-      setOauthDiscoverError(err instanceof Error ? err.message : 'Connection failed')
+      setOauthError(err instanceof Error ? err.message : 'OAuth connection failed')
       setOauthConnecting(false)
     }
   }
@@ -284,6 +196,14 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
     const errs = validate(form)
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
     setErrors({})
+    // For OAuth servers: save first, then initiate the OAuth flow
+    if (form.authType === 'oauth') {
+      const saved = await onSubmit(form) as McpServerRow | undefined
+      if (saved?.id) {
+        await handleConnectOAuth(saved.id)
+      }
+      return
+    }
     await onSubmit(form)
   }
 
@@ -635,155 +555,31 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
             </div>
           )}
 
-          {/* OAuth panel — two modes:
-              1. Auto-discover (for servers like ClickHouse Cloud that use dynamic OAuth/PKCE)
-              2. Manual (for servers where you already have client credentials)
-          */}
+          {/* OAuth panel — one-click connect via SDK auth() */}
           {form.authType === 'oauth' && (
             <div className="mcp-auth-panel" role="tabpanel">
-
-              {/* Auto-discover mode */}
               <div className="mcp-oauth-discover-section">
                 <div className="mcp-oauth-discover-header">
                   <div>
                     <p className="mcp-oauth-discover-title">Connect with OAuth</p>
                     <p className="mcp-oauth-discover-hint">
-                      For servers like ClickHouse Cloud — we'll auto-discover the auth server and redirect you to log in.
+                      We'll auto-discover the authorization server, register the client (DCR),
+                      and redirect you to log in. Tokens are refreshed automatically.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    className="conn-btn conn-btn--primary"
-                    onClick={handleDiscoverOAuth}
-                    disabled={isSubmitting || oauthDiscovering || oauthConnecting}
-                    data-testid="mcp-discover-oauth-btn"
-                  >
-                    {oauthDiscovering && <span className="conn-spinner" />}
-                    {oauthDiscovering ? 'Discovering…' : 'Discover OAuth'}
-                  </button>
                 </div>
-
-                {oauthDiscoverError && (
+                {oauthError && (
                   <div className="mcp-oauth-error">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
-                    <span>{oauthDiscoverError}</span>
+                    <span>{oauthError}</span>
                   </div>
                 )}
-
-                {oauthDiscovered && (
-                  <div className="mcp-oauth-discovered">
-                    <div className="mcp-oauth-discovered-badge">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                      OAuth endpoints discovered
-                    </div>
-                    <div className="mcp-oauth-endpoints">
-                      <span className="mcp-oauth-endpoint-label">Auth:</span>
-                      <code className="mcp-oauth-endpoint-url">{oauthDiscovered.authorizationEndpoint}</code>
-                    </div>
-                    <div className="mcp-oauth-endpoints">
-                      <span className="mcp-oauth-endpoint-label">Token:</span>
-                      <code className="mcp-oauth-endpoint-url">{oauthDiscovered.tokenEndpoint}</code>
-                    </div>
-                    {oauthDiscovered.clientId && (
-                      <div className="mcp-oauth-endpoints">
-                        <span className="mcp-oauth-endpoint-label">Client ID:</span>
-                        <code className="mcp-oauth-endpoint-url">{oauthDiscovered.clientId}</code>
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      className="conn-btn conn-btn--primary mcp-oauth-connect-btn"
-                      onClick={handleConnectOAuth}
-                      disabled={isSubmitting || oauthConnecting}
-                      data-testid="mcp-connect-oauth-btn"
-                    >
-                      {oauthConnecting && <span className="conn-spinner" />}
-                      {oauthConnecting ? 'Saving & redirecting…' : 'Connect with OAuth →'}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Divider */}
-              <div className="mcp-oauth-divider">
-                <span>or configure manually</span>
-              </div>
-
-              {/* Manual fields (collapsed by default — only shown if user needs them) */}
-              <div className="conn-form-grid">
-                <div className="conn-field">
-                  <label className="conn-label" htmlFor="mcp-client-id">
-                    Client ID <span className="mcp-label-optional">(optional if using auto-discover)</span>
-                  </label>
-                  <input
-                    id="mcp-client-id"
-                    className={`conn-input${errors['clientId'] ? ' conn-input--error' : ''}`}
-                    type="text"
-                    placeholder="Client ID"
-                    value={form.clientId}
-                    onChange={(e) => set('clientId', e.target.value)}
-                    disabled={isSubmitting}
-                    data-testid="mcp-client-id"
-                  />
-                  {errors['clientId'] && <p className="mcp-field-error">{errors['clientId']}</p>}
-                </div>
-                <div className="conn-field">
-                  <label className="conn-label" htmlFor="mcp-client-secret">Client Secret</label>
-                  <input
-                    id="mcp-client-secret"
-                    className="conn-input mcp-mono"
-                    type="password"
-                    placeholder="Client Secret"
-                    value={form.clientSecret}
-                    onChange={(e) => set('clientSecret', e.target.value)}
-                    disabled={isSubmitting}
-                    autoComplete="off"
-                    data-testid="mcp-client-secret"
-                  />
-                </div>
-                <div className="conn-field">
-                  <label className="conn-label" htmlFor="mcp-auth-url">Authorization URL</label>
-                  <input
-                    id="mcp-auth-url"
-                    className="conn-input"
-                    type="url"
-                    placeholder="https://auth.example.com/authorize"
-                    value={form.authUrl}
-                    onChange={(e) => set('authUrl', e.target.value)}
-                    disabled={isSubmitting}
-                    data-testid="mcp-auth-url"
-                  />
-                </div>
-                <div className="conn-field">
-                  <label className="conn-label" htmlFor="mcp-token-url">Token URL</label>
-                  <input
-                    id="mcp-token-url"
-                    className="conn-input"
-                    type="url"
-                    placeholder="https://auth.example.com/token"
-                    value={form.tokenUrl}
-                    onChange={(e) => set('tokenUrl', e.target.value)}
-                    disabled={isSubmitting}
-                    data-testid="mcp-token-url"
-                  />
-                </div>
-              </div>
-              <div className="conn-field">
-                <label className="conn-label" htmlFor="mcp-scope">Scope</label>
-                <input
-                  id="mcp-scope"
-                  className="conn-input"
-                  type="text"
-                  placeholder="read write"
-                  value={form.scope}
-                  onChange={(e) => set('scope', e.target.value)}
-                  disabled={isSubmitting}
-                  data-testid="mcp-scope"
-                />
+                <p className="mcp-oauth-discover-hint mcp-oauth-submit-hint">
+                  Fill in the name and URL above, check the trust box, then click
+                  <strong> Save &amp; Connect</strong> to begin the OAuth flow.
+                </p>
               </div>
             </div>
           )}
@@ -824,12 +620,16 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
             <button
               type="submit"
               className="conn-btn conn-btn--primary"
-              disabled={isSubmitting}
+              disabled={isSubmitting || oauthConnecting}
               id="mcp-submit-btn"
               data-testid="mcp-submit"
             >
-              {isSubmitting && <span className="conn-spinner" />}
-              {submitLabel}
+              {(isSubmitting || oauthConnecting) && <span className="conn-spinner" />}
+              {oauthConnecting
+                ? 'Connecting…'
+                : form.authType === 'oauth' && !isSubmitting
+                  ? `${submitLabel.replace('Add', 'Save')} & Connect`
+                  : submitLabel}
             </button>
           </div>
         </div>

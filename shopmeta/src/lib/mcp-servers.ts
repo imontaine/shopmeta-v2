@@ -18,6 +18,7 @@ import { z } from 'zod'
 import { getDb } from '#/lib/db/index'
 import { mcpServers, agentMcpServers } from '#/lib/db/schema'
 import { requireOrgSession } from '#/lib/auth/require-org-session'
+import { DrizzleOAuthProvider } from '#/lib/mcp-oauth-provider'
 
 // ─── Auth config schemas ──────────────────────────────────────────────────────
 
@@ -51,6 +52,8 @@ export interface McpServerRow {
   iconUrl: string | null
   authType: string
   authConfig: Record<string, unknown> | null
+  oauthClientInfo: Record<string, unknown> | null
+  oauthState: Record<string, unknown> | null
   trusted: boolean
   createdAt: string | null
   updatedAt: string | null
@@ -68,6 +71,8 @@ function serializeMcpServer(s: typeof mcpServers.$inferSelect): McpServerRow {
     iconUrl: s.iconUrl ?? null,
     authType: s.authType,
     authConfig: s.authConfig as Record<string, unknown> | null,
+    oauthClientInfo: s.oauthClientInfo as Record<string, unknown> | null,
+    oauthState: s.oauthState as Record<string, unknown> | null,
     trusted: s.trusted,
     createdAt: s.createdAt ? s.createdAt.toISOString() : null,
     updatedAt: s.updatedAt ? s.updatedAt.toISOString() : null,
@@ -305,6 +310,8 @@ export const getAgentMcpServers = createServerFn({ method: 'GET' })
         iconUrl: mcpServers.iconUrl,
         authType: mcpServers.authType,
         authConfig: mcpServers.authConfig,
+        oauthClientInfo: mcpServers.oauthClientInfo,
+        oauthState: mcpServers.oauthState,
         trusted: mcpServers.trusted,
         createdAt: mcpServers.createdAt,
         updatedAt: mcpServers.updatedAt,
@@ -315,28 +322,43 @@ export const getAgentMcpServers = createServerFn({ method: 'GET' })
     return rows.map(serializeMcpServer)
   })
 
-// ─── Auth → MCPServerConfig conversion ───────────────────────────────────────
+// ─── Auth → MCPClientOptions conversion ──────────────────────────────────────
 
 /**
- * Converts a McpServerRow from the DB catalog into an MCPServerConfig
- * ready for use with createTenantMCPClients() / discoverTools().
+ * Converts a McpServerRow from the DB catalog into MCPClientOptions
+ * for use with createMCPClients() from @tanstack/ai-mcp.
  *
  * Handles all auth types:
- *   'none'   → no headers
- *   'apikey' → Authorization: Bearer/Basic/Custom <key>
- *   'oauth'  → resolves a valid access_token (auto-refreshes if expired)
+ *   'none'   → no headers, no authProvider
+ *   'apikey' → static Authorization header injected via transport.headers
+ *   'oauth'  → authProvider: DrizzleOAuthProvider (SDK handles token injection
+ *              and auto-refresh on 401 — no manual token management needed)
  *
- * For OAuth: this function performs a DB read + possible network call (token refresh).
- * Always call this server-side (server function or API route handler).
+ * The redirect URL is derived from the request origin so it works on
+ * local dev, staging, and production without configuration.
  *
- * @param row   - McpServerRow from the catalog
- * @param orgId - Org ID for OAuth token resolution scoping
+ * @param row         - McpServerRow from the catalog
+ * @param orgId       - Org ID for tenant scoping
+ * @param redirectUrl - OAuth callback URL (e.g. `${origin}/api/mcp/oauth-callback`)
  */
-export async function mcpRowToServerConfig(
+export function mcpRowToClientOptions(
   row: McpServerRow,
   orgId: string,
-): Promise<import('#/lib/ai/mcp').MCPServerConfig> {
-  const headers: Record<string, string> = {}
+  redirectUrl: string,
+): import('@tanstack/ai-mcp').MCPClientOptions {
+  const type = row.transport === 'sse' ? 'sse' : 'http'
+  const prefix = row.serverName || row.name
+
+  if (row.authType === 'oauth') {
+    return {
+      transport: {
+        type,
+        url: row.url,
+        authProvider: new DrizzleOAuthProvider(row.id, orgId, redirectUrl),
+      },
+      prefix,
+    }
+  }
 
   if (row.authType === 'apikey') {
     const cfg = row.authConfig as {
@@ -345,35 +367,50 @@ export async function mcpRowToServerConfig(
       customHeader?: string
     } | null
 
+    const headers: Record<string, string> = {}
     if (cfg?.key) {
       if (cfg.headerFormat === 'basic') {
         headers['Authorization'] = `Basic ${cfg.key}`
       } else if (cfg.headerFormat === 'custom' && cfg.customHeader) {
         headers[cfg.customHeader] = cfg.key
       } else {
-        // Default: Bearer
         headers['Authorization'] = `Bearer ${cfg.key}`
       }
     }
-  } else if (row.authType === 'oauth') {
-    // resolveOAuthToken auto-refreshes if the token is expired
-    const accessToken = await resolveOAuthToken(row.id, orgId)
-    headers['Authorization'] = `Bearer ${accessToken}`
+    return {
+      transport: {
+        type,
+        url: row.url,
+        headers: Object.keys(headers).length > 0 ? headers : undefined,
+      },
+      prefix,
+    }
   }
 
+  // authType = 'none'
   return {
-    name: row.serverName || row.name,
-    url: row.url,
-    transportType: row.transport === 'sse' ? 'sse' : 'http',
-    headers: Object.keys(headers).length > 0 ? headers : undefined,
+    transport: { type, url: row.url },
+    prefix,
   }
 }
 
 /**
- * Resolves a valid OAuth access token for an MCP server by ID.
- * Thin re-export so callers don't need to import from mcp-oauth directly.
+ * @deprecated Use mcpRowToClientOptions() instead.
+ * Legacy wrapper kept for any code that still calls mcpRowToServerConfig.
+ * Will be removed in a future cleanup.
  */
-async function resolveOAuthToken(mcpServerId: string, orgId: string): Promise<string> {
-  const { resolveOAuthToken: resolve } = await import('#/lib/mcp-oauth')
-  return resolve(mcpServerId, orgId)
+export async function mcpRowToServerConfig(
+  row: McpServerRow,
+  orgId: string,
+): Promise<import('#/lib/ai/mcp').MCPServerConfig> {
+  const options = mcpRowToClientOptions(row, orgId, 'https://app.shopmeta.app/api/mcp/oauth-callback')
+  const transport = options.transport as { type?: string; url: string; headers?: Record<string, string> }
+  return {
+    name: options.prefix ?? row.serverName,
+    url: transport.url,
+    transportType: transport.type === 'sse' ? 'sse' : 'http',
+    headers: transport.headers,
+  }
 }
+
+

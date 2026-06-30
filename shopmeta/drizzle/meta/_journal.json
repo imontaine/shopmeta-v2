@@ -43,6 +43,13 @@
       "when": 1751416800000,
       "tag": "0005_mcp_servers_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782858834302,
+      "tag": "0006_slippery_wallop",
+      "breakpoints": true
     }
   ]
 }

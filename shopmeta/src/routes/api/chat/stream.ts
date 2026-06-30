@@ -69,30 +69,24 @@ export const Route = createFileRoute('/api/chat/stream')({
         }
 
         // ── MCP Integration ────────────────────────────────────────────────────
-        // Load agent MCP servers from the DB catalog, resolve auth headers.
-        // OAuth tokens are auto-refreshed here if expired.
+        // Load agent MCP servers from the DB catalog. For OAuth servers, the SDK
+        // transport automatically injects the Bearer token and refreshes it on 401
+        // via DrizzleOAuthProvider (no manual token management needed).
         let mcpTools: unknown[] = []
-        let mcpClients: Awaited<ReturnType<typeof import('#/lib/ai/mcp').createTenantMCPClients>> | undefined
+        let mcpClients: Awaited<ReturnType<typeof import('@tanstack/ai-mcp').createMCPClients>> | undefined
 
         if (parsed.agentId && parsed.orgId) {
           try {
             const { getDb } = await import('#/lib/db/index')
             const { mcpServers, agentMcpServers } = await import('#/lib/db/schema')
             const { eq, and } = await import('drizzle-orm')
-            const { mcpRowToServerConfig } = await import('#/lib/mcp-servers')
-            const { createTenantMCPClients } = await import('#/lib/ai/mcp')
+            const { mcpRowToClientOptions } = await import('#/lib/mcp-servers')
+            const { createMCPClients, MCPConnectionError, DuplicateToolNameError } = await import('@tanstack/ai-mcp')
 
             const db = getDb()
 
-            type McpRow = {
-              id: string; orgId: string; name: string; serverName: string | null;
-              url: string; transport: string; description: string | null;
-              iconUrl: string | null; authType: string; authConfig: unknown;
-              trusted: boolean; createdAt: Date | null; updatedAt: Date | null;
-            }
-
-            // Fetch the agent's attached MCP servers directly from DB
-            const rows: McpRow[] = await db
+            // Fetch agent's attached MCP servers directly from DB
+            const rows = await db
               .select({
                 id: mcpServers.id,
                 orgId: mcpServers.orgId,
@@ -104,6 +98,8 @@ export const Route = createFileRoute('/api/chat/stream')({
                 iconUrl: mcpServers.iconUrl,
                 authType: mcpServers.authType,
                 authConfig: mcpServers.authConfig,
+                oauthClientInfo: mcpServers.oauthClientInfo,
+                oauthState: mcpServers.oauthState,
                 trusted: mcpServers.trusted,
                 createdAt: mcpServers.createdAt,
                 updatedAt: mcpServers.updatedAt,
@@ -118,32 +114,51 @@ export const Route = createFileRoute('/api/chat/stream')({
               )
 
             if (rows.length > 0) {
-              // Resolve auth headers for each server (handles Bearer, API Key, OAuth refresh)
-              const serverConfigs = await Promise.all(
-                rows.map((row) => {
-                  // Convert DB row to McpServerRow shape
-                  const mcpRow: import('#/lib/mcp-servers').McpServerRow = {
-                    id: row.id,
-                    orgId: row.orgId,
-                    name: row.name,
-                    serverName: row.serverName ?? '',
-                    url: row.url,
-                    transport: row.transport,
-                    description: row.description ?? null,
-                    iconUrl: row.iconUrl ?? null,
-                    authType: row.authType,
-                    authConfig: row.authConfig as Record<string, unknown> | null,
-                    trusted: row.trusted,
-                    createdAt: row.createdAt?.toISOString() ?? null,
-                    updatedAt: row.updatedAt?.toISOString() ?? null,
-                  }
-                  return mcpRowToServerConfig(mcpRow, parsed.orgId!)
-                })
-              )
+              // Derive the redirect URL from the request origin
+              const origin = new URL(request.url).origin
+              const redirectUrl = `${origin}/api/mcp/oauth-callback`
 
-              // Create MCP client pool and discover tools
-              mcpClients = await createTenantMCPClients(serverConfigs)
-              mcpTools = await mcpClients.tools()
+              // Build MCPClientOptions for each server. For OAuth servers, the
+              // transport's authProvider handles token injection + refresh on 401.
+              const clientOptionsMap: Record<string, import('@tanstack/ai-mcp').MCPClientOptions> = {}
+              for (const row of rows) {
+                const mcpRow: import('#/lib/mcp-servers').McpServerRow = {
+                  id: row.id,
+                  orgId: row.orgId,
+                  name: row.name,
+                  serverName: row.serverName ?? '',
+                  url: row.url,
+                  transport: row.transport,
+                  description: row.description ?? null,
+                  iconUrl: row.iconUrl ?? null,
+                  authType: row.authType,
+                  authConfig: row.authConfig as Record<string, unknown> | null,
+                  oauthClientInfo: row.oauthClientInfo as Record<string, unknown> | null,
+                  oauthState: row.oauthState as Record<string, unknown> | null,
+                  trusted: row.trusted,
+                  createdAt: row.createdAt?.toISOString() ?? null,
+                  updatedAt: row.updatedAt?.toISOString() ?? null,
+                }
+                const opts = mcpRowToClientOptions(mcpRow, parsed.orgId!, redirectUrl)
+                const key = (opts.prefix ?? mcpRow.serverName) || mcpRow.name
+                clientOptionsMap[key] = opts
+              }
+
+              try {
+                // Create MCP client pool. SDK handles transport lifecycle.
+                mcpClients = await createMCPClients(clientOptionsMap)
+                mcpTools = await mcpClients.tools()
+              } catch (err) {
+                if (err instanceof DuplicateToolNameError) {
+                  // Two MCP servers expose a tool with the same prefixed name
+                  console.error('[chat/stream] Duplicate MCP tool name:', err.toolName)
+                } else if (err instanceof MCPConnectionError) {
+                  // One or more MCP servers failed to connect (OAuth failure, network, etc.)
+                  console.error('[chat/stream] MCP connection error:', err.message)
+                } else {
+                  throw err
+                }
+              }
             }
           } catch (err) {
             // Log but don't crash — degrade gracefully to no-MCP mode

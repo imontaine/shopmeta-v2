@@ -199,7 +199,12 @@ export const agentSkills = pgTable(
 // authType: 'none' | 'apikey' | 'oauth'
 // authConfig (JSONB):
 //   apikey: { headerFormat: 'bearer' | 'basic' | 'custom', key: string, customHeader?: string }
-//   oauth:  { clientId, clientSecret, authUrl, tokenUrl, scope }
+//   oauth:  OAuthTokens from SDK — { access_token, refresh_token?, expires_in?, token_type, scope? }
+// oauthClientInfo (JSONB): OAuthClientInformationFull from SDK — written once after DCR, never changes
+//   { client_id, client_secret?, redirect_uris, ... }
+// oauthState (JSONB): transient during auth + cached AS discovery:
+//   { codeVerifier?, redirectUrl?, authorizationServerUrl?, resourceMetadataUrl?,
+//     resourceMetadata?, authorizationServerMetadata? }
 export const mcpServers = pgTable(
   'mcp_servers',
   {
@@ -212,7 +217,9 @@ export const mcpServers = pgTable(
     description: text('description'),
     iconUrl: text('icon_url'),                        // Optional icon (min 128x128)
     authType: text('auth_type').default('none').notNull(), // none | apikey | oauth
-    authConfig: jsonb('auth_config'),                 // Encrypted-at-rest auth credentials
+    authConfig: jsonb('auth_config'),                 // Credentials — see comment above
+    oauthClientInfo: jsonb('oauth_client_info'),      // SDK OAuthClientInformationFull (DCR result)
+    oauthState: jsonb('oauth_state'),                 // Transient auth state + cached AS discovery
     trusted: boolean('trusted').default(false).notNull(), // User trust checkbox
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
