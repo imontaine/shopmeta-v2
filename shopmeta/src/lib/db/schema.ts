@@ -193,6 +193,45 @@ export const agentSkills = pgTable(
   ],
 )
 
+// ─── MCP Servers Catalog ─────────────────────────
+// Org-level catalog of reusable MCP server configs.
+// Agents reference these via the agent_mcp_servers join table.
+export const mcpServers = pgTable(
+  'mcp_servers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: text('org_id').notNull(),
+    name: text('name').notNull(),                // Human-readable label, e.g. "ClickHouse Prod"
+    serverName: text('server_name').notNull(),  // MCP server identifier/prefix, e.g. "clickhouse"
+    url: text('url').notNull(),
+    transport: text('transport').default('http').notNull(), // http | sse | stdio
+    description: text('description'),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (table) => [
+    index('mcp_servers_org_id_idx').on(table.orgId),
+    unique('mcp_servers_org_name_unique').on(table.orgId, table.name),
+  ],
+)
+
+export const agentMcpServers = pgTable(
+  'agent_mcp_servers',
+  {
+    agentId: uuid('agent_id')
+      .notNull()
+      .references(() => agents.id, { onDelete: 'cascade' }),
+    mcpServerId: uuid('mcp_server_id')
+      .notNull()
+      .references(() => mcpServers.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.agentId, table.mcpServerId] }),
+    index('agent_mcp_servers_agent_id_idx').on(table.agentId),
+    index('agent_mcp_servers_mcp_server_id_idx').on(table.mcpServerId),
+  ],
+)
+
 // ─── Tenant Connections ───────────────────────────
 // Note: widgets references connections, so connections must be defined first
 export const connections = pgTable(
@@ -297,6 +336,22 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 export const agentsRelations = relations(agents, ({ many }) => ({
   conversations: many(conversations),
   agentSkills: many(agentSkills),
+  agentMcpServers: many(agentMcpServers),
+}))
+
+export const mcpServersRelations = relations(mcpServers, ({ many }) => ({
+  agentMcpServers: many(agentMcpServers),
+}))
+
+export const agentMcpServersRelations = relations(agentMcpServers, ({ one }) => ({
+  agent: one(agents, {
+    fields: [agentMcpServers.agentId],
+    references: [agents.id],
+  }),
+  mcpServer: one(mcpServers, {
+    fields: [agentMcpServers.mcpServerId],
+    references: [mcpServers.id],
+  }),
 }))
 
 export const dashboardsRelations = relations(dashboards, ({ many }) => ({
