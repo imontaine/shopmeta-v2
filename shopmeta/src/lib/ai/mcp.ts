@@ -11,7 +11,7 @@
 //   - mergeServerTools() is a pure utility for testing / manual merging.
 
 import { createMCPClient, createMCPClientFromTransport, InMemoryTransport } from '@tanstack/ai-mcp'
-import type { MCPClientOptions, MCPClients, MCPClientsConfig } from '@tanstack/ai-mcp'
+import type { MCPClientOptions, MCPClientsConfig } from '@tanstack/ai-mcp'
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 
 // Re-export for test usage so tests can import from '#/lib/ai/mcp'

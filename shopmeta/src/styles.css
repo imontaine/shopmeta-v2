@@ -2724,6 +2724,53 @@ body {
   background: var(--border-muted);
 }
 
+/* OAuth status badge on server cards */
+.mcp-oauth-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 100px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.mcp-oauth-status-badge--connected {
+  background: hsla(142, 55%, 40%, 0.12);
+  color: hsl(142, 55%, 40%);
+  border: 1px solid hsla(142, 55%, 40%, 0.25);
+}
+
+.mcp-oauth-status-badge--disconnected {
+  background: hsla(0, 72%, 50%, 0.10);
+  color: hsl(0, 72%, 50%);
+  border: 1px solid hsla(0, 72%, 50%, 0.25);
+}
+
+/* Reconnect / refresh OAuth button */
+.mcp-reconnect-btn {
+  color: var(--accent);
+  border-color: var(--accent-muted, var(--accent));
+}
+
+.mcp-reconnect-btn:hover:not(:disabled) {
+  background: hsla(var(--accent-hsl, 210 100% 56%), 0.10);
+}
+
+/* Submit hint inside OAuth panel */
+.mcp-oauth-submit-hint {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--bg-subtle, var(--bg-secondary));
+  border-radius: 6px;
+  border: 1px solid var(--border-muted);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Trust checkbox box Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 .mcp-trust-box {

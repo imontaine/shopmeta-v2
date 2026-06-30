@@ -661,6 +661,40 @@ interface McpCardProps {
 }
 
 function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
+  const [reconnecting, setReconnecting] = useState(false)
+  const [reconnectError, setReconnectError] = useState<string | null>(null)
+
+  // OAuth connection state derived from authConfig
+  const isOAuth = server.authType === 'oauth'
+  const hasTokens = isOAuth && !!(server.authConfig as Record<string, unknown> | null)?.['access_token']
+
+  async function handleReconnect() {
+    setReconnecting(true)
+    setReconnectError(null)
+    try {
+      const res = await fetch('/api/mcp/oauth-start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mcpServerId: server.id }),
+      })
+      const data = await res.json() as { authorizationUrl?: string; alreadyAuthorized?: boolean; error?: string }
+      if (!res.ok || data.error) throw new Error(data.error ?? `Server error ${res.status}`)
+      if (data.alreadyAuthorized) {
+        setReconnectError(null)
+        return
+      }
+      if (data.authorizationUrl) {
+        window.location.href = data.authorizationUrl
+        return
+      }
+      throw new Error('No authorization URL returned')
+    } catch (err) {
+      setReconnectError(err instanceof Error ? err.message : 'Reconnect failed')
+    } finally {
+      setReconnecting(false)
+    }
+  }
+
   return (
     <div className="conn-card" data-testid={`mcp-card-${server.id}`}>
       <div className="conn-card-header">
@@ -678,8 +712,38 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
             )}
           </div>
           <span className="conn-card-name">{server.name}</span>
+
+          {/* OAuth connection status badge */}
+          {isOAuth && (
+            <span
+              className={`mcp-oauth-status-badge${hasTokens ? ' mcp-oauth-status-badge--connected' : ' mcp-oauth-status-badge--disconnected'}`}
+              title={hasTokens ? 'OAuth token stored' : 'Not authenticated — click Reconnect'}
+            >
+              {hasTokens ? '🟢 Connected' : '🔴 Not authenticated'}
+            </span>
+          )}
         </div>
         <div className="conn-card-actions">
+          {/* Reconnect button for OAuth servers without tokens */}
+          {isOAuth && (
+            <button
+              type="button"
+              className="conn-card-btn mcp-reconnect-btn"
+              onClick={handleReconnect}
+              disabled={reconnecting}
+              aria-label={`${hasTokens ? 'Reconnect' : 'Connect'} ${server.name} via OAuth`}
+              title={hasTokens ? 'Reconnect (refresh auth)' : 'Connect via OAuth'}
+              data-testid={`mcp-reconnect-${server.id}`}
+            >
+              {reconnecting
+                ? <span className="conn-spinner" />
+                : (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M23 4v6h-6" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                  </svg>
+                )}
+            </button>
+          )}
           <button
             className="conn-card-btn"
             onClick={() => onEdit(server)}
@@ -707,6 +771,15 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
           </button>
         </div>
       </div>
+
+      {reconnectError && (
+        <div className="mcp-oauth-error" style={{ margin: '6px 0 0' }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{reconnectError}</span>
+        </div>
+      )}
 
       <div className="conn-card-meta">
         {/* URL */}
