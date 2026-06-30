@@ -893,11 +893,11 @@ export function AgentBuilder() {
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="agent-builder">
+    <div className="conn-settings" data-testid="agent-builder">
       {/* Toasts */}
-      <div className="agent-toasts" aria-live="polite">
+      <div className="conn-toasts" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`agent-toast agent-toast--${t.type}`}>
+          <div key={t.id} className={`conn-toast conn-toast--${t.type}`}>
             {t.type === 'success' ? (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="20 6 9 17 4 12" />
@@ -913,16 +913,16 @@ export function AgentBuilder() {
       </div>
 
       {/* Section header */}
-      <div className="agent-section-header">
+      <div className="conn-section-header">
         <div>
-          <h2 className="agent-section-title">Agent Builder</h2>
-          <p className="agent-section-desc">
+          <h2 className="conn-section-title">Agent Catalog</h2>
+          <p className="conn-section-desc">
             Create AI agents with custom system instructions, model selection, and MCP server integrations.
           </p>
         </div>
         {view === 'list' && (
           <button
-            className="agent-btn agent-btn--primary"
+            className="conn-btn conn-btn--primary"
             onClick={() => setView('create')}
             id="agent-add-btn"
             data-testid="agent-add-btn"
@@ -937,8 +937,8 @@ export function AgentBuilder() {
 
       {/* Create form */}
       {view === 'create' && (
-        <div className="agent-form-wrapper">
-          <h3 className="agent-form-title">New Agent</h3>
+        <div className="conn-form-section">
+          <h3 className="conn-form-title">New Agent</h3>
           <AgentForm
             onSubmit={handleCreate}
             onCancel={handleCancelForm}
@@ -950,8 +950,8 @@ export function AgentBuilder() {
 
       {/* Edit form */}
       {view === 'edit' && editingAgent && (
-        <div className="agent-form-wrapper">
-          <h3 className="agent-form-title">Edit Agent</h3>
+        <div className="conn-form-section">
+          <h3 className="conn-form-title">Edit Agent</h3>
           <AgentForm
             agentId={editingAgent.id}
             initial={{
@@ -973,10 +973,10 @@ export function AgentBuilder() {
 
       {/* List view */}
       {view === 'list' && (
-        <div className="agent-list-section">
+        <div className="conn-list-section">
           {isLoading && (
-            <div className="agent-loading">
-              <div className="agent-loading-dots">
+            <div className="conn-loading">
+              <div className="conn-loading-dots">
                 <span /><span /><span />
               </div>
               <span>Loading agents…</span>
@@ -984,7 +984,7 @@ export function AgentBuilder() {
           )}
 
           {error && (
-            <div className="agent-error-banner">
+            <div className="conn-error-banner">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
@@ -995,19 +995,19 @@ export function AgentBuilder() {
           )}
 
           {!isLoading && !error && agentList.length === 0 && (
-            <div className="agent-empty">
-              <div className="agent-empty-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <div className="conn-empty">
+              <div className="conn-empty-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M12 2a10 10 0 1 0 10 10" />
                   <path d="M12 8v4l3 3" />
                 </svg>
               </div>
-              <h3 className="agent-empty-title">No agents yet</h3>
-              <p className="agent-empty-desc">
+              <h3 className="conn-empty-title">No agents yet</h3>
+              <p className="conn-empty-desc">
                 Create your first AI agent with custom system instructions and model configuration.
               </p>
               <button
-                className="agent-btn agent-btn--primary"
+                className="conn-btn conn-btn--primary"
                 onClick={() => setView('create')}
                 data-testid="agent-create-first-btn"
               >
@@ -1017,7 +1017,7 @@ export function AgentBuilder() {
           )}
 
           {!isLoading && agentList.length > 0 && (
-            <div className="agent-grid" data-testid="agent-grid">
+            <div className="conn-grid" data-testid="agent-grid">
               {agentList.map((agent) => (
                 <AgentCard
                   key={agent.id}

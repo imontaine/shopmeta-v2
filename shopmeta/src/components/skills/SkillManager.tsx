@@ -583,29 +583,41 @@ export function SkillManager() {
   const userSkills = skillsList.filter((s) => s.source !== 'bundled')
 
   return (
-    <div className="skill-manager">
+    <div className="conn-settings" data-testid="skill-manager">
       {/* Toast container */}
-      <div className="agent-toast-container">
+      <div className="conn-toasts" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`agent-toast agent-toast--${t.type}`}>
+          <div key={t.id} className={`conn-toast conn-toast--${t.type}`}>
             {t.message}
           </div>
         ))}
       </div>
 
-      {/* Actions bar */}
-      <div className="skill-actions-bar">
-        <button
-          data-testid="create-skill-btn"
-          className="agent-btn agent-btn--primary"
-          onClick={() => {
-            resetForm()
-            setStagedSkill(null)
-            setShowForm(true)
-          }}
-        >
-          + Create Skill
-        </button>
+      {/* Section header */}
+      <div className="conn-section-header">
+        <div>
+          <h2 className="conn-section-title">Skill Library</h2>
+          <p className="conn-section-desc">
+            Skills are instruction sets and knowledge documents that agents can draw on.
+            Upload .md files, folders, or .zip archives.
+          </p>
+        </div>
+        {!showForm && !stagedSkill && (
+          <button
+            data-testid="create-skill-btn"
+            className="conn-btn conn-btn--primary"
+            onClick={() => {
+              resetForm()
+              setStagedSkill(null)
+              setShowForm(true)
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Create Skill
+          </button>
+        )}
       </div>
 
       {/* Upload zone — shown when no form/staged skill is open */}
@@ -710,10 +722,28 @@ export function SkillManager() {
 
       {/* Skills list */}
       {isLoading ? (
-        <p className="skills-loading">Loading skills...</p>
+        <div className="conn-loading">
+          <div className="conn-loading-dots"><span /><span /><span /></div>
+          <span>Loading skills…</span>
+        </div>
       ) : skillsList.length === 0 ? (
-        <div className="skills-empty">
-          <p>No skills yet. Create one or upload a skill folder / .zip to get started.</p>
+        <div className="conn-empty">
+          <div className="conn-empty-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+          </div>
+          <h3 className="conn-empty-title">No skills yet</h3>
+          <p className="conn-empty-desc">
+            Create a skill or upload a skill folder / .zip to get started.
+          </p>
+          <button
+            className="conn-btn conn-btn--primary"
+            onClick={() => { resetForm(); setShowForm(true) }}
+          >
+            Create your first skill
+          </button>
         </div>
       ) : (
         <>
@@ -776,14 +806,14 @@ export function SkillManager() {
                       <div className="skill-card-actions">
                         <button
                           data-testid={`skill-edit-btn-${skill.id}`}
-                          className="agent-btn agent-btn--secondary agent-btn--sm"
+                          className="conn-btn conn-btn--secondary conn-btn--sm"
                           onClick={() => startEdit(skill)}
                         >
                           Edit
                         </button>
                         <button
                           data-testid={`skill-delete-btn-${skill.id}`}
-                          className="agent-btn agent-btn--danger agent-btn--sm"
+                          className="conn-btn conn-btn--danger conn-btn--sm"
                           onClick={() => setDeleteConfirmId(skill.id)}
                         >
                           Delete
