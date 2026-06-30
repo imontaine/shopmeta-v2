@@ -112,7 +112,8 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
           })
         }
 
-        // Store token in DB
+        // Store token in DB — include tokenEndpoint + clientId so resolveOAuthToken
+        // can refresh without re-discovering the auth server
         try {
           const db = getDb()
           await db
@@ -126,6 +127,9 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
                 tokenType: tokens.token_type ?? 'Bearer',
                 scope: tokens.scope,
                 issuedAt: Date.now(),
+                // Persist these so auto-refresh works without re-discovery
+                tokenEndpoint: state.tokenEndpoint,
+                clientId: state.clientId,
               },
               updatedAt: new Date(),
             })

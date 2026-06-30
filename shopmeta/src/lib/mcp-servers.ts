@@ -90,7 +90,7 @@ const CreateMcpServerInput = z.object({
   description: z.string().max(1000).optional(),
   iconUrl: z.string().url().optional().or(z.literal('')),
   authType: z.enum(['none', 'apikey', 'oauth']).default('none'),
-  authConfig: z.record(z.unknown()).optional(),
+  authConfig: z.record(z.string(), z.unknown()).optional(),
   trusted: z.boolean().default(false),
 })
 
@@ -103,7 +103,7 @@ const UpdateMcpServerInput = z.object({
   description: z.string().max(1000).optional(),
   iconUrl: z.string().url().optional().or(z.literal('')),
   authType: z.enum(['none', 'apikey', 'oauth']).optional(),
-  authConfig: z.record(z.unknown()).optional().nullable(),
+  authConfig: z.record(z.string(), z.unknown()).optional().nullable(),
   trusted: z.boolean().optional(),
 })
 
@@ -314,3 +314,66 @@ export const getAgentMcpServers = createServerFn({ method: 'GET' })
       .where(eq(agentMcpServers.agentId, data.agentId))
     return rows.map(serializeMcpServer)
   })
+
+// ─── Auth → MCPServerConfig conversion ───────────────────────────────────────
+
+/**
+ * Converts a McpServerRow from the DB catalog into an MCPServerConfig
+ * ready for use with createTenantMCPClients() / discoverTools().
+ *
+ * Handles all auth types:
+ *   'none'   → no headers
+ *   'apikey' → Authorization: Bearer/Basic/Custom <key>
+ *   'oauth'  → resolves a valid access_token (auto-refreshes if expired)
+ *
+ * For OAuth: this function performs a DB read + possible network call (token refresh).
+ * Always call this server-side (server function or API route handler).
+ *
+ * @param row   - McpServerRow from the catalog
+ * @param orgId - Org ID for OAuth token resolution scoping
+ */
+export async function mcpRowToServerConfig(
+  row: McpServerRow,
+  orgId: string,
+): Promise<import('#/lib/ai/mcp').MCPServerConfig> {
+  const headers: Record<string, string> = {}
+
+  if (row.authType === 'apikey') {
+    const cfg = row.authConfig as {
+      key?: string
+      headerFormat?: 'bearer' | 'basic' | 'custom'
+      customHeader?: string
+    } | null
+
+    if (cfg?.key) {
+      if (cfg.headerFormat === 'basic') {
+        headers['Authorization'] = `Basic ${cfg.key}`
+      } else if (cfg.headerFormat === 'custom' && cfg.customHeader) {
+        headers[cfg.customHeader] = cfg.key
+      } else {
+        // Default: Bearer
+        headers['Authorization'] = `Bearer ${cfg.key}`
+      }
+    }
+  } else if (row.authType === 'oauth') {
+    // resolveOAuthToken auto-refreshes if the token is expired
+    const accessToken = await resolveOAuthToken(row.id, orgId)
+    headers['Authorization'] = `Bearer ${accessToken}`
+  }
+
+  return {
+    name: row.serverName || row.name,
+    url: row.url,
+    transportType: row.transport === 'sse' ? 'sse' : 'http',
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
+  }
+}
+
+/**
+ * Resolves a valid OAuth access token for an MCP server by ID.
+ * Thin re-export so callers don't need to import from mcp-oauth directly.
+ */
+async function resolveOAuthToken(mcpServerId: string, orgId: string): Promise<string> {
+  const { resolveOAuthToken: resolve } = await import('#/lib/mcp-oauth')
+  return resolve(mcpServerId, orgId)
+}

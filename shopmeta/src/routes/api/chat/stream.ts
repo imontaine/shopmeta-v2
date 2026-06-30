@@ -2,6 +2,12 @@
 // Chat streaming API route — handles POST /api/chat/stream.
 // Returns SSE response with AI-generated text chunks.
 // Compatible with assistant-ui's ChatModelAdapter streaming format.
+//
+// MCP integration:
+//   When agentId + orgId are provided, the route loads the agent's attached
+//   MCP servers from the DB catalog, resolves auth headers (API key / OAuth
+//   with automatic token refresh), and passes the configured server list to
+//   the AI agent loop for tool discovery.
 
 import { createFileRoute } from '@tanstack/react-router'
 import { getAdapter } from '#/lib/ai/providers'
@@ -62,6 +68,90 @@ export const Route = createFileRoute('/api/chat/stream')({
           })
         }
 
+        // ── MCP Integration ────────────────────────────────────────────────────
+        // Load agent MCP servers from the DB catalog, resolve auth headers.
+        // OAuth tokens are auto-refreshed here if expired.
+        let mcpTools: unknown[] = []
+        let mcpClients: Awaited<ReturnType<typeof import('#/lib/ai/mcp').createTenantMCPClients>> | undefined
+
+        if (parsed.agentId && parsed.orgId) {
+          try {
+            const { getDb } = await import('#/lib/db/index')
+            const { mcpServers, agentMcpServers } = await import('#/lib/db/schema')
+            const { eq, and } = await import('drizzle-orm')
+            const { mcpRowToServerConfig } = await import('#/lib/mcp-servers')
+            const { createTenantMCPClients } = await import('#/lib/ai/mcp')
+
+            const db = getDb()
+
+            type McpRow = {
+              id: string; orgId: string; name: string; serverName: string | null;
+              url: string; transport: string; description: string | null;
+              iconUrl: string | null; authType: string; authConfig: unknown;
+              trusted: boolean; createdAt: Date | null; updatedAt: Date | null;
+            }
+
+            // Fetch the agent's attached MCP servers directly from DB
+            const rows: McpRow[] = await db
+              .select({
+                id: mcpServers.id,
+                orgId: mcpServers.orgId,
+                name: mcpServers.name,
+                serverName: mcpServers.serverName,
+                url: mcpServers.url,
+                transport: mcpServers.transport,
+                description: mcpServers.description,
+                iconUrl: mcpServers.iconUrl,
+                authType: mcpServers.authType,
+                authConfig: mcpServers.authConfig,
+                trusted: mcpServers.trusted,
+                createdAt: mcpServers.createdAt,
+                updatedAt: mcpServers.updatedAt,
+              })
+              .from(agentMcpServers)
+              .innerJoin(mcpServers, eq(agentMcpServers.mcpServerId, mcpServers.id))
+              .where(
+                and(
+                  eq(agentMcpServers.agentId, parsed.agentId),
+                  eq(mcpServers.orgId, parsed.orgId),
+                )
+              )
+
+            if (rows.length > 0) {
+              // Resolve auth headers for each server (handles Bearer, API Key, OAuth refresh)
+              const serverConfigs = await Promise.all(
+                rows.map((row) => {
+                  // Convert DB row to McpServerRow shape
+                  const mcpRow: import('#/lib/mcp-servers').McpServerRow = {
+                    id: row.id,
+                    orgId: row.orgId,
+                    name: row.name,
+                    serverName: row.serverName ?? '',
+                    url: row.url,
+                    transport: row.transport,
+                    description: row.description ?? null,
+                    iconUrl: row.iconUrl ?? null,
+                    authType: row.authType,
+                    authConfig: row.authConfig as Record<string, unknown> | null,
+                    trusted: row.trusted,
+                    createdAt: row.createdAt?.toISOString() ?? null,
+                    updatedAt: row.updatedAt?.toISOString() ?? null,
+                  }
+                  return mcpRowToServerConfig(mcpRow, parsed.orgId!)
+                })
+              )
+
+              // Create MCP client pool and discover tools
+              mcpClients = await createTenantMCPClients(serverConfigs)
+              mcpTools = await mcpClients.tools()
+            }
+          } catch (err) {
+            // Log but don't crash — degrade gracefully to no-MCP mode
+            console.error('[chat/stream] MCP init failed:', err instanceof Error ? err.message : String(err))
+          }
+        }
+
+        // ── System prompt ──────────────────────────────────────────────────────
         // Split out system messages vs conversation messages
         const systemMessages = parsed.messages.filter((m) => m.role === 'system')
         const conversationMessages = parsed.messages.filter((m) => m.role !== 'system')
@@ -81,18 +171,40 @@ export const Route = createFileRoute('/api/chat/stream')({
             : m.content.map((p) => ({ type: 'text' as const, content: p.text ?? '' })),
         }))
 
+        // ── Agent loop ─────────────────────────────────────────────────────────
+        // Prepend system prompt as a system message
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const allMessages: any[] = systemPrompt
+          ? [{ role: 'system', content: systemPrompt }, ...messages]
+          : messages
+
         const stream = chat({
           adapter,
-          messages,
-          system: systemPrompt,
+          messages: allMessages,
+          tools: mcpTools.length > 0 ? (mcpTools as Parameters<typeof chat>[0]['tools']) : undefined,
           agentLoopStrategy: combineStrategies([
             maxIterations(15),
             untilFinishReason(['stop', 'length']),
           ]),
         })
 
-        return toServerSentEventsResponse(stream)
+        // Clean up MCP connections when stream finishes
+        // AsyncIterable from @tanstack/ai doesn't have .finally — wrap it
+        async function* withMcpCleanup() {
+          try {
+            for await (const chunk of stream) {
+              yield chunk
+            }
+          } finally {
+            if (mcpClients) {
+              await mcpClients.close().catch(() => {})
+            }
+          }
+        }
+
+        return toServerSentEventsResponse(mcpClients ? withMcpCleanup() : stream)
       },
     },
   },
 })
+

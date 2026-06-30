@@ -16,6 +16,11 @@
 //   Callback: GET /api/mcp/oauth-callback?code=...&state=...
 //   POST <token_endpoint> { code, code_verifier } → { access_token, refresh_token, ... }
 //   Store token in mcp_servers.auth_config
+//
+// Token refresh:
+//   resolveOAuthToken(mcpServerId, orgId) — reads authConfig from DB,
+//   checks expiry (with 60s buffer), refreshes via refresh_token if needed,
+//   writes new tokens back to DB, returns a valid access_token.
 
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
@@ -250,4 +255,163 @@ async function dynamicClientRegistration(registrationEndpoint: string): Promise<
   }
 
   return json.client_id
+}
+
+// ─── Stored token shape ───────────────────────────────────────────────────────
+
+/**
+ * The shape written into mcp_servers.auth_config for OAuth servers.
+ * Set by the callback route and updated on every refresh.
+ */
+export interface StoredOAuthConfig {
+  accessToken: string
+  refreshToken?: string
+  /** Seconds until expiry from time of issue */
+  expiresIn?: number
+  tokenType: string
+  scope?: string
+  /** Unix ms timestamp when the token was issued / last refreshed */
+  issuedAt: number
+  /** The token endpoint used to refresh (needed for subsequent refreshes) */
+  tokenEndpoint?: string
+  /** The client_id used (needed for subsequent refreshes) */
+  clientId?: string
+}
+
+// ─── Token resolution + auto-refresh ─────────────────────────────────────────
+
+/**
+ * Resolves a valid access token for an OAuth MCP server.
+ *
+ * Algorithm:
+ *   1. Read storedConfig from mcp_servers.auth_config.
+ *   2. If token is still valid (>60s remaining), return it as-is.
+ *   3. If expired / expiring soon AND refresh_token present:
+ *      a. POST to tokenEndpoint with grant_type=refresh_token
+ *      b. Write new tokens back to DB (issuedAt = now)
+ *      c. Return the new access_token
+ *   4. If no refresh_token: throw — user must re-authenticate.
+ *
+ * @param mcpServerId - DB ID of the MCP server row
+ * @param orgId       - Org scoping (to prevent cross-org access)
+ * @returns           - A valid access_token string
+ * @throws            - If no token stored, token expired with no refresh_token,
+ *                      or the refresh request fails
+ */
+export async function resolveOAuthToken(
+  mcpServerId: string,
+  orgId: string,
+): Promise<string> {
+  const { getDb } = await import('#/lib/db/index')
+  const { mcpServers } = await import('#/lib/db/schema')
+  const { eq, and } = await import('drizzle-orm')
+
+  const db = getDb()
+
+  // Read the current auth config
+  const [row] = await db
+    .select({ authConfig: mcpServers.authConfig, authType: mcpServers.authType })
+    .from(mcpServers)
+    .where(and(eq(mcpServers.id, mcpServerId), eq(mcpServers.orgId, orgId)))
+    .limit(1)
+
+  if (!row) throw new Error(`MCP server not found: ${mcpServerId}`)
+  if (row.authType !== 'oauth') throw new Error(`MCP server ${mcpServerId} is not configured for OAuth`)
+
+  const cfg = row.authConfig as StoredOAuthConfig | null
+  if (!cfg?.accessToken) {
+    throw new Error(
+      `MCP server ${mcpServerId} has no stored OAuth token. ` +
+      `Please complete the OAuth flow from the MCP Servers settings page.`
+    )
+  }
+
+  // Check expiry — treat as expired 60s before actual expiry (clock skew buffer)
+  const BUFFER_MS = 60 * 1000
+  const issuedAt = cfg.issuedAt ?? 0
+  const expiresIn = cfg.expiresIn ?? 3600 // default 1h if not specified
+  const expiresAt = issuedAt + (expiresIn * 1000)
+  const nowMs = Date.now()
+
+  const isExpired = expiresAt - nowMs < BUFFER_MS
+
+  if (!isExpired) {
+    // Token is still valid — return as-is
+    return cfg.accessToken
+  }
+
+  // Token is expired / expiring soon — attempt refresh
+  if (!cfg.refreshToken) {
+    throw new Error(
+      `OAuth token for MCP server ${mcpServerId} has expired and no refresh_token is available. ` +
+      `Please re-authenticate from the MCP Servers settings page.`
+    )
+  }
+
+  if (!cfg.tokenEndpoint) {
+    throw new Error(
+      `OAuth token for MCP server ${mcpServerId} has expired but the token endpoint is not stored. ` +
+      `Please re-authenticate from the MCP Servers settings page.`
+    )
+  }
+
+  // Perform the refresh
+  const body = new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: cfg.refreshToken,
+    ...(cfg.clientId ? { client_id: cfg.clientId } : {}),
+  })
+
+  let refreshRes: Response
+  try {
+    refreshRes = await fetchWithTimeout(cfg.tokenEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    })
+  } catch (err) {
+    throw new Error(`Token refresh network error for MCP server ${mcpServerId}: ${err instanceof Error ? err.message : String(err)}`)
+  }
+
+  if (!refreshRes.ok) {
+    const errBody = await refreshRes.text().catch(() => '(unreadable)')
+    throw new Error(`Token refresh failed for MCP server ${mcpServerId} (${refreshRes.status}): ${errBody}`)
+  }
+
+  const refreshed = await refreshRes.json() as {
+    access_token?: string
+    refresh_token?: string
+    expires_in?: number
+    token_type?: string
+    scope?: string
+  }
+
+  if (!refreshed.access_token) {
+    throw new Error(`Token refresh for MCP server ${mcpServerId} did not return an access_token`)
+  }
+
+  // Build the updated config — keep existing fields, overlay refreshed ones
+  const updatedConfig: StoredOAuthConfig = {
+    ...cfg,
+    accessToken: refreshed.access_token,
+    // Servers may issue a new refresh_token (rotation) — use it if present
+    refreshToken: refreshed.refresh_token ?? cfg.refreshToken,
+    expiresIn: refreshed.expires_in ?? cfg.expiresIn,
+    tokenType: refreshed.token_type ?? cfg.tokenType,
+    scope: refreshed.scope ?? cfg.scope,
+    issuedAt: Date.now(),
+  }
+
+  // Persist the refreshed tokens back to DB
+  try {
+    await db
+      .update(mcpServers)
+      .set({ authConfig: updatedConfig as unknown as Record<string, unknown>, updatedAt: new Date() })
+      .where(and(eq(mcpServers.id, mcpServerId), eq(mcpServers.orgId, orgId)))
+  } catch (dbErr) {
+    // Log the DB error but still return the new token — don't block the request
+    console.error(`[mcp-oauth] Failed to persist refreshed token for ${mcpServerId}:`, dbErr)
+  }
+
+  return updatedConfig.accessToken
 }
