@@ -787,7 +787,8 @@ export function McpServersPage() {
         console.error('[mcp-servers] Query failed (showing empty):', err instanceof Error ? err.message : String(err))
         return [] as import('#/lib/mcp-servers').McpServerRow[]
       }
-    },    retry: false,
+    },
+    retry: false,
   })
 
   const createMutation = useMutation({
