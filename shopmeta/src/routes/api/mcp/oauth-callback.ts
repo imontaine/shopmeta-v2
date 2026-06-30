@@ -1,4 +1,4 @@
-﻿// src/routes/api/mcp/oauth-callback.ts
+// src/routes/api/mcp/oauth-callback.ts
 // OAuth 2.0 callback route for MCP server authentication.
 //
 // The browser is redirected here after the user completes the OAuth flow
@@ -141,7 +141,7 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
               eq(mcpServers.orgId, appState.orgId),
             ))
         } catch (err) {
-          // Non-fatal — tokens are already saved
+          // Non-fatal - tokens are already saved
           console.error('[oauth-callback] Failed to clear codeVerifier:', err)
         }
 

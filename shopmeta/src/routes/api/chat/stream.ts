@@ -1,5 +1,5 @@
 // src/routes/api/chat/stream.ts
-// Chat streaming API route — handles POST /api/chat/stream.
+// Chat streaming API route - handles POST /api/chat/stream.
 // Returns SSE response with AI-generated text chunks.
 // Compatible with assistant-ui's ChatModelAdapter streaming format.
 //
@@ -68,7 +68,7 @@ export const Route = createFileRoute('/api/chat/stream')({
           })
         }
 
-        // ── MCP Integration ────────────────────────────────────────────────────
+        // -- MCP Integration ----------------------------------------------------
         // Load agent MCP servers from the DB catalog. For OAuth servers, the SDK
         // transport automatically injects the Bearer token and refreshes it on 401
         // via DrizzleOAuthProvider (no manual token management needed).
@@ -161,12 +161,12 @@ export const Route = createFileRoute('/api/chat/stream')({
               }
             }
           } catch (err) {
-            // Log but don't crash — degrade gracefully to no-MCP mode
+            // Log but don't crash - degrade gracefully to no-MCP mode
             console.error('[chat/stream] MCP init failed:', err instanceof Error ? err.message : String(err))
           }
         }
 
-        // ── System prompt ──────────────────────────────────────────────────────
+        // -- System prompt ------------------------------------------------------
         // Split out system messages vs conversation messages
         const systemMessages = parsed.messages.filter((m) => m.role === 'system')
         const conversationMessages = parsed.messages.filter((m) => m.role !== 'system')
@@ -186,7 +186,7 @@ export const Route = createFileRoute('/api/chat/stream')({
             : m.content.map((p) => ({ type: 'text' as const, content: p.text ?? '' })),
         }))
 
-        // ── Agent loop ─────────────────────────────────────────────────────────
+        // -- Agent loop ---------------------------------------------------------
         // Prepend system prompt as a system message
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const allMessages: any[] = systemPrompt
@@ -204,7 +204,7 @@ export const Route = createFileRoute('/api/chat/stream')({
         })
 
         // Clean up MCP connections when stream finishes
-        // AsyncIterable from @tanstack/ai doesn't have .finally — wrap it
+        // AsyncIterable from @tanstack/ai doesn't have .finally - wrap it
         async function* withMcpCleanup() {
           try {
             for await (const chunk of stream) {

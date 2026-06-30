@@ -1,10 +1,10 @@
 // src/components/mcp/McpServersPage.tsx
-// MCP Servers catalog page — conforms to the /settings design system.
+// MCP Servers catalog page - conforms to the /settings design system.
 //
 // Structure mirrors ConnectionsSettings:
 //   settings-page > settings-header + settings-layout > settings-tabs + settings-content > mcp-settings
 //
-// CSS prefix: mcp-* — but all structural/token patterns borrowed from conn-* / settings-*
+// CSS prefix: mcp-* - but all structural/token patterns borrowed from conn-* / settings-*
 // so the visual result is identical to /settings.
 
 import { useState, useRef, useEffect } from 'react'
@@ -17,7 +17,7 @@ import {
 } from '#/lib/mcp-servers'
 import type { McpServerRow } from '#/lib/mcp-servers'
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
+// --- Toast --------------------------------------------------------------------
 
 interface Toast {
   id: number
@@ -37,7 +37,7 @@ function useToast() {
   return { toasts, add }
 }
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// --- Types ---------------------------------------------------------------------
 
 type AuthType = 'none' | 'apikey' | 'oauth'
 type Transport = 'streamable-http' | 'sse'
@@ -82,7 +82,7 @@ function formToPayload(f: FormState) {
       ...(f.headerFormat === 'custom' ? { customHeader: f.customHeader } : {}),
     }
   }
-  // For oauth: no authConfig at save time — SDK writes tokens after the OAuth flow
+  // For oauth: no authConfig at save time - SDK writes tokens after the OAuth flow
   return {
     name: f.name.trim(),
     serverName: f.serverName.trim(),
@@ -129,7 +129,7 @@ function validate(f: FormState): Record<string, string> {
   return e
 }
 
-// ─── MCP Server Form ───────────────────────────────────────────────────────────
+// --- MCP Server Form -----------------------------------------------------------
 
 interface McpFormProps {
   initial?: FormState
@@ -175,7 +175,7 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
         throw new Error(data.error ?? `Server error ${res.status}`)
       }
       if (data.alreadyAuthorized) {
-        // Token still valid — no redirect needed, just close form
+        // Token still valid - no redirect needed, just close form
         onCancel()
         return
       }
@@ -212,11 +212,11 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
       <h3 className="conn-form-title">{title}</h3>
       <form className="conn-form" onSubmit={handleSubmit} noValidate>
 
-        {/* Icon — Upload or URL */}
+        {/* Icon - Upload or URL */}
         <div className="conn-field">
           <div className="mcp-icon-field-header">
             <label className="conn-label">
-              Icon <span className="mcp-label-optional">(optional — minimum 128 x 128 px)</span>
+              Icon <span className="mcp-label-optional">(optional - minimum 128 x 128 px)</span>
             </label>
             <div className="mcp-icon-mode-tabs">
               <button
@@ -243,7 +243,7 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
               className="mcp-icon-thumb mcp-icon-thumb--clickable"
               onClick={() => iconMode === 'upload' && fileRef.current?.click()}
               title={iconMode === 'upload' ? 'Click to upload icon' : undefined}
-              aria-label={form.iconUrl ? 'Icon preview — click to change' : 'Click to upload icon'}
+              aria-label={form.iconUrl ? 'Icon preview - click to change' : 'Click to upload icon'}
               disabled={isSubmitting}
             >
               {form.iconUrl ? (
@@ -286,7 +286,7 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
                   reader.onerror = reject
                   reader.readAsDataURL(file)
                 })
-                // For SVG skip dimension check (vector — always scalable)
+                // For SVG skip dimension check (vector - always scalable)
                 if (file.type === 'image/svg+xml') {
                   set('iconUrl', dataUrl)
                   return
@@ -343,7 +343,7 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
                       </svg>
                     </button>
                   )}
-                  <p className="mcp-icon-hint">PNG, JPG, WebP, GIF or SVG — min 128x128 px</p>
+                  <p className="mcp-icon-hint">PNG, JPG, WebP, GIF or SVG - min 128x128 px</p>
                 </>
               ) : (
                 <input
@@ -555,7 +555,7 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
             </div>
           )}
 
-          {/* OAuth panel — one-click connect via SDK auth() */}
+          {/* OAuth panel - one-click connect via SDK auth() */}
           {form.authType === 'oauth' && (
             <div className="mcp-auth-panel" role="tabpanel">
               <div className="mcp-oauth-discover-section">
@@ -598,13 +598,13 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
             />
             <span>
               <strong>I trust this application</strong>
-              <span className="mcp-trust-hint"> — Custom connectors are not verified by Shopmeta</span>
+              <span className="mcp-trust-hint"> - Custom connectors are not verified by Shopmeta</span>
             </span>
           </label>
           {errors['trusted'] && <p className="mcp-field-error">{errors['trusted']}</p>}
         </div>
 
-        {/* Actions — matches conn-form-actions pattern */}
+        {/* Actions - matches conn-form-actions pattern */}
         <div className="conn-form-actions">
           <div />
           <div className="conn-form-actions-right">
@@ -626,7 +626,7 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
             >
               {(isSubmitting || oauthConnecting) && <span className="conn-spinner" />}
               {oauthConnecting
-                ? 'Connecting…'
+                ? 'Connecting-'
                 : form.authType === 'oauth' && !isSubmitting
                   ? `${submitLabel.replace('Add', 'Save')} & Connect`
                   : submitLabel}
@@ -638,7 +638,7 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
   )
 }
 
-// ─── MCP Server Card ───────────────────────────────────────────────────────────
+// --- MCP Server Card -----------------------------------------------------------
 
 function transportLabel(t: string) {
   if (t === 'streamable-http') return 'Streamable HTTPS'
@@ -717,9 +717,9 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
           {isOAuth && (
             <span
               className={`mcp-oauth-status-badge${hasTokens ? ' mcp-oauth-status-badge--connected' : ' mcp-oauth-status-badge--disconnected'}`}
-              title={hasTokens ? 'OAuth token stored' : 'Not authenticated — click Reconnect'}
+              title={hasTokens ? 'OAuth token stored' : 'Not authenticated - click Reconnect'}
             >
-              {hasTokens ? '🟢 Connected' : '🔴 Not authenticated'}
+              {hasTokens ? '-- Connected' : '-- Not authenticated'}
             </span>
           )}
         </div>
@@ -790,13 +790,13 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
           </svg>
           <code className="mcp-card-url">{server.url}</code>
         </span>
-        <span className="conn-meta-sep">·</span>
+        <span className="conn-meta-sep">-</span>
         <span className="conn-meta-item">{transportLabel(server.transport)}</span>
-        <span className="conn-meta-sep">·</span>
+        <span className="conn-meta-sep">-</span>
         <span className="conn-meta-item">{authLabel(server.authType)}</span>
         {server.serverName && (
           <>
-            <span className="conn-meta-sep">·</span>
+            <span className="conn-meta-sep">-</span>
             <span className="conn-meta-item">
               <code className="mcp-card-prefix">{server.serverName}</code>
             </span>
@@ -811,7 +811,7 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
   )
 }
 
-// ─── Main Page ──────────────────────────────────────────────────────────────────
+// --- Main Page ------------------------------------------------------------------
 
 type View = 'list' | 'create' | 'edit'
 
@@ -842,12 +842,12 @@ export function McpServersPage() {
   const { data: servers = [], isLoading, isError, error } = useQuery({
     queryKey: ['mcp-servers'],
     // Wrap in try/catch so schema/migration errors (table/column not existing)
-    // never set isError — they just return an empty list instead.
+    // never set isError - they just return an empty list instead.
     queryFn: async () => {
       try {
         return await listMcpServers({ data: {} })
       } catch (err) {
-        // Catch ALL errors — the server already returns [] on DB errors but
+        // Catch ALL errors - the server already returns [] on DB errors but
         // postgres.js wraps errors as 'Failed query: ...' so pattern matching
         // on the message text is unreliable. Showing empty state is correct.
         console.error('[mcp-servers] Query failed (showing empty):', err instanceof Error ? err.message : String(err))
@@ -914,7 +914,7 @@ export function McpServersPage() {
   // Matches settings-page structure exactly
   return (
     <div className="settings-page">
-      {/* Toast notifications — identical to conn-toasts pattern */}
+      {/* Toast notifications - identical to conn-toasts pattern */}
       <div className="conn-toasts" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={`conn-toast conn-toast--${t.type}`}>
@@ -933,7 +933,7 @@ export function McpServersPage() {
         ))}
       </div>
 
-      {/* Page header — matches .settings-header */}
+      {/* Page header - matches .settings-header */}
       <div className="settings-header">
         <h1 className="settings-title">MCP Servers</h1>
         <p className="settings-subtitle">
@@ -941,7 +941,7 @@ export function McpServersPage() {
         </p>
       </div>
 
-      {/* Layout — matches .settings-layout with sidebar tabs */}
+      {/* Layout - matches .settings-layout with sidebar tabs */}
       <div className="settings-layout">
         {/* Tabs sidebar */}
         <nav className="settings-tabs" aria-label="MCP sections">
@@ -955,11 +955,11 @@ export function McpServersPage() {
           </button>
         </nav>
 
-        {/* Content — matches .settings-content */}
+        {/* Content - matches .settings-content */}
         <div className="settings-content">
           <div className="conn-settings" data-testid="mcp-settings">
 
-            {/* Section header — identical to conn-section-header */}
+            {/* Section header - identical to conn-section-header */}
             <div className="conn-section-header">
               <div>
                 <h2 className="conn-section-title">MCP Server Catalog</h2>
@@ -988,7 +988,7 @@ export function McpServersPage() {
                 title="New MCP Server"
                 onSubmit={async (f) => {
                   // For OAuth flow: we need the raw server row returned without
-                  // triggering setView('list') — mutateAsync fires onSuccess too.
+                  // triggering setView('list') - mutateAsync fires onSuccess too.
                   // Use mutateAsync here; the OAuth handler will redirect before
                   // the list view is rendered.
                   return await createMutation.mutateAsync(f)
@@ -1018,7 +1018,7 @@ export function McpServersPage() {
                 {isLoading && (
                   <div className="conn-loading">
                     <div className="conn-loading-dots"><span /><span /><span /></div>
-                    <span>Loading MCP servers…</span>
+                    <span>Loading MCP servers-</span>
                   </div>
                 )}
                 {isError && (

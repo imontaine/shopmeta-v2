@@ -1,5 +1,5 @@
 // src/routes/api/mcp/oauth-start.ts
-// POST /api/mcp/oauth/start — initiates the OAuth 2.0 + PKCE flow for an MCP server.
+// POST /api/mcp/oauth/start - initiates the OAuth 2.0 + PKCE flow for an MCP server.
 //
 // Called by the "Connect" button on the MCP servers page when a server has
 // authType = 'oauth' but no tokens yet (auth_config is null) or the user
@@ -13,9 +13,9 @@
 //   5. Instantiate DrizzleOAuthProvider (SDK storage backend)
 //   6. Override redirectToAuthorization on the INSTANCE to capture the auth URL
 //      (the SDK calls it as a side-effect; we intercept rather than following it)
-//   7. Call SDK auth() — handles RFC 9728 discovery, DCR, PKCE, builds authorizationUrl
+//   7. Call SDK auth() - handles RFC 9728 discovery, DCR, PKCE, builds authorizationUrl
 //   8. Return { authorizationUrl } as JSON
-//   9. Browser does window.location.href = authorizationUrl → user logs in
+//   9. Browser does window.location.href = authorizationUrl - user logs in
 //  10. AS redirects back to /api/mcp/oauth-callback?code=...&app_state=...
 
 import { createFileRoute } from '@tanstack/react-router'
@@ -30,7 +30,7 @@ export const Route = createFileRoute('/api/mcp/oauth-start')({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
-        // ── Parse body ────────────────────────────────────────────────────────
+        // -- Parse body --------------------------------------------------------
         let body: { mcpServerId?: string }
         try {
           body = await request.json() as { mcpServerId?: string }
@@ -42,7 +42,7 @@ export const Route = createFileRoute('/api/mcp/oauth-start')({
           return Response.json({ error: 'mcpServerId is required' }, { status: 400 })
         }
 
-        // ── Verify session ────────────────────────────────────────────────────
+        // -- Verify session ----------------------------------------------------
         let orgId: string
         try {
           const session = await requireOrgSession()
@@ -51,7 +51,7 @@ export const Route = createFileRoute('/api/mcp/oauth-start')({
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // ── Load MCP server ───────────────────────────────────────────────────
+        // -- Load MCP server ---------------------------------------------------
         const db = getDb()
         const [server] = await db
           .select({ id: mcpServers.id, url: mcpServers.url, authType: mcpServers.authType })
@@ -66,13 +66,13 @@ export const Route = createFileRoute('/api/mcp/oauth-start')({
           return Response.json({ error: 'Server is not configured for OAuth' }, { status: 400 })
         }
 
-        // ── Build redirect URL from request origin ────────────────────────────
+        // -- Build redirect URL from request origin ----------------------------
         // IMPORTANT: derived from request origin (not a static env var) so it
         // works on local dev, staging, and production without configuration.
         const origin = new URL(request.url).origin
         const redirectUrl = `${origin}/api/mcp/oauth-callback`
 
-        // ── Run SDK auth() and capture the authorization URL ──────────────────
+        // -- Run SDK auth() and capture the authorization URL ------------------
         const provider = new DrizzleOAuthProvider(mcpServerId, orgId, redirectUrl)
 
         // Override redirectToAuthorization on this instance to capture the URL.
@@ -86,7 +86,7 @@ export const Route = createFileRoute('/api/mcp/oauth-start')({
           const result = await auth(provider, { serverUrl: server.url })
 
           if (result === 'AUTHORIZED') {
-            // Tokens are already valid — no user action needed
+            // Tokens are already valid - no user action needed
             return Response.json({ alreadyAuthorized: true })
           }
 

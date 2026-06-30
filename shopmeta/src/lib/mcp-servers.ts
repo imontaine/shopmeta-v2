@@ -5,9 +5,9 @@
 //   - The "catalog" stores reusable MCP server configs per org (displayed on /mcp-servers page).
 //   - Agents reference catalog entries via the agent_mcp_servers join table.
 //   - authType controls how the server is authenticated:
-//       'none'   → no auth (or auto-detect)
-//       'apikey' → Bearer/Basic/Custom header with API key
-//       'oauth'  → OAuth 2.0 flow
+//       'none'   - no auth (or auto-detect)
+//       'apikey' - Bearer/Basic/Custom header with API key
+//       'oauth'  - OAuth 2.0 flow
 //   - authConfig is stored as JSONB (should be encrypted-at-rest in prod).
 //   - transport: 'streamable-http' | 'sse'
 //   - All operations are scoped to orgId (tenant isolation).
@@ -20,7 +20,7 @@ import { mcpServers, agentMcpServers } from '#/lib/db/schema'
 import { requireOrgSession } from '#/lib/auth/require-org-session'
 import { DrizzleOAuthProvider } from '#/lib/mcp-oauth-provider'
 
-// ─── Auth config schemas ──────────────────────────────────────────────────────
+// --- Auth config schemas ------------------------------------------------------
 
 export const ApiKeyAuthSchema = z.object({
   key: z.string().min(1, 'API Key is required'),
@@ -39,7 +39,7 @@ export const OAuthAuthSchema = z.object({
 export type ApiKeyAuth = z.infer<typeof ApiKeyAuthSchema>
 export type OAuthAuth = z.infer<typeof OAuthAuthSchema>
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types --------------------------------------------------------------------
 
 export interface McpServerRow {
   id: string
@@ -79,11 +79,11 @@ function serializeMcpServer(s: typeof mcpServers.$inferSelect): McpServerRow {
   }
 }
 
-// ─── Zod Input Schemas ────────────────────────────────────────────────────────
+// --- Zod Input Schemas --------------------------------------------------------
 
 const CreateMcpServerInput = z.object({
   name: z.string().min(1, 'Name is required').max(255),
-  // serverName is optional — if blank the server derives it from name
+  // serverName is optional - if blank the server derives it from name
   serverName: z
     .string()
     .max(100)
@@ -125,7 +125,7 @@ const GetAgentMcpServerIdsInput = z.object({
   agentId: z.string().uuid(),
 })
 
-// ─── Server Functions ─────────────────────────────────────────────────────────
+// --- Server Functions ---------------------------------------------------------
 
 /**
  * Lists all MCP servers in the org catalog.
@@ -322,17 +322,17 @@ export const getAgentMcpServers = createServerFn({ method: 'GET' })
     return rows.map(serializeMcpServer)
   })
 
-// ─── Auth → MCPClientOptions conversion ──────────────────────────────────────
+// --- Auth - MCPClientOptions conversion --------------------------------------
 
 /**
  * Converts a McpServerRow from the DB catalog into MCPClientOptions
  * for use with createMCPClients() from @tanstack/ai-mcp.
  *
  * Handles all auth types:
- *   'none'   → no headers, no authProvider
- *   'apikey' → static Authorization header injected via transport.headers
- *   'oauth'  → authProvider: DrizzleOAuthProvider (SDK handles token injection
- *              and auto-refresh on 401 — no manual token management needed)
+ *   'none'   - no headers, no authProvider
+ *   'apikey' - static Authorization header injected via transport.headers
+ *   'oauth'  - authProvider: DrizzleOAuthProvider (SDK handles token injection
+ *              and auto-refresh on 401 - no manual token management needed)
  *
  * The redirect URL is derived from the request origin so it works on
  * local dev, staging, and production without configuration.

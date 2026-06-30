@@ -6,7 +6,7 @@
 // KEY DESIGN:
 //   - createMCPClients() creates a pool of named clients from config.
 //   - The pool auto-prefixes tool names: { clickhouse: ..., postgres: ... }
-//     → "clickhouse__list_tables", "postgres__list_tables" avoiding collisions.
+//     - "clickhouse__list_tables", "postgres__list_tables" avoiding collisions.
 //   - discoverTools() returns all tools from all servers, merged with prefixes.
 //   - mergeServerTools() is a pure utility for testing / manual merging.
 
@@ -17,10 +17,10 @@ import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 // Re-export for test usage so tests can import from '#/lib/ai/mcp'
 export { createMCPClientFromTransport }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types --------------------------------------------------------------------
 
 export interface MCPServerConfig {
-  /** Unique name for this server — used as the tool name prefix. */
+  /** Unique name for this server - used as the tool name prefix. */
   name: string
   /** Transport URL for HTTP/SSE servers. */
   url: string
@@ -43,7 +43,7 @@ export interface DiscoveredTool {
   inputSchema?: unknown
 }
 
-// ─── Multi-Server Prefix Utility ─────────────────────────────────────────────
+// --- Multi-Server Prefix Utility ---------------------------------------------
 
 /**
  * Pure utility: merges tool lists from multiple servers, applying
@@ -54,7 +54,7 @@ export interface DiscoveredTool {
  *   { server: 'clickhouse', tools: [{ name: 'list_tables' }] },
  *   { server: 'postgres',   tools: [{ name: 'list_tables' }] },
  * ])
- * // → [{ name: 'clickhouse__list_tables', ... }, { name: 'postgres__list_tables', ... }]
+ * // - [{ name: 'clickhouse__list_tables', ... }, { name: 'postgres__list_tables', ... }]
  */
 export function mergeServerTools(
   serverToolSets: Array<{ server: string; tools: Array<{ name: string; description?: string; inputSchema?: unknown }> }>,
@@ -76,7 +76,7 @@ export function mergeServerTools(
 
 /**
  * Splits a prefixed tool name back into server + original name.
- * e.g. "clickhouse__list_tables" → { server: 'clickhouse', toolName: 'list_tables' }
+ * e.g. "clickhouse__list_tables" - { server: 'clickhouse', toolName: 'list_tables' }
  */
 export function splitPrefixedToolName(prefixedName: string): { server: string; toolName: string } | null {
   const idx = prefixedName.indexOf('__')
@@ -87,7 +87,7 @@ export function splitPrefixedToolName(prefixedName: string): { server: string; t
   }
 }
 
-// ─── MCP Client Factory ───────────────────────────────────────────────────────
+// --- MCP Client Factory -------------------------------------------------------
 
 /**
  * Creates an MCPClient for a single server using HTTP or SSE transport.
@@ -116,7 +116,7 @@ export async function createMCPClientForTransport(transport: Transport, serverNa
   return createMCPClientFromTransport(transport, serverName)
 }
 
-// ─── Multi-Server Pool ────────────────────────────────────────────────────────
+// --- Multi-Server Pool --------------------------------------------------------
 
 /**
  * Creates a pool of MCP clients from a list of server configs.
@@ -176,7 +176,7 @@ export async function discoverTools(servers: MCPServerConfig[]): Promise<Discove
   }
 }
 
-// ─── Agent Loop MCP Integration ───────────────────────────────────────────────
+// --- Agent Loop MCP Integration -----------------------------------------------
 
 /**
  * Executes a named tool on an MCP client pool.

@@ -13,7 +13,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
-// ─── Better Auth tables ───────────────────────────
+// --- Better Auth tables ---------------------------
 // These must be in the schema so drizzleAdapter can map model names to tables.
 // Column names match the raw SQL in drizzle/0001_better_auth_and_organizations.sql.
 
@@ -90,7 +90,7 @@ export const invitation = pgTable('invitation', {
   inviterId: text('inviter_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
 })
 
-// ─── Conversations ────────────────────────────────
+// --- Conversations --------------------------------
 export const conversations = pgTable(
   'conversations',
   {
@@ -130,7 +130,7 @@ export const messages = pgTable(
   ],
 )
 
-// ─── Agents ───────────────────────────────────────
+// --- Agents ---------------------------------------
 export const agents = pgTable(
   'agents',
   {
@@ -153,7 +153,7 @@ export const agents = pgTable(
   ],
 )
 
-// ─── Skills ───────────────────────────────────────
+// --- Skills ---------------------------------------
 export const skills = pgTable(
   'skills',
   {
@@ -193,14 +193,14 @@ export const agentSkills = pgTable(
   ],
 )
 
-// ─── MCP Servers Catalog ─────────────────────────
+// --- MCP Servers Catalog -------------------------
 // Org-level catalog of reusable MCP server configs.
 // Agents reference these via the agent_mcp_servers join table.
 // authType: 'none' | 'apikey' | 'oauth'
 // authConfig (JSONB):
 //   apikey: { headerFormat: 'bearer' | 'basic' | 'custom', key: string, customHeader?: string }
-//   oauth:  OAuthTokens from SDK — { access_token, refresh_token?, expires_in?, token_type, scope? }
-// oauthClientInfo (JSONB): OAuthClientInformationFull from SDK — written once after DCR, never changes
+//   oauth:  OAuthTokens from SDK - { access_token, refresh_token?, expires_in?, token_type, scope? }
+// oauthClientInfo (JSONB): OAuthClientInformationFull from SDK - written once after DCR, never changes
 //   { client_id, client_secret?, redirect_uris, ... }
 // oauthState (JSONB): transient during auth + cached AS discovery:
 //   { codeVerifier?, redirectUrl?, authorizationServerUrl?, resourceMetadataUrl?,
@@ -217,7 +217,7 @@ export const mcpServers = pgTable(
     description: text('description'),
     iconUrl: text('icon_url'),                        // Optional icon (min 128x128)
     authType: text('auth_type').default('none').notNull(), // none | apikey | oauth
-    authConfig: jsonb('auth_config'),                 // Credentials — see comment above
+    authConfig: jsonb('auth_config'),                 // Credentials - see comment above
     oauthClientInfo: jsonb('oauth_client_info'),      // SDK OAuthClientInformationFull (DCR result)
     oauthState: jsonb('oauth_state'),                 // Transient auth state + cached AS discovery
     trusted: boolean('trusted').default(false).notNull(), // User trust checkbox
@@ -247,7 +247,7 @@ export const agentMcpServers = pgTable(
   ],
 )
 
-// ─── Tenant Connections ───────────────────────────
+// --- Tenant Connections ---------------------------
 // Note: widgets references connections, so connections must be defined first
 export const connections = pgTable(
   'connections',
@@ -269,7 +269,7 @@ export const connections = pgTable(
   ],
 )
 
-// ─── Dashboard ────────────────────────────────────
+// --- Dashboard ------------------------------------
 export const dashboards = pgTable(
   'dashboards',
   {
@@ -315,7 +315,7 @@ export const widgets = pgTable(
   ],
 )
 
-// ─── Usage Tracking ───────────────────────────────
+// --- Usage Tracking -------------------------------
 export const usageRecords = pgTable(
   'usage_records',
   {
@@ -336,7 +336,7 @@ export const usageRecords = pgTable(
   ],
 )
 
-// ─── Relations ────────────────────────────────────
+// --- Relations ------------------------------------
 export const conversationsRelations = relations(conversations, ({ many }) => ({
   messages: many(messages),
 }))
