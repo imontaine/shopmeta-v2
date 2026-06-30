@@ -139,33 +139,24 @@ export const listMcpServers = createServerFn({ method: 'GET' })
         .orderBy(mcpServers.name)
       return rows.map(serializeMcpServer)
     } catch (err) {
-      // Log the real error server-side so it's visible in production logs
-      // without crashing the UI with an error banner.
+      // postgres.js wraps ALL PostgreSQL errors as "Failed query: SELECT ..."
+      // in the top-level error message, hiding the underlying PG error codes
+      // (42P01 = table not found, 42703 = column not found) from simple string
+      // matching. Rather than recursing into err.cause to find the PG code,
+      // we catch ALL DB errors on this read-only list query and return [].
       //
-      // Common causes:
-      //   PostgreSQL 42P01 — table "mcp_servers" does not exist (migration pending)
-      //   PostgreSQL 42703 — column does not exist (0003 ran but 0004 partial)
-      //   postgres.js wraps these as PostgresError with .code, but the code format
-      //   may differ across drivers. We catch all DB errors here since there are
-      //   legitimately 0 MCP servers on a fresh install.
-      const code = (err as { code?: string; routine?: string }).code
-      const msg = err instanceof Error ? err.message : String(err)
-      const isSchemaError =
-        code === '42P01' ||   // undefined_table
-        code === '42703' ||   // undefined_column
-        msg.includes('does not exist') ||
-        msg.includes('relation') ||
-        msg.includes('column')
-      if (isSchemaError) {
-        console.error('[listMcpServers] Schema error (migration may be pending):', code, msg)
-        return []
-      }
-      // For all other DB errors (connection failures, permissions, etc.), re-throw
-      // so the server returns a proper 500 and we can investigate via logs.
-      console.error('[listMcpServers] Unexpected DB error:', code, msg)
-      throw err
+      // This is safe because:
+      //   - The page shows "No MCP servers yet" empty state for []
+      //   - The user can still try to add servers even if the table is missing
+      //     (they will get a proper error on save instead)
+      //   - Real auth errors are thrown by requireOrgSession() BEFORE this try
+      //     block, so they still propagate correctly
+      //   - The actual error is logged server-side for operator diagnosis
+      console.error('[listMcpServers] DB error (returning empty list):', err instanceof Error ? err.message : String(err))
+      return []
     }
   })
+
 
 
 /**

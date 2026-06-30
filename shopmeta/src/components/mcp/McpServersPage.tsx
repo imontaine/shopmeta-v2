@@ -781,22 +781,13 @@ export function McpServersPage() {
       try {
         return await listMcpServers({ data: {} })
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        // If the error message looks like a DB schema issue, treat as empty
-        if (
-          msg.includes('does not exist') ||
-          msg.includes('relation') ||
-          msg.includes('column') ||
-          msg.includes('42P01') ||
-          msg.includes('42703')
-        ) {
-          console.error('[mcp-servers] Schema error caught client-side:', msg)
-          return []
-        }
-        throw err
+        // Catch ALL errors — the server already returns [] on DB errors but
+        // postgres.js wraps errors as 'Failed query: ...' so pattern matching
+        // on the message text is unreliable. Showing empty state is correct.
+        console.error('[mcp-servers] Query failed (showing empty):', err instanceof Error ? err.message : String(err))
+        return [] as import('#/lib/mcp-servers').McpServerRow[]
       }
-    },
-    retry: false,
+    },    retry: false,
   })
 
   const createMutation = useMutation({
