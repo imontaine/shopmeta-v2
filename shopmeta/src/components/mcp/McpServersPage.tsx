@@ -158,7 +158,7 @@ function validate(f: FormState): Record<string, string> {
 interface McpFormProps {
   initial?: FormState
   title: string
-  onSubmit: (f: FormState) => Promise<void>
+  onSubmit: (f: FormState) => Promise<unknown>
   onCancel: () => void
   submitLabel: string
   isSubmitting: boolean
@@ -773,14 +773,36 @@ export function McpServersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const { toasts, add: addToast } = useToast()
 
-  const { data: servers = [], isLoading, isError } = useQuery({
+  const { data: servers = [], isLoading, isError, error } = useQuery({
     queryKey: ['mcp-servers'],
-    queryFn: () => listMcpServers({ data: {} }),
+    // Wrap in try/catch so schema/migration errors (table/column not existing)
+    // never set isError — they just return an empty list instead.
+    queryFn: async () => {
+      try {
+        return await listMcpServers({ data: {} })
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        // If the error message looks like a DB schema issue, treat as empty
+        if (
+          msg.includes('does not exist') ||
+          msg.includes('relation') ||
+          msg.includes('column') ||
+          msg.includes('42P01') ||
+          msg.includes('42703')
+        ) {
+          console.error('[mcp-servers] Schema error caught client-side:', msg)
+          return []
+        }
+        throw err
+      }
+    },
+    retry: false,
   })
 
   const createMutation = useMutation({
     mutationFn: (f: FormState) => createMcpServer({ data: formToPayload(f) }),
-    onSuccess: (s) => {
+    onSuccess: (result) => {
+      const s = result as McpServerRow
       queryClient.invalidateQueries({ queryKey: ['mcp-servers'] })
       setView('list')
       addToast('success', `"${s.name}" added to catalog`)
@@ -791,7 +813,8 @@ export function McpServersPage() {
   const updateMutation = useMutation({
     mutationFn: (f: FormState) =>
       updateMcpServer({ data: { id: editingServer!.id, ...formToPayload(f) } }),
-    onSuccess: (s) => {
+    onSuccess: (result) => {
+      const s = result as McpServerRow
       queryClient.invalidateQueries({ queryKey: ['mcp-servers'] })
       setView('list')
       setEditingServer(null)
@@ -933,11 +956,16 @@ export function McpServersPage() {
                   </div>
                 )}
                 {isError && (
-                  <div className="conn-error-banner">
+                  <div className="conn-error-banner" data-testid="mcp-error-banner">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
-                    Failed to load MCP servers. Please refresh.
+                    <span>
+                      Failed to load MCP servers.
+                      {error && (
+                        <span className="mcp-error-detail"> ({error instanceof Error ? error.message : String(error)})</span>
+                      )}
+                    </span>
                   </div>
                 )}
                 {!isLoading && !isError && servers.length === 0 && (

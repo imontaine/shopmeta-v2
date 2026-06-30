@@ -4,7 +4,7 @@
 // All server calls go through TanStack Query + server functions from src/lib/agents.ts
 
 import { useState, useEffect, useRef } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listAgents,
   createAgent,

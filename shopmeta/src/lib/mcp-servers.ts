@@ -139,17 +139,34 @@ export const listMcpServers = createServerFn({ method: 'GET' })
         .orderBy(mcpServers.name)
       return rows.map(serializeMcpServer)
     } catch (err) {
-      const pgCode = (err as { code?: string }).code
-      // 42P01 = table doesn't exist (migration 0004 never ran)
-      // 42703 = column doesn't exist (migration 0003 ran but 0004 didn't, so
-      //         icon_url / auth_type / auth_config / trusted columns are missing)
-      // In both cases return [] so the UI shows the empty state, not an error banner.
-      // The user will be able to add servers once the migration runs.
-      if (pgCode === '42P01' || pgCode === '42703') return []
+      // Log the real error server-side so it's visible in production logs
+      // without crashing the UI with an error banner.
+      //
+      // Common causes:
+      //   PostgreSQL 42P01 — table "mcp_servers" does not exist (migration pending)
+      //   PostgreSQL 42703 — column does not exist (0003 ran but 0004 partial)
+      //   postgres.js wraps these as PostgresError with .code, but the code format
+      //   may differ across drivers. We catch all DB errors here since there are
+      //   legitimately 0 MCP servers on a fresh install.
+      const code = (err as { code?: string; routine?: string }).code
+      const msg = err instanceof Error ? err.message : String(err)
+      const isSchemaError =
+        code === '42P01' ||   // undefined_table
+        code === '42703' ||   // undefined_column
+        msg.includes('does not exist') ||
+        msg.includes('relation') ||
+        msg.includes('column')
+      if (isSchemaError) {
+        console.error('[listMcpServers] Schema error (migration may be pending):', code, msg)
+        return []
+      }
+      // For all other DB errors (connection failures, permissions, etc.), re-throw
+      // so the server returns a proper 500 and we can investigate via logs.
+      console.error('[listMcpServers] Unexpected DB error:', code, msg)
       throw err
     }
-
   })
+
 
 /**
  * Creates a new MCP server entry in the org catalog.

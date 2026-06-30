@@ -2816,3 +2816,4 @@ body {
   color: var(--text-tertiary);
   margin: 0;
 }
+.mcp-error-detail { font-size: var(--text-xs); opacity: 0.75; }
