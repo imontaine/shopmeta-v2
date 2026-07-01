@@ -42,10 +42,14 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
           })
         }
 
-        if (!code || !sdkState) {
+        // Missing code is always fatal.
+        // Missing state is recoverable: some ASes (e.g. ClickHouse Cloud) do not
+        // echo back `state`. We fall back to the `pendingServerId` we stored in
+        // oauthState during /api/mcp/oauth-start.
+        if (!code) {
           return new Response(null, {
             status: 302,
-            headers: { Location: '/mcp-servers?oauth_error=Missing+code+or+state+from+authorization+server' },
+            headers: { Location: '/mcp-servers?oauth_error=Missing+code+from+authorization+server' },
           })
         }
 
@@ -75,10 +79,27 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
           .from(mcpServers)
           .where(eq(mcpServers.orgId, orgId))
 
-        const server = rows.find((r) => {
-          const state = (r.oauthState ?? {}) as Record<string, unknown>
-          return state['pendingState'] === sdkState
-        })
+        // Primary lookup: match by the SDK state value (CSRF token)
+        let server = sdkState
+          ? rows.find((r) => {
+              const state = (r.oauthState ?? {}) as Record<string, unknown>
+              return state['pendingState'] === sdkState
+            })
+          : undefined
+
+        // Fallback: if AS omitted `state`, find by pendingServerId stored at oauth-start
+        if (!server) {
+          server = rows.find((r) => {
+            const state = (r.oauthState ?? {}) as Record<string, unknown>
+            // pendingServerId must exist and match the row's own id
+            return state['pendingServerId'] === r.id
+          })
+          if (server) {
+            console.warn(
+              `[oauth-callback] AS did not return state; fell back to pendingServerId=${server.id}`,
+            )
+          }
+        }
 
         if (!server) {
           console.error(`[oauth-callback] No server found for state=${sdkState} orgId=${orgId}`)
@@ -131,6 +152,7 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
           const {
             codeVerifier: _cv,
             pendingState: _ps,
+            pendingServerId: _pid,
             ...persistedState
           } = currentState
           await db.update(mcpServers)

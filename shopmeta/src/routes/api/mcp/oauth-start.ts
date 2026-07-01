@@ -108,9 +108,10 @@ export const Route = createFileRoute('/api/mcp/oauth-start')({
           // We do NOT append our own `app_state` — the AS only echoes back
           // the standard `code` and `state` params.
           const sdkState = capturedAuthUrl.searchParams.get('state')
-          if (sdkState) {
-            // Persist the state value so the callback can find this server row.
-            // patchState is not directly accessible, so we do it via a DB update.
+          // Always persist pendingServerId (and pendingState when available) so
+          // the callback can reverse-lookup this server even if the AS doesn't
+          // echo back the `state` param (e.g. ClickHouse Cloud omits it).
+          {
             const db = getDb()
             const existingRow = await db
               .select({ oauthState: mcpServers.oauthState })
@@ -120,7 +121,13 @@ export const Route = createFileRoute('/api/mcp/oauth-start')({
             const existing = (existingRow[0]?.oauthState ?? {}) as Record<string, unknown>
             await db
               .update(mcpServers)
-              .set({ oauthState: { ...existing, pendingState: sdkState } })
+              .set({
+                oauthState: {
+                  ...existing,
+                  pendingServerId: mcpServerId,
+                  ...(sdkState ? { pendingState: sdkState } : {}),
+                },
+              })
               .where(and(eq(mcpServers.id, mcpServerId), eq(mcpServers.orgId, orgId)))
           }
 
