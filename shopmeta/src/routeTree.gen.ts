@@ -21,12 +21,14 @@ import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as AuthenticatedSkillsRouteImport } from './routes/_authenticated/skills'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedMcpServersRouteImport } from './routes/_authenticated/mcp-servers'
+import { Route as AuthenticatedDataSourcesRouteImport } from './routes/_authenticated/data-sources'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
+import { Route as ApiMcpTestRouteImport } from './routes/api/mcp/test'
 import { Route as ApiMcpOauthStartRouteImport } from './routes/api/mcp/oauth-start'
 import { Route as ApiMcpOauthCallbackRouteImport } from './routes/api/mcp/oauth-callback'
-import { Route as ApiMcpTestRouteImport } from './routes/api/mcp/test'
+import { Route as ApiMcpDiagnoseRouteImport } from './routes/api/mcp/diagnose'
 import { Route as ApiChatStreamRouteImport } from './routes/api/chat/stream'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedDevStyleTesterRouteImport } from './routes/_authenticated/dev/style-tester'
@@ -90,6 +92,12 @@ const AuthenticatedMcpServersRoute = AuthenticatedMcpServersRouteImport.update({
   path: '/mcp-servers',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDataSourcesRoute =
+  AuthenticatedDataSourcesRouteImport.update({
+    id: '/data-sources',
+    path: '/data-sources',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -105,6 +113,11 @@ const AuthenticatedAgentsRoute = AuthenticatedAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiMcpTestRoute = ApiMcpTestRouteImport.update({
+  id: '/api/mcp/test',
+  path: '/api/mcp/test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMcpOauthStartRoute = ApiMcpOauthStartRouteImport.update({
   id: '/api/mcp/oauth-start',
   path: '/api/mcp/oauth-start',
@@ -115,9 +128,9 @@ const ApiMcpOauthCallbackRoute = ApiMcpOauthCallbackRouteImport.update({
   path: '/api/mcp/oauth-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMcpTestRoute = ApiMcpTestRouteImport.update({
-  id: '/api/mcp/test',
-  path: '/api/mcp/test',
+const ApiMcpDiagnoseRoute = ApiMcpDiagnoseRouteImport.update({
+  id: '/api/mcp/diagnose',
+  path: '/api/mcp/diagnose',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatStreamRoute = ApiChatStreamRouteImport.update({
@@ -147,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/agents': typeof AuthenticatedAgentsRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/data-sources': typeof AuthenticatedDataSourcesRoute
   '/mcp-servers': typeof AuthenticatedMcpServersRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/skills': typeof AuthenticatedSkillsRoute
@@ -155,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/dev/style-tester': typeof AuthenticatedDevStyleTesterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
+  '/api/mcp/diagnose': typeof ApiMcpDiagnoseRoute
   '/api/mcp/oauth-callback': typeof ApiMcpOauthCallbackRoute
   '/api/mcp/oauth-start': typeof ApiMcpOauthStartRoute
   '/api/mcp/test': typeof ApiMcpTestRoute
@@ -169,6 +184,7 @@ export interface FileRoutesByTo {
   '/agents': typeof AuthenticatedAgentsRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/data-sources': typeof AuthenticatedDataSourcesRoute
   '/mcp-servers': typeof AuthenticatedMcpServersRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/skills': typeof AuthenticatedSkillsRoute
@@ -177,6 +193,7 @@ export interface FileRoutesByTo {
   '/dev/style-tester': typeof AuthenticatedDevStyleTesterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
+  '/api/mcp/diagnose': typeof ApiMcpDiagnoseRoute
   '/api/mcp/oauth-callback': typeof ApiMcpOauthCallbackRoute
   '/api/mcp/oauth-start': typeof ApiMcpOauthStartRoute
   '/api/mcp/test': typeof ApiMcpTestRoute
@@ -193,6 +210,7 @@ export interface FileRoutesById {
   '/_authenticated/agents': typeof AuthenticatedAgentsRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/data-sources': typeof AuthenticatedDataSourcesRoute
   '/_authenticated/mcp-servers': typeof AuthenticatedMcpServersRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/skills': typeof AuthenticatedSkillsRoute
@@ -201,6 +219,7 @@ export interface FileRoutesById {
   '/_authenticated/dev/style-tester': typeof AuthenticatedDevStyleTesterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/chat/stream': typeof ApiChatStreamRoute
+  '/api/mcp/diagnose': typeof ApiMcpDiagnoseRoute
   '/api/mcp/oauth-callback': typeof ApiMcpOauthCallbackRoute
   '/api/mcp/oauth-start': typeof ApiMcpOauthStartRoute
   '/api/mcp/test': typeof ApiMcpTestRoute
@@ -217,6 +236,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/chat'
     | '/dashboard'
+    | '/data-sources'
     | '/mcp-servers'
     | '/settings'
     | '/skills'
@@ -225,6 +245,7 @@ export interface FileRouteTypes {
     | '/dev/style-tester'
     | '/api/auth/$'
     | '/api/chat/stream'
+    | '/api/mcp/diagnose'
     | '/api/mcp/oauth-callback'
     | '/api/mcp/oauth-start'
     | '/api/mcp/test'
@@ -239,6 +260,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/chat'
     | '/dashboard'
+    | '/data-sources'
     | '/mcp-servers'
     | '/settings'
     | '/skills'
@@ -247,6 +269,7 @@ export interface FileRouteTypes {
     | '/dev/style-tester'
     | '/api/auth/$'
     | '/api/chat/stream'
+    | '/api/mcp/diagnose'
     | '/api/mcp/oauth-callback'
     | '/api/mcp/oauth-start'
     | '/api/mcp/test'
@@ -262,6 +285,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agents'
     | '/_authenticated/chat'
     | '/_authenticated/dashboard'
+    | '/_authenticated/data-sources'
     | '/_authenticated/mcp-servers'
     | '/_authenticated/settings'
     | '/_authenticated/skills'
@@ -270,6 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dev/style-tester'
     | '/api/auth/$'
     | '/api/chat/stream'
+    | '/api/mcp/diagnose'
     | '/api/mcp/oauth-callback'
     | '/api/mcp/oauth-start'
     | '/api/mcp/test'
@@ -287,6 +312,7 @@ export interface RootRouteChildren {
   ApiSignOutRoute: typeof ApiSignOutRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiChatStreamRoute: typeof ApiChatStreamRoute
+  ApiMcpDiagnoseRoute: typeof ApiMcpDiagnoseRoute
   ApiMcpOauthCallbackRoute: typeof ApiMcpOauthCallbackRoute
   ApiMcpOauthStartRoute: typeof ApiMcpOauthStartRoute
   ApiMcpTestRoute: typeof ApiMcpTestRoute
@@ -378,6 +404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMcpServersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/data-sources': {
+      id: '/_authenticated/data-sources'
+      path: '/data-sources'
+      fullPath: '/data-sources'
+      preLoaderRoute: typeof AuthenticatedDataSourcesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -399,6 +432,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/mcp/test': {
+      id: '/api/mcp/test'
+      path: '/api/mcp/test'
+      fullPath: '/api/mcp/test'
+      preLoaderRoute: typeof ApiMcpTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/mcp/oauth-start': {
       id: '/api/mcp/oauth-start'
       path: '/api/mcp/oauth-start'
@@ -413,11 +453,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMcpOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/mcp/test': {
-      id: '/api/mcp/test'
-      path: '/api/mcp/test'
-      fullPath: '/api/mcp/test'
-      preLoaderRoute: typeof ApiMcpTestRouteImport
+    '/api/mcp/diagnose': {
+      id: '/api/mcp/diagnose'
+      path: '/api/mcp/diagnose'
+      fullPath: '/api/mcp/diagnose'
+      preLoaderRoute: typeof ApiMcpDiagnoseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat/stream': {
@@ -448,6 +488,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAgentsRoute: typeof AuthenticatedAgentsRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDataSourcesRoute: typeof AuthenticatedDataSourcesRoute
   AuthenticatedMcpServersRoute: typeof AuthenticatedMcpServersRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSkillsRoute: typeof AuthenticatedSkillsRoute
@@ -458,6 +499,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAgentsRoute: AuthenticatedAgentsRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDataSourcesRoute: AuthenticatedDataSourcesRoute,
   AuthenticatedMcpServersRoute: AuthenticatedMcpServersRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSkillsRoute: AuthenticatedSkillsRoute,
@@ -480,6 +522,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSignOutRoute: ApiSignOutRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiChatStreamRoute: ApiChatStreamRoute,
+  ApiMcpDiagnoseRoute: ApiMcpDiagnoseRoute,
   ApiMcpOauthCallbackRoute: ApiMcpOauthCallbackRoute,
   ApiMcpOauthStartRoute: ApiMcpOauthStartRoute,
   ApiMcpTestRoute: ApiMcpTestRoute,
@@ -487,12 +530,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

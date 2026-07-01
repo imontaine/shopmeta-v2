@@ -39,9 +39,9 @@ interface PageSpec {
 
 const CONFIG_PAGES: PageSpec[] = [
   {
-    id: 'settings',
-    name: 'Settings',
-    path: '/settings',
+    id: 'data-sources',
+    name: 'Data Sources',
+    path: '/data-sources',
     requiredClasses: [
       'settings-page',
       'settings-header',
@@ -55,6 +55,21 @@ const CONFIG_PAGES: PageSpec[] = [
       'conn-section-title',
       'conn-btn',
       'conn-btn--primary',
+    ],
+    forbiddenClasses: [],
+  },
+  {
+    id: 'settings',
+    name: 'Settings',
+    path: '/settings',
+    requiredClasses: [
+      'settings-page',
+      'settings-header',
+      'settings-title',
+      'settings-subtitle',
+      'settings-layout',
+      'settings-tabs',
+      'settings-content',
     ],
     forbiddenClasses: [],
   },
@@ -585,7 +600,7 @@ export function StyleTesterPage() {
                   <div>
                     <h2 className="conn-section-title">Visual Preview</h2>
                     <p className="conn-section-desc">
-                      Side-by-side comparison of the canonical reference (<strong>/settings</strong>) and each config page.
+                      Side-by-side comparison of the canonical reference (<strong>/data-sources</strong>) and each config page.
                       Use this to spot visual drift that automated checks cannot catch.
                     </p>
                   </div>
@@ -612,7 +627,7 @@ export function StyleTesterPage() {
                 <div className="st-checklist">
                   <h3 className="conn-section-title" style={{ marginBottom: 12 }}>Visual Conformance Checklist</h3>
                   <p className="conn-section-desc" style={{ marginBottom: 16 }}>
-                    Manually verify these visual attributes match between /settings and all config pages:
+                    Manually verify these visual attributes match between /data-sources and all config pages:
                   </p>
                   {[
                     'Page title font-size, weight, and letter-spacing match',
