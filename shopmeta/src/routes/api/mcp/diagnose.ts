@@ -1,19 +1,25 @@
 // src/routes/api/mcp/diagnose.ts
 // POST /api/mcp/diagnose - raw HTTP probe of an MCP endpoint for debugging.
 //
-// Does NOT use the MCP SDK - just fires a raw HTTP request to the server URL
+// Does NOT use the MCP SDK - just fires real HTTP requests to the server URL
 // and reports back: status, content-type, WWW-Authenticate header, and the
 // first 500 chars of the response body.
 //
+// KEY FIX: sends the FULL token in the HTTP request (server-side is safe —
+// the token never reaches the browser). The display label shows only the
+// first 8 chars for security, but the wire request uses the full token.
+//
 // This lets us distinguish:
-//   - 401 Unauthorized (OAuth token expired / not connected)
+//   - 401 with token → token expired (need reconnect)
+//   - 401 without token → not connected yet
 //   - 403 Forbidden
 //   - 404 Not Found (wrong URL)
-//   - 405 Method Not Allowed (SSE endpoint hit with POST, or vice versa)
-//   - 200 with wrong content-type (not MCP)
+//   - 405 Method Not Allowed (SSE vs Streamable HTTP mismatch)
+//   - 200 with wrong content-type
 //   - Network/DNS errors
 //
-// Called by the Debug button on each MCP server card.
+// Also auto-detects correct transport by trying both POST (Streamable HTTP)
+// and GET (SSE) when transport type is uncertain.
 
 import { createFileRoute } from '@tanstack/react-router'
 import { requireOrgSession } from '#/lib/auth/require-org-session'
@@ -81,28 +87,46 @@ export const Route = createFileRoute('/api/mcp/diagnose')({
           ok: boolean
         }> = []
 
-        // -- Step 1: Build auth header -------------------------------------------
-        const headers: Record<string, string> = {
+        // -- Step 1: Build auth headers ------------------------------------------
+        // IMPORTANT: Send the FULL credential in the wire request.
+        // This endpoint is server-side only - tokens never reach the browser.
+        // We track a masked display label separately for the response.
+        const wireHeaders: Record<string, string> = {
           'Accept': 'application/json, text/event-stream, */*',
           'User-Agent': 'ShopMeta-Diagnose/1.0',
         }
 
+        let authStatusLabel = 'No auth'
+        let hasToken = false
+
         if (row.authType === 'apikey') {
           const cfg = row.authConfig as { key?: string; headerFormat?: string; customHeader?: string } | null
           if (cfg?.key) {
+            hasToken = true
             if (cfg.headerFormat === 'basic') {
-              headers['Authorization'] = `Basic ${cfg.key.slice(0, 8)}...`
+              wireHeaders['Authorization'] = `Basic ${cfg.key}` // full value on wire
+              authStatusLabel = `Basic [key:${cfg.key.slice(0, 6)}…]`
             } else if (cfg.headerFormat === 'custom' && cfg.customHeader) {
-              headers[cfg.customHeader] = `${cfg.key.slice(0, 8)}...`
+              wireHeaders[cfg.customHeader] = cfg.key // full value on wire
+              authStatusLabel = `${cfg.customHeader}: [key:${cfg.key.slice(0, 6)}…]`
             } else {
-              headers['Authorization'] = `Bearer ${cfg.key.slice(0, 8)}...`
+              wireHeaders['Authorization'] = `Bearer ${cfg.key}` // full value on wire
+              authStatusLabel = `Bearer [key:${cfg.key.slice(0, 6)}…]`
             }
+          } else {
+            steps.push({
+              label: 'API key check',
+              ok: false,
+              error: 'No API key stored for this server.',
+            })
           }
         } else if (row.authType === 'oauth') {
           const cfg = row.authConfig as Record<string, unknown> | null
           const token = cfg?.['access_token'] as string | undefined
           if (token) {
-            headers['Authorization'] = `Bearer ${token.slice(0, 8)}...`
+            hasToken = true
+            wireHeaders['Authorization'] = `Bearer ${token}` // full token on wire (server-side safe)
+            authStatusLabel = `Bearer [token:${token.slice(0, 8)}…] (OAuth)`
           } else {
             steps.push({
               label: 'OAuth token check',
@@ -112,29 +136,32 @@ export const Route = createFileRoute('/api/mcp/diagnose')({
           }
         }
 
-        // -- Step 2: Raw GET probe (SSE endpoint typically accepts GET) ----------
+        // -- Step 2: HTTP probe --------------------------------------------------
+        // Probe the configured transport first, then auto-detect if it fails.
         const probeUrl = row.url
         const startMs = Date.now()
-        try {
+
+        // Helper: fire a single probe request
+        async function probe(method: 'GET' | 'POST'): Promise<{
+          status: number
+          contentType: string
+          wwwAuthenticate?: string
+          bodySnippet: string
+          latencyMs: number
+        }> {
           const controller = new AbortController()
           const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS)
-
-          let resp: Response
           try {
-            // For SSE: GET with Accept: text/event-stream
-            // For HTTP (Streamable): POST with MCP initialize JSON
-            const isSSE = row.transport === 'sse'
-            resp = await fetch(probeUrl, {
-              method: isSSE ? 'GET' : 'POST',
+            const res = await fetch(probeUrl, {
+              method,
               headers: {
-                ...headers,
-                ...(isSSE
+                ...wireHeaders,
+                ...(method === 'GET'
                   ? { Accept: 'text/event-stream' }
                   : { 'Content-Type': 'application/json' }),
               },
-              body: isSSE
-                ? undefined
-                : JSON.stringify({
+              body: method === 'POST'
+                ? JSON.stringify({
                     jsonrpc: '2.0',
                     id: 1,
                     method: 'initialize',
@@ -143,73 +170,136 @@ export const Route = createFileRoute('/api/mcp/diagnose')({
                       capabilities: {},
                       clientInfo: { name: 'shopmeta-diagnose', version: '1.0' },
                     },
-                  }),
+                  })
+                : undefined,
               signal: controller.signal,
             })
+            const latencyMs = Date.now() - startMs
+            const contentType = res.headers.get('content-type') ?? '(none)'
+            const wwwAuthenticate = res.headers.get('www-authenticate') ?? undefined
+            let bodySnippet = '(unread)'
+            try {
+              const text = await res.text()
+              bodySnippet = text.slice(0, 500) + (text.length > 500 ? '…' : '')
+            } catch {
+              bodySnippet = '(body read failed)'
+            }
+            return { status: res.status, contentType, wwwAuthenticate, bodySnippet, latencyMs }
           } finally {
             clearTimeout(timer)
           }
+        }
 
-          const latencyMs = Date.now() - startMs
-          const contentType = resp.headers.get('content-type') ?? '(none)'
-          const wwwAuth = resp.headers.get('www-authenticate') ?? undefined
-          const xRequestId = resp.headers.get('x-request-id') ?? undefined
-
-          // Read up to 500 chars of body
-          let bodySnippet = '(unread)'
-          try {
-            const text = await resp.text()
-            bodySnippet = text.slice(0, 500) + (text.length > 500 ? '…' : '')
-          } catch {
-            bodySnippet = '(body read failed)'
-          }
+        try {
+          // Primary probe: use the configured transport
+          const isSSE = row.transport === 'sse'
+          const primaryMethod = isSSE ? 'GET' : 'POST'
+          const primaryResult = await probe(primaryMethod)
 
           steps.push({
-            label: `HTTP ${row.transport === 'sse' ? 'GET' : 'POST'} ${probeUrl}`,
-            status: resp.status,
-            contentType,
-            wwwAuthenticate: wwwAuth,
-            body: bodySnippet,
-            ok: resp.status >= 200 && resp.status < 300,
+            label: `HTTP ${primaryMethod} ${probeUrl} (${isSSE ? 'SSE' : 'Streamable HTTP'}) | auth: ${authStatusLabel}`,
+            status: primaryResult.status,
+            contentType: primaryResult.contentType,
+            wwwAuthenticate: primaryResult.wwwAuthenticate,
+            body: primaryResult.bodySnippet,
+            ok: primaryResult.status >= 200 && primaryResult.status < 300,
           })
 
-          // -- Step 3: Interpret the result ------------------------------------
-          const diagnosis: string[] = []
+          // -- Step 3: Transport auto-detection ------------------------------------
+          // If we got 405 Method Not Allowed, try the opposite transport method.
+          // This tells the user which transport is actually correct.
+          let alternativeResult: Awaited<ReturnType<typeof probe>> | null = null
+          let suggestedTransport: string | null = null
 
-          if (resp.status === 401) {
-            diagnosis.push('401 Unauthorized — token missing, expired, or invalid.')
-            if (row.authType === 'oauth') {
-              diagnosis.push('Try disconnecting and reconnecting the OAuth flow.')
-            } else if (row.authType === 'none') {
-              diagnosis.push('Server requires auth but authType is "none". Set authType to "oauth" or "apikey".')
+          if (primaryResult.status === 405) {
+            const altMethod = isSSE ? 'POST' : 'GET'
+            const altStartMs = Date.now()
+            try {
+              alternativeResult = await probe(altMethod)
+              steps.push({
+                label: `HTTP ${altMethod} ${probeUrl} (${isSSE ? 'Streamable HTTP' : 'SSE'} — auto-detect) | auth: ${authStatusLabel}`,
+                status: alternativeResult.status,
+                contentType: alternativeResult.contentType,
+                wwwAuthenticate: alternativeResult.wwwAuthenticate,
+                body: alternativeResult.bodySnippet,
+                ok: alternativeResult.status >= 200 && alternativeResult.status < 300,
+              })
+              if (alternativeResult.status !== 405) {
+                suggestedTransport = isSSE ? 'streamable-http' : 'sse'
+              }
+            } catch {
+              // Alternative probe failed — ignore
             }
-            if (wwwAuth) diagnosis.push(`WWW-Authenticate: ${wwwAuth}`)
-          } else if (resp.status === 403) {
-            diagnosis.push('403 Forbidden — authenticated but not authorized for this resource.')
-          } else if (resp.status === 404) {
-            diagnosis.push('404 Not Found — wrong URL. Verify the MCP endpoint path.')
-          } else if (resp.status === 405) {
-            diagnosis.push('405 Method Not Allowed — transport type mismatch (SSE vs Streamable HTTP).')
-          } else if (resp.status === 200 || resp.status === 202) {
-            if (row.transport === 'sse' && !contentType.includes('text/event-stream')) {
-              diagnosis.push(`Transport is SSE but server returned Content-Type: ${contentType}. Try switching to "Streamable HTTP".`)
-            } else if (row.transport !== 'sse' && contentType.includes('text/event-stream')) {
-              diagnosis.push(`Transport is Streamable HTTP but server returned SSE Content-Type. Try switching transport to "SSE".`)
+            void altStartMs
+          }
+
+          // -- Step 4: Build diagnosis --------------------------------------------
+          const diagnosis: string[] = []
+          const status = primaryResult.status
+          const ct = primaryResult.contentType
+          const wwwAuth = primaryResult.wwwAuthenticate
+
+          if (status === 401) {
+            if (!hasToken) {
+              diagnosis.push('401 Unauthorized — no credentials stored. Connect the server first (OAuth flow or API key).')
             } else {
-              diagnosis.push('HTTP probe succeeded. If MCP SDK still fails, the issue may be in the MCP handshake (initialize / capabilities).')
+              diagnosis.push('401 Unauthorized — credentials were sent but rejected by the server.')
+              if (row.authType === 'oauth') {
+                diagnosis.push('OAuth token is likely expired. Click Reconnect to refresh it.')
+              } else {
+                diagnosis.push('API key may be invalid or revoked. Check the key value.')
+              }
+            }
+            if (wwwAuth) diagnosis.push(`Server WWW-Authenticate: ${wwwAuth}`)
+          } else if (status === 403) {
+            diagnosis.push('403 Forbidden — authenticated but not authorized for this resource or org.')
+          } else if (status === 404) {
+            diagnosis.push('404 Not Found — URL is wrong or the MCP endpoint path is different.')
+          } else if (status === 405) {
+            if (suggestedTransport) {
+              const label = suggestedTransport === 'sse' ? 'SSE' : 'Streamable HTTPS'
+              diagnosis.push(`405 Method Not Allowed — wrong transport. Switch to "${label}" in the server settings.`)
+              diagnosis.push(`Auto-detect: the ${altMethod} method returned HTTP ${alternativeResult?.status ?? '?'}.`)
+            } else {
+              diagnosis.push('405 Method Not Allowed — transport type mismatch (SSE vs Streamable HTTP).')
+              diagnosis.push('Try switching the transport setting and re-running diagnose.')
+            }
+          } else if (status === 200 || status === 202) {
+            if (ct.includes('text/event-stream') && !isSSE) {
+              diagnosis.push(`Server returned SSE stream (text/event-stream) but transport is set to "Streamable HTTP". Switch to "SSE".`)
+            } else if (!ct.includes('text/event-stream') && !ct.includes('application/json') && isSSE) {
+              diagnosis.push(`Unexpected Content-Type: ${ct}. Check the URL is correct.`)
+            } else {
+              diagnosis.push('✓ HTTP probe succeeded with credentials.')
+              if (hasToken) {
+                diagnosis.push('Token is valid and accepted. If the MCP SDK still fails, the issue may be in the handshake (initialize / capabilities exchange).')
+              }
+            }
+          }
+
+          // Transport detection note (even on 200)
+          if (status !== 405) {
+            if (isSSE && ct.includes('text/event-stream')) {
+              diagnosis.push('Transport confirmed: SSE (GET → text/event-stream ✓)')
+            } else if (!isSSE && ct.includes('application/json')) {
+              diagnosis.push('Transport confirmed: Streamable HTTP (POST → application/json ✓)')
+            } else if (!isSSE && ct.includes('text/event-stream')) {
+              diagnosis.push('⚠ Transport mismatch: set to Streamable HTTP but server returned text/event-stream. Try switching to SSE.')
             }
           }
 
           return Response.json({
-            ok: resp.status >= 200 && resp.status < 300,
+            ok: status >= 200 && status < 300,
             steps,
             diagnosis,
-            latencyMs,
+            latencyMs: primaryResult.latencyMs,
             server: {
               name: row.name,
               url: row.url,
               transport: row.transport,
               authType: row.authType,
+              hasToken,
+              suggestedTransport,
               origin,
             },
           })
@@ -235,6 +325,7 @@ export const Route = createFileRoute('/api/mcp/diagnose')({
               url: row.url,
               transport: row.transport,
               authType: row.authType,
+              hasToken,
               origin,
             },
           })
