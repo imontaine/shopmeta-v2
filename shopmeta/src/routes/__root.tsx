@@ -2,13 +2,26 @@
 // Root layout — loads session on each navigation and provides it to router context.
 // Uses beforeLoad (not loader) so the session is available in child route contexts.
 
+import * as React from 'react'
 import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 
 import appCss from '../styles.css?url'
+
+// ─── Lazy-loaded DevTools (client-only) ──────────────────────────────────────
+// DevTools must NOT render during SSR — their hooks crash when called outside
+// a React render context. Lazy-loading ensures they only mount after hydration.
+const TanStackRouterDevtoolsPanel = React.lazy(() =>
+  import('@tanstack/react-router-devtools').then((m) => ({
+    default: m.TanStackRouterDevtoolsPanel,
+  })),
+)
+const TanStackDevtools = React.lazy(() =>
+  import('@tanstack/react-devtools').then((m) => ({
+    default: m.TanStackDevtools,
+  })),
+)
 
 // ─── Session loading server function ─────────────────────────────────────────
 // Loaded on every navigation to populate the router context with auth state.
@@ -79,6 +92,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  // Track whether we've hydrated — devtools only mount after hydration
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => { setMounted(true) }, [])
+
   // Inline script to apply theme class before first paint — prevents FOUC.
   // Runs synchronously during HTML parsing, before CSS is applied.
   const themeScript = `
@@ -108,12 +125,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
-        <TanStackDevtools
-          config={{ position: 'bottom-right' }}
-          plugins={[{ name: 'Tanstack Router', render: <TanStackRouterDevtoolsPanel /> }]}
-        />
+        {/* DevTools: lazy-loaded, mounted after hydration to avoid SSR mismatch */}
+        {mounted && process.env.NODE_ENV === 'development' && (
+          <React.Suspense fallback={null}>
+            <TanStackDevtools
+              config={{ position: 'bottom-right' }}
+              plugins={[{ name: 'Tanstack Router', render: <TanStackRouterDevtoolsPanel /> }]}
+            />
+          </React.Suspense>
+        )}
         <Scripts />
       </body>
     </html>
   )
 }
+
+

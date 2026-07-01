@@ -1,8 +1,8 @@
 // src/routes/register.tsx
 // Register page — create a new account
 
+import * as React from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
 import { signUp } from '#/lib/auth/client'
 
 export const Route = createFileRoute('/register')({
@@ -15,12 +15,12 @@ export const Route = createFileRoute('/register')({
 })
 
 function RegisterPage() {
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [loading, setLoading] = React.useState(false)
   // Disabled until React hydrates — prevents native GET form submission
   // when Playwright clicks before onSubmit is attached.
-  const [isHydrated, setIsHydrated] = useState(false)
-  useEffect(() => { setIsHydrated(true) }, [])
+  const [isHydrated, setIsHydrated] = React.useState(false)
+  React.useEffect(() => { setIsHydrated(true) }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

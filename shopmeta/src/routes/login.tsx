@@ -1,8 +1,8 @@
 // src/routes/login.tsx
 // Login page — email + password auth
 
+import * as React from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
 import { signIn } from '#/lib/auth/client'
 
 export const Route = createFileRoute('/login')({
@@ -16,11 +16,11 @@ export const Route = createFileRoute('/login')({
 })
 
 function LoginPage() {
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [loading, setLoading] = React.useState(false)
   // Disabled until React hydrates — prevents native GET form submission
-  const [isHydrated, setIsHydrated] = useState(false)
-  useEffect(() => { setIsHydrated(true) }, [])
+  const [isHydrated, setIsHydrated] = React.useState(false)
+  React.useEffect(() => { setIsHydrated(true) }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

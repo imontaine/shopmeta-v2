@@ -1,8 +1,8 @@
 // src/routes/forgot-password.tsx
 // Forgot Password page — request a password reset email
 
+import * as React from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
 import { forgetPassword } from '#/lib/auth/client'
 
 export const Route = createFileRoute('/forgot-password')({
@@ -10,11 +10,11 @@ export const Route = createFileRoute('/forgot-password')({
 })
 
 function ForgotPasswordPage() {
-  const [error, setError] = useState<string | null>(null)
-  const [sent, setSent] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [isHydrated, setIsHydrated] = useState(false)
-  useEffect(() => { setIsHydrated(true) }, [])
+  const [error, setError] = React.useState<string | null>(null)
+  const [sent, setSent] = React.useState(false)
+  const [loading, setLoading] = React.useState(false)
+  const [isHydrated, setIsHydrated] = React.useState(false)
+  React.useEffect(() => { setIsHydrated(true) }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

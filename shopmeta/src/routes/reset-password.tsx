@@ -1,8 +1,8 @@
 // src/routes/reset-password.tsx
 // Reset Password page — handles the token from the email link
 
+import * as React from 'react'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
 import { resetPassword } from '#/lib/auth/client'
 
 type SearchParams = {
@@ -19,11 +19,11 @@ export const Route = createFileRoute('/reset-password')({
 function ResetPasswordPage() {
   const router = useRouter()
   const { token } = Route.useSearch()
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [isHydrated, setIsHydrated] = useState(false)
-  useEffect(() => { setIsHydrated(true) }, [])
+  const [error, setError] = React.useState<string | null>(null)
+  const [success, setSuccess] = React.useState(false)
+  const [loading, setLoading] = React.useState(false)
+  const [isHydrated, setIsHydrated] = React.useState(false)
+  React.useEffect(() => { setIsHydrated(true) }, [])
 
   if (!token) {
     return (

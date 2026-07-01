@@ -32,11 +32,26 @@ const APP_VERSION = getAppVersion()
 const config = defineConfig({
   resolve: {
     tsconfigPaths: true,
+    dedupe: ['react', 'react-dom'],
   },
   define: {
     __APP_VERSION__: JSON.stringify(APP_VERSION),
   },
   plugins: [devtools(), tailwindcss(), tanstackStart(), viteReact()],
+  // Force React into a single instance for both client and SSR environments.
+  // Without this, Vite's dep pre-bundling creates a separate module identity
+  // for react in the client chunk vs the SSR bundle, causing "Cannot read
+  // properties of null (reading 'useState')" during code-split SPA transitions.
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+  },
+  environments: {
+    ssr: {
+      optimizeDeps: {
+        include: ['react', 'react-dom', 'react-dom/server', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+      },
+    },
+  },
   ssr: {
     // @better-fetch/fetch must be external because bundling it pulls in
     // better-auth internals that need Zod 4 .meta() which conflicts with
