@@ -2917,6 +2917,24 @@ body {
   white-space: nowrap;
 }
 
+/* —— MCP inline delete confirmation ————————————————————————————————————— */
+
+.mcp-delete-confirm-label {
+  font-size: var(--text-xs);
+  color: #f87171;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 0 2px;
+}
+.mcp-delete-confirm-btn {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 2px 7px;
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.mcp-delete-confirm-btn:hover { background: rgba(239, 68, 68, 0.12); }
+
 /* Inline link used in AgentBuilder MCP section */
 .agent-link { color: var(--accent); text-decoration: none; font-weight: 500; }
 .agent-link:hover { text-decoration: underline; }

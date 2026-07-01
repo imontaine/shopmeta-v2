@@ -673,6 +673,7 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
   const [reconnectError, setReconnectError] = useState<string | null>(null)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<TestResult | null>(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   // OAuth connection state derived from authConfig
   const isOAuth = server.authType === 'oauth'
@@ -792,30 +793,58 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
             </button>
           )}
           <button
+            type="button"
             className="conn-card-btn"
             onClick={() => onEdit(server)}
             aria-label={`Edit ${server.name}`}
             title="Edit"
             data-testid={`mcp-edit-${server.id}`}
+            disabled={confirmingDelete}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
           </button>
-          <button
-            className="conn-card-btn conn-card-btn--danger"
-            onClick={() => onDelete(server)}
-            disabled={isDeleting}
-            aria-label={`Delete ${server.name}`}
-            title="Delete"
-            data-testid={`mcp-delete-${server.id}`}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-            </svg>
-          </button>
+          {confirmingDelete ? (
+            <>
+              <span className="mcp-delete-confirm-label">Remove?</span>
+              <button
+                type="button"
+                className="conn-card-btn conn-card-btn--danger mcp-delete-confirm-btn"
+                onClick={() => { setConfirmingDelete(false); onDelete(server) }}
+                disabled={isDeleting}
+                aria-label={`Confirm delete ${server.name}`}
+                data-testid={`mcp-delete-confirm-${server.id}`}
+              >
+                Yes
+              </button>
+              <button
+                type="button"
+                className="conn-card-btn"
+                onClick={() => setConfirmingDelete(false)}
+                aria-label="Cancel delete"
+                data-testid={`mcp-delete-cancel-${server.id}`}
+              >
+                No
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="conn-card-btn conn-card-btn--danger"
+              onClick={() => setConfirmingDelete(true)}
+              disabled={isDeleting}
+              aria-label={`Delete ${server.name}`}
+              title="Delete"
+              data-testid={`mcp-delete-${server.id}`}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1012,7 +1041,6 @@ export function McpServersPage() {
   }
 
   const handleDelete = (s: McpServerRow) => {
-    if (!window.confirm(`Remove "${s.name}" from the catalog? This will also detach it from any agents.`)) return
     setDeletingId(s.id)
     deleteMutation.mutate(s.id)
   }
