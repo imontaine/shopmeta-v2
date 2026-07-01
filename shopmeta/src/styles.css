@@ -2917,6 +2917,153 @@ body {
   white-space: nowrap;
 }
 
+/* —— MCP Diagnose button —————————————————————————————————————————————————— */
+
+.mcp-diagnose-btn {
+  color: var(--text-tertiary);
+  opacity: 0.75;
+}
+.mcp-diagnose-btn:hover:not(:disabled) {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.1);
+  opacity: 1;
+}
+
+/* —— MCP Diagnose result panel ———————————————————————————————————————————— */
+
+.mcp-diagnose-result {
+  margin: 6px 0 0;
+  border-radius: 6px;
+  border: 1px solid var(--border-muted);
+  background: var(--bg-subtle);
+  overflow: hidden;
+}
+.mcp-diagnose-result--ok { border-color: rgba(52, 211, 153, 0.3); }
+.mcp-diagnose-result--error { border-color: rgba(248, 113, 113, 0.3); }
+
+.mcp-diagnose-result-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border-muted);
+  font-size: var(--text-xs);
+  color: #60a5fa;
+}
+.mcp-diagnose-result--ok .mcp-diagnose-result-header { color: #34d399; }
+.mcp-diagnose-result--error .mcp-diagnose-result-header { color: #f87171; }
+.mcp-diagnose-result-header strong { flex: 1; }
+
+.mcp-diagnose-step {
+  padding: 7px 10px;
+  border-top: 1px solid var(--border-muted);
+  font-size: var(--text-xs);
+}
+.mcp-diagnose-step:first-of-type { border-top: none; }
+
+.mcp-diagnose-step-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.mcp-diagnose-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.mcp-diagnose-status-dot--ok { background: #34d399; }
+.mcp-diagnose-status-dot--error { background: #f87171; }
+
+.mcp-diagnose-step-name {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  word-break: break-all;
+  flex: 1;
+}
+
+.mcp-diagnose-http-status {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.mcp-diagnose-http-status--ok { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+.mcp-diagnose-http-status--warn { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.mcp-diagnose-http-status--error { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+
+.mcp-diagnose-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 0.68rem;
+}
+.mcp-diagnose-field-label {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.mcp-diagnose-field code {
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+.mcp-diagnose-error-text { color: #f87171; }
+
+.mcp-diagnose-field--body {
+  flex-direction: column;
+  gap: 3px;
+}
+.mcp-diagnose-body {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-muted);
+  border-radius: 4px;
+  padding: 5px 7px;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mcp-diagnose-conclusion {
+  padding: 7px 10px;
+  border-top: 1px solid var(--border-muted);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.mcp-diagnose-conclusion strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+.mcp-diagnose-conclusion ul {
+  margin: 0;
+  padding-left: 14px;
+}
+.mcp-diagnose-conclusion li {
+  margin-bottom: 3px;
+  line-height: 1.4;
+}
+
+.mcp-diagnose-debug {
+  margin-top: 4px;
+  font-size: 0.67rem;
+  color: var(--text-tertiary);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.mcp-diagnose-debug code { color: var(--text-secondary); }
+
+
 /* —— MCP inline delete confirmation ————————————————————————————————————— */
 
 .mcp-delete-confirm-label {

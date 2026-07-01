@@ -666,14 +666,38 @@ interface TestResult {
   tools?: Array<{ name: string; description: string }>
   latencyMs?: number
   error?: string
+  errorCode?: string
+  debug?: { url: string; transport: string; authType: string }
 }
+
+interface DiagnoseStep {
+  label: string
+  status?: number
+  contentType?: string
+  wwwAuthenticate?: string
+  body?: string
+  error?: string
+  ok: boolean
+}
+
+interface DiagnoseResult {
+  ok: boolean
+  steps: DiagnoseStep[]
+  diagnosis: string[]
+  latencyMs?: number
+  server?: { name: string; url: string; transport: string; authType: string; origin: string }
+}
+
 
 function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
   const [reconnecting, setReconnecting] = useState(false)
   const [reconnectError, setReconnectError] = useState<string | null>(null)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<TestResult | null>(null)
+  const [diagnosing, setDiagnosing] = useState(false)
+  const [diagnoseResult, setDiagnoseResult] = useState<DiagnoseResult | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+
 
   // OAuth connection state derived from authConfig
   const isOAuth = server.authType === 'oauth'
@@ -709,6 +733,7 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
   async function handleTest() {
     setTesting(true)
     setTestResult(null)
+    setDiagnoseResult(null)
     try {
       const res = await fetch('/api/mcp/test', {
         method: 'POST',
@@ -724,6 +749,30 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
       setTesting(false)
     }
   }
+
+  async function handleDiagnose() {
+    setDiagnosing(true)
+    setDiagnoseResult(null)
+    setTestResult(null)
+    try {
+      const res = await fetch('/api/mcp/diagnose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mcpServerId: server.id }),
+      })
+      const data = await res.json() as DiagnoseResult
+      setDiagnoseResult(data)
+    } catch (err) {
+      setDiagnoseResult({
+        ok: false,
+        steps: [{ label: 'fetch', ok: false, error: err instanceof Error ? err.message : 'Request failed' }],
+        diagnosis: ['Could not reach the diagnose endpoint. Check network connectivity.'],
+      })
+    } finally {
+      setDiagnosing(false)
+    }
+  }
+
 
   return (
     <div className="conn-card" data-testid={`mcp-card-${server.id}`}>
@@ -759,9 +808,9 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
             type="button"
             className="conn-card-btn mcp-test-btn"
             onClick={handleTest}
-            disabled={testing || reconnecting}
+            disabled={testing || reconnecting || diagnosing}
             aria-label={`Test connection to ${server.name}`}
-            title="Test connection"
+            title="Test MCP connection (SDK)"
             data-testid={`mcp-test-${server.id}`}
           >
             {testing
@@ -772,6 +821,27 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
                 </svg>
               )}
           </button>
+          {/* Diagnose button - raw HTTP probe */}
+          <button
+            type="button"
+            className="conn-card-btn mcp-diagnose-btn"
+            onClick={handleDiagnose}
+            disabled={diagnosing || testing || reconnecting}
+            aria-label={`Diagnose ${server.name}`}
+            title="Diagnose (raw HTTP probe — shows status code, headers, body)"
+            data-testid={`mcp-diagnose-${server.id}`}
+          >
+            {diagnosing
+              ? <span className="conn-spinner" />
+              : (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              )}
+          </button>
+
           {/* Reconnect button for OAuth servers */}
           {isOAuth && (
             <button
@@ -912,6 +982,82 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
               </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Diagnose result panel */}
+      {diagnoseResult && (
+        <div className={`mcp-diagnose-result${diagnoseResult.ok ? ' mcp-diagnose-result--ok' : ' mcp-diagnose-result--error'}`}>
+          <div className="mcp-diagnose-result-header">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <strong>Diagnostic Report</strong>
+            {diagnoseResult.latencyMs !== undefined && (
+              <span className="mcp-test-latency">({diagnoseResult.latencyMs}ms)</span>
+            )}
+            <button
+              type="button"
+              className="mcp-test-result-close"
+              onClick={() => setDiagnoseResult(null)}
+              aria-label="Dismiss diagnostic report"
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Steps */}
+          {diagnoseResult.steps.map((step, i) => (
+            <div key={i} className={`mcp-diagnose-step${step.ok ? ' mcp-diagnose-step--ok' : ' mcp-diagnose-step--error'}`}>
+              <div className="mcp-diagnose-step-label">
+                <span className={`mcp-diagnose-status-dot${step.ok ? ' mcp-diagnose-status-dot--ok' : ' mcp-diagnose-status-dot--error'}`} />
+                <code className="mcp-diagnose-step-name">{step.label}</code>
+                {step.status !== undefined && (
+                  <span className={`mcp-diagnose-http-status${step.status < 300 ? ' mcp-diagnose-http-status--ok' : step.status < 500 ? ' mcp-diagnose-http-status--warn' : ' mcp-diagnose-http-status--error'}`}>
+                    HTTP {step.status}
+                  </span>
+                )}
+              </div>
+              {step.contentType && (
+                <div className="mcp-diagnose-field">
+                  <span className="mcp-diagnose-field-label">Content-Type:</span>
+                  <code>{step.contentType}</code>
+                </div>
+              )}
+              {step.wwwAuthenticate && (
+                <div className="mcp-diagnose-field">
+                  <span className="mcp-diagnose-field-label">WWW-Authenticate:</span>
+                  <code>{step.wwwAuthenticate}</code>
+                </div>
+              )}
+              {step.body && (
+                <div className="mcp-diagnose-field mcp-diagnose-field--body">
+                  <span className="mcp-diagnose-field-label">Response body:</span>
+                  <pre className="mcp-diagnose-body">{step.body}</pre>
+                </div>
+              )}
+              {step.error && (
+                <div className="mcp-diagnose-field">
+                  <span className="mcp-diagnose-field-label">Error:</span>
+                  <code className="mcp-diagnose-error-text">{step.error}</code>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Diagnosis */}
+          {diagnoseResult.diagnosis.length > 0 && (
+            <div className="mcp-diagnose-conclusion">
+              <strong>Diagnosis:</strong>
+              <ul>
+                {diagnoseResult.diagnosis.map((d, i) => <li key={i}>{d}</li>)}
+              </ul>
             </div>
           )}
         </div>

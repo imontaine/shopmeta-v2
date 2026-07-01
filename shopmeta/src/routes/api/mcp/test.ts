@@ -138,8 +138,39 @@ export const Route = createFileRoute('/api/mcp/test')({
         } catch (err) {
           const latencyMs = Date.now() - startMs
           const message = err instanceof Error ? err.message : String(err)
-          console.error('[mcp/test] Connection test failed:', message)
-          return Response.json({ ok: false, error: message, latencyMs }, { status: 200 })
+
+          // Unwrap cause chain for richer diagnostics
+          let causeMessage: string | undefined
+          let causeName: string | undefined
+          if (err instanceof Error && err.cause) {
+            const c = err.cause
+            causeMessage = c instanceof Error ? c.message : String(c)
+            causeName = c instanceof Error ? c.constructor.name : undefined
+          }
+
+          const detail = [
+            message,
+            causeMessage ? `Cause: ${causeMessage}` : null,
+            causeName ? `(${causeName})` : null,
+          ].filter(Boolean).join(' — ')
+
+          console.error('[mcp/test] Connection test failed:', detail,
+            '\n  server:', mcpRow.url,
+            '\n  transport:', mcpRow.transport,
+            '\n  authType:', mcpRow.authType,
+          )
+          return Response.json({
+            ok: false,
+            error: detail,
+            errorCode: causeName,
+            latencyMs,
+            debug: {
+              url: mcpRow.url,
+              transport: mcpRow.transport,
+              authType: mcpRow.authType,
+            },
+          }, { status: 200 })
+
         } finally {
           clearTimeout(timer)
           try { await mcpClients?.close?.() } catch { /* ignore close errors */ }

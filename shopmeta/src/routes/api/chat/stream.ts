@@ -148,6 +148,7 @@ export const Route = createFileRoute('/api/chat/stream')({
                 clientOptionsMap[key] = opts
               }
 
+
               try {
                 // Create MCP client pool. SDK handles transport lifecycle.
                 mcpClients = await createMCPClients(clientOptionsMap)
@@ -158,11 +159,22 @@ export const Route = createFileRoute('/api/chat/stream')({
                   console.error('[chat/stream] Duplicate MCP tool name:', err.toolName)
                 } else if (err instanceof MCPConnectionError) {
                   // One or more MCP servers failed to connect (OAuth failure, network, etc.)
-                  console.error('[chat/stream] MCP connection error:', err.message)
+                  const causeMsg = err.cause instanceof Error
+                    ? err.cause.message
+                    : err.cause != null ? String(err.cause) : '(no cause)'
+                  console.error(
+                    '[chat/stream] MCP connection error:', err.message,
+                    '| cause:', causeMsg,
+                    '| servers:', Object.keys(clientOptionsMap).join(', '),
+                  )
+                  if (err.cause instanceof Error && err.cause.stack) {
+                    console.error('[chat/stream] MCP cause stack:', err.cause.stack)
+                  }
                 } else {
                   throw err
                 }
               }
+
             }
           } catch (err) {
             // Log but don't crash - degrade gracefully to no-MCP mode
