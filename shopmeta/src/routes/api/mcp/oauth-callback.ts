@@ -20,6 +20,7 @@ import { mcpServers } from '#/lib/db/schema'
 import { and, eq } from 'drizzle-orm'
 import { DrizzleOAuthProvider } from '#/lib/mcp-oauth-provider'
 import { auth } from '@modelcontextprotocol/sdk/client/auth.js'
+import { getPublicOrigin } from '#/lib/get-origin'
 
 export const Route = createFileRoute('/api/mcp/oauth-callback')({
   server: {
@@ -95,7 +96,9 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
 
         // Reconstruct the same redirectUrl used in /oauth/start.
         // The SDK requires it to match exactly what was used for PKCE + DCR.
-        const origin = new URL(request.url).origin
+        // Use getPublicOrigin() to honour reverse-proxy forwarding headers so
+        // the https:// scheme is preserved (same as oauth-start).
+        const origin = getPublicOrigin(request)
         const redirectUrl = `${origin}/api/mcp/oauth-callback`
 
         // Delegate token exchange to the SDK.

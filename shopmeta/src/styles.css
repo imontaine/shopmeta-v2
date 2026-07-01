@@ -2824,6 +2824,99 @@ body {
   line-height: 1.5;
 }
 
+/* —— MCP Test button —————————————————————————————————————————————————————— */
+
+.mcp-test-btn {
+  color: var(--text-tertiary);
+  transition: color 0.15s, background 0.15s;
+}
+.mcp-test-btn:hover:not(:disabled) {
+  color: var(--accent);
+  background: var(--accent-subtle);
+}
+
+/* —— MCP Test result panel ——————————————————————————————————————————————— */
+
+.mcp-test-result {
+  margin: 8px 0 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: var(--text-xs);
+  overflow: hidden;
+}
+.mcp-test-result--ok {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.06);
+}
+.mcp-test-result--error {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.06);
+}
+.mcp-test-result-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+.mcp-test-result--ok .mcp-test-result-header { color: #34d399; }
+.mcp-test-result--error .mcp-test-result-header { color: #f87171; }
+.mcp-test-result-header > span { flex: 1; color: var(--text-secondary); }
+.mcp-test-result--ok .mcp-test-result-header > span { color: var(--text-primary); }
+.mcp-test-result--error .mcp-test-result-header > span { color: #f87171; }
+.mcp-test-latency {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.mcp-test-result-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.mcp-test-result-close:hover { color: var(--text-primary); background: var(--accent-subtle); }
+.mcp-test-tools {
+  list-style: none;
+  margin: 0;
+  padding: 0 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.mcp-test-tool {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 3px 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.mcp-test-tool:first-child { border-top: none; }
+.mcp-test-tool-name {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.7rem;
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.mcp-test-tool-desc {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Inline link used in AgentBuilder MCP section */
 .agent-link { color: var(--accent); text-decoration: none; font-weight: 500; }
 .agent-link:hover { text-decoration: underline; }

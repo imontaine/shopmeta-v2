@@ -626,7 +626,7 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
             >
               {(isSubmitting || oauthConnecting) && <span className="conn-spinner" />}
               {oauthConnecting
-                ? 'Connecting-'
+                ? 'Connecting…'
                 : form.authType === 'oauth' && !isSubmitting
                   ? `${submitLabel.replace('Add', 'Save')} & Connect`
                   : submitLabel}
@@ -660,9 +660,19 @@ interface McpCardProps {
   isDeleting: boolean
 }
 
+interface TestResult {
+  ok: boolean
+  toolCount?: number
+  tools?: Array<{ name: string; description: string }>
+  latencyMs?: number
+  error?: string
+}
+
 function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
   const [reconnecting, setReconnecting] = useState(false)
   const [reconnectError, setReconnectError] = useState<string | null>(null)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<TestResult | null>(null)
 
   // OAuth connection state derived from authConfig
   const isOAuth = server.authType === 'oauth'
@@ -695,6 +705,25 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
     }
   }
 
+  async function handleTest() {
+    setTesting(true)
+    setTestResult(null)
+    try {
+      const res = await fetch('/api/mcp/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mcpServerId: server.id }),
+      })
+      const data = await res.json() as TestResult & { error?: string }
+      if (!res.ok && !data.error) throw new Error(`Server error ${res.status}`)
+      setTestResult(data)
+    } catch (err) {
+      setTestResult({ ok: false, error: err instanceof Error ? err.message : 'Test failed' })
+    } finally {
+      setTesting(false)
+    }
+  }
+
   return (
     <div className="conn-card" data-testid={`mcp-card-${server.id}`}>
       <div className="conn-card-header">
@@ -724,13 +753,31 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
           )}
         </div>
         <div className="conn-card-actions">
-          {/* Reconnect button for OAuth servers without tokens */}
+          {/* Test button */}
+          <button
+            type="button"
+            className="conn-card-btn mcp-test-btn"
+            onClick={handleTest}
+            disabled={testing || reconnecting}
+            aria-label={`Test connection to ${server.name}`}
+            title="Test connection"
+            data-testid={`mcp-test-${server.id}`}
+          >
+            {testing
+              ? <span className="conn-spinner" />
+              : (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+              )}
+          </button>
+          {/* Reconnect button for OAuth servers */}
           {isOAuth && (
             <button
               type="button"
               className="conn-card-btn mcp-reconnect-btn"
               onClick={handleReconnect}
-              disabled={reconnecting}
+              disabled={reconnecting || testing}
               aria-label={`${hasTokens ? 'Reconnect' : 'Connect'} ${server.name} via OAuth`}
               title={hasTokens ? 'Reconnect (refresh auth)' : 'Connect via OAuth'}
               data-testid={`mcp-reconnect-${server.id}`}
@@ -778,6 +825,66 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           <span>{reconnectError}</span>
+        </div>
+      )}
+
+      {/* Test result panel */}
+      {testResult && (
+        <div className={`mcp-test-result${testResult.ok ? ' mcp-test-result--ok' : ' mcp-test-result--error'}`}>
+          {testResult.ok ? (
+            <>
+              <div className="mcp-test-result-header">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>
+                  Connected — <strong>{testResult.toolCount}</strong> tool{testResult.toolCount !== 1 ? 's' : ''} available
+                  {testResult.latencyMs !== undefined && (
+                    <span className="mcp-test-latency"> ({testResult.latencyMs}ms)</span>
+                  )}
+                </span>
+                <button
+                  type="button"
+                  className="mcp-test-result-close"
+                  onClick={() => setTestResult(null)}
+                  aria-label="Dismiss test result"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              {testResult.tools && testResult.tools.length > 0 && (
+                <ul className="mcp-test-tools">
+                  {testResult.tools.map((t) => (
+                    <li key={t.name} className="mcp-test-tool">
+                      <code className="mcp-test-tool-name">{t.name}</code>
+                      {t.description && (
+                        <span className="mcp-test-tool-desc">{t.description}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : (
+            <div className="mcp-test-result-header">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>{testResult.error ?? 'Connection failed'}</span>
+              <button
+                type="button"
+                className="mcp-test-result-close"
+                onClick={() => setTestResult(null)}
+                aria-label="Dismiss test result"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -863,6 +970,10 @@ export function McpServersPage() {
     onSuccess: (result) => {
       const s = result as McpServerRow
       queryClient.invalidateQueries({ queryKey: ['mcp-servers'] })
+      // For OAuth servers: do NOT navigate to list or show success toast here.
+      // handleConnectOAuth() will redirect the browser to the authorization
+      // server. The success toast fires on return via the ?oauth_success param.
+      if (s.authType === 'oauth') return
       setView('list')
       addToast('success', `"${s.name}" added to catalog`)
     },

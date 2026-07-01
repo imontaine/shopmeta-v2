@@ -114,8 +114,12 @@ export const Route = createFileRoute('/api/chat/stream')({
               )
 
             if (rows.length > 0) {
-              // Derive the redirect URL from the request origin
-              const origin = new URL(request.url).origin
+              // Derive the redirect URL from the public-facing origin.
+              // getPublicOrigin() honours x-forwarded-proto so the redirect_uri
+              // is https:// in production (behind a reverse proxy) and http://
+              // on localhost dev — matching what oauth-start registered.
+              const { getPublicOrigin } = await import('#/lib/get-origin')
+              const origin = getPublicOrigin(request)
               const redirectUrl = `${origin}/api/mcp/oauth-callback`
 
               // Build MCPClientOptions for each server. For OAuth servers, the

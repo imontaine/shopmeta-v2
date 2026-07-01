@@ -26,6 +26,7 @@ import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/c
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
 import { Route as ApiMcpOauthStartRouteImport } from './routes/api/mcp/oauth-start'
 import { Route as ApiMcpOauthCallbackRouteImport } from './routes/api/mcp/oauth-callback'
+import { Route as ApiMcpTestRouteImport } from './routes/api/mcp/test'
 import { Route as ApiChatStreamRouteImport } from './routes/api/chat/stream'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedDevStyleTesterRouteImport } from './routes/_authenticated/dev/style-tester'
@@ -114,6 +115,11 @@ const ApiMcpOauthCallbackRoute = ApiMcpOauthCallbackRouteImport.update({
   path: '/api/mcp/oauth-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMcpTestRoute = ApiMcpTestRouteImport.update({
+  id: '/api/mcp/test',
+  path: '/api/mcp/test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatStreamRoute = ApiChatStreamRouteImport.update({
   id: '/api/chat/stream',
   path: '/api/chat/stream',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/api/chat/stream': typeof ApiChatStreamRoute
   '/api/mcp/oauth-callback': typeof ApiMcpOauthCallbackRoute
   '/api/mcp/oauth-start': typeof ApiMcpOauthStartRoute
+  '/api/mcp/test': typeof ApiMcpTestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -172,6 +179,7 @@ export interface FileRoutesByTo {
   '/api/chat/stream': typeof ApiChatStreamRoute
   '/api/mcp/oauth-callback': typeof ApiMcpOauthCallbackRoute
   '/api/mcp/oauth-start': typeof ApiMcpOauthStartRoute
+  '/api/mcp/test': typeof ApiMcpTestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -195,6 +203,7 @@ export interface FileRoutesById {
   '/api/chat/stream': typeof ApiChatStreamRoute
   '/api/mcp/oauth-callback': typeof ApiMcpOauthCallbackRoute
   '/api/mcp/oauth-start': typeof ApiMcpOauthStartRoute
+  '/api/mcp/test': typeof ApiMcpTestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/api/chat/stream'
     | '/api/mcp/oauth-callback'
     | '/api/mcp/oauth-start'
+    | '/api/mcp/test'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -239,6 +249,7 @@ export interface FileRouteTypes {
     | '/api/chat/stream'
     | '/api/mcp/oauth-callback'
     | '/api/mcp/oauth-start'
+    | '/api/mcp/test'
   id:
     | '__root__'
     | '/'
@@ -261,6 +272,7 @@ export interface FileRouteTypes {
     | '/api/chat/stream'
     | '/api/mcp/oauth-callback'
     | '/api/mcp/oauth-start'
+    | '/api/mcp/test'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -277,6 +289,7 @@ export interface RootRouteChildren {
   ApiChatStreamRoute: typeof ApiChatStreamRoute
   ApiMcpOauthCallbackRoute: typeof ApiMcpOauthCallbackRoute
   ApiMcpOauthStartRoute: typeof ApiMcpOauthStartRoute
+  ApiMcpTestRoute: typeof ApiMcpTestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -400,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMcpOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mcp/test': {
+      id: '/api/mcp/test'
+      path: '/api/mcp/test'
+      fullPath: '/api/mcp/test'
+      preLoaderRoute: typeof ApiMcpTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat/stream': {
       id: '/api/chat/stream'
       path: '/api/chat/stream'
@@ -462,7 +482,17 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatStreamRoute: ApiChatStreamRoute,
   ApiMcpOauthCallbackRoute: ApiMcpOauthCallbackRoute,
   ApiMcpOauthStartRoute: ApiMcpOauthStartRoute,
+  ApiMcpTestRoute: ApiMcpTestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

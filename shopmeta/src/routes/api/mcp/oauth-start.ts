@@ -25,6 +25,7 @@ import { mcpServers } from '#/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { DrizzleOAuthProvider } from '#/lib/mcp-oauth-provider'
 import { auth } from '@modelcontextprotocol/sdk/client/auth.js'
+import { getPublicOrigin } from '#/lib/get-origin'
 
 export const Route = createFileRoute('/api/mcp/oauth-start')({
   server: {
@@ -66,10 +67,12 @@ export const Route = createFileRoute('/api/mcp/oauth-start')({
           return Response.json({ error: 'Server is not configured for OAuth' }, { status: 400 })
         }
 
-        // -- Build redirect URL from request origin ----------------------------
-        // IMPORTANT: derived from request origin (not a static env var) so it
-        // works on local dev, staging, and production without configuration.
-        const origin = new URL(request.url).origin
+        // -- Build redirect URL from public origin ----------------------------
+        // IMPORTANT: use getPublicOrigin() not new URL(request.url).origin.
+        // Behind a reverse proxy the internal request is http:// even though
+        // the public URL is https://. The MCP SDK OAuth validator rejects
+        // http:// redirect_uris for non-localhost hosts.
+        const origin = getPublicOrigin(request)
         const redirectUrl = `${origin}/api/mcp/oauth-callback`
 
         // -- Run SDK auth() and capture the authorization URL ------------------
