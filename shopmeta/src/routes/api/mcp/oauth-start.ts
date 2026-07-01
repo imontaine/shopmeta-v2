@@ -100,19 +100,29 @@ export const Route = createFileRoute('/api/mcp/oauth-start')({
             )
           }
 
-          // The SDK has already:
-          //   - Performed RFC 9728 discovery (saved to oauthState via provider)
-          //   - Performed DCR (saved to oauthClientInfo via provider)
-          //   - Generated PKCE (saved codeVerifier to oauthState via provider)
-          //   - Built the authorizationUrl with code_challenge, state, etc.
+          // The SDK has already built the authorizationUrl with its own
+          // `state` (CSRF token) and `code_challenge` (PKCE).
           //
-          // We append our server identity as 'app_state' so the callback can
-          // look up the DB row. The SDK uses 'state' for CSRF; we don't touch it.
-          const ourState = Buffer.from(
-            JSON.stringify({ mcpServerId, orgId })
-          ).toString('base64url')
-
-          capturedAuthUrl.searchParams.set('app_state', ourState)
+          // We store the SDK's `state` value in oauthState so the callback
+          // can reverse-lookup which MCP server this flow belongs to.
+          // We do NOT append our own `app_state` — the AS only echoes back
+          // the standard `code` and `state` params.
+          const sdkState = capturedAuthUrl.searchParams.get('state')
+          if (sdkState) {
+            // Persist the state value so the callback can find this server row.
+            // patchState is not directly accessible, so we do it via a DB update.
+            const db = getDb()
+            const existingRow = await db
+              .select({ oauthState: mcpServers.oauthState })
+              .from(mcpServers)
+              .where(and(eq(mcpServers.id, mcpServerId), eq(mcpServers.orgId, orgId)))
+              .limit(1)
+            const existing = (existingRow[0]?.oauthState ?? {}) as Record<string, unknown>
+            await db
+              .update(mcpServers)
+              .set({ oauthState: { ...existing, pendingState: sdkState } })
+              .where(and(eq(mcpServers.id, mcpServerId), eq(mcpServers.orgId, orgId)))
+          }
 
           return Response.json({
             authorizationUrl: capturedAuthUrl.toString(),

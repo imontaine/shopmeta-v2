@@ -4,14 +4,15 @@
 // The browser is redirected here after the user completes the OAuth flow
 // at the MCP server's authorization server (e.g., ClickHouse Cloud login).
 //
-// URL: /api/mcp/oauth-callback?code=<code>&state=<sdk_state>&app_state=<our_state>
+// URL: /api/mcp/oauth-callback?code=<code>&state=<sdk_state>
 //
-// The `app_state` parameter is a base64url-encoded JSON object set by
-// /api/mcp/oauth/start containing: { mcpServerId, orgId }
+// The AS echoes back only the standard `code` and `state` parameters.
+// We stored the SDK's `state` value in oauthState.pendingState during
+// /api/mcp/oauth-start, so we reverse-lookup the server row by that value.
 //
 // The SDK handles: codeVerifier lookup, token exchange, token persistence
-// (via DrizzleOAuthProvider which it calls internally). We just decode
-// app_state and delegate everything else to auth().
+// (via DrizzleOAuthProvider which it calls internally). We just find the
+// right server row and delegate everything else to auth().
 
 import { createFileRoute } from '@tanstack/react-router'
 import { requireOrgSession } from '#/lib/auth/require-org-session'
@@ -28,7 +29,7 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
       GET: async ({ request }: { request: Request }) => {
         const url = new URL(request.url)
         const code = url.searchParams.get('code')
-        const appStateParam = url.searchParams.get('app_state')
+        const sdkState = url.searchParams.get('state')
         const error = url.searchParams.get('error')
         const errorDesc = url.searchParams.get('error_description')
 
@@ -41,34 +42,18 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
           })
         }
 
-        if (!code || !appStateParam) {
+        if (!code || !sdkState) {
           return new Response(null, {
             status: 302,
-            headers: { Location: '/mcp-servers?oauth_error=Missing+code+or+app_state' },
+            headers: { Location: '/mcp-servers?oauth_error=Missing+code+or+state+from+authorization+server' },
           })
         }
 
-        // Decode our app_state (set by /api/mcp/oauth/start)
-        let appState: { mcpServerId: string; orgId: string }
-        try {
-          appState = JSON.parse(Buffer.from(appStateParam, 'base64url').toString('utf8'))
-          if (!appState.mcpServerId || !appState.orgId) throw new Error('Missing fields')
-        } catch {
-          return new Response(null, {
-            status: 302,
-            headers: { Location: '/mcp-servers?oauth_error=Invalid+app_state+parameter' },
-          })
-        }
-
-        // Verify session matches the org from app_state
+        // Verify session
+        let orgId: string
         try {
           const session = await requireOrgSession()
-          if (session.orgId !== appState.orgId) {
-            return new Response(null, {
-              status: 302,
-              headers: { Location: '/mcp-servers?oauth_error=Session+org+mismatch' },
-            })
-          }
+          orgId = session.orgId
         } catch {
           return new Response(null, {
             status: 302,
@@ -76,28 +61,35 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
           })
         }
 
-        // Load server row
+        // Reverse-lookup the MCP server row by the SDK state value we stored
+        // in oauthState.pendingState during /api/mcp/oauth-start.
+        // The AS only echoes back `code` and `state` — we stored our context
+        // in the DB so we don't depend on the AS preserving extra params.
         const db = getDb()
-        const [server] = await db
-          .select({ url: mcpServers.url, oauthState: mcpServers.oauthState })
+        const rows = await db
+          .select({
+            id: mcpServers.id,
+            url: mcpServers.url,
+            oauthState: mcpServers.oauthState,
+          })
           .from(mcpServers)
-          .where(and(
-            eq(mcpServers.id, appState.mcpServerId),
-            eq(mcpServers.orgId, appState.orgId),
-          ))
-          .limit(1)
+          .where(eq(mcpServers.orgId, orgId))
+
+        const server = rows.find((r) => {
+          const state = (r.oauthState ?? {}) as Record<string, unknown>
+          return state['pendingState'] === sdkState
+        })
 
         if (!server) {
+          console.error(`[oauth-callback] No server found for state=${sdkState} orgId=${orgId}`)
           return new Response(null, {
             status: 302,
-            headers: { Location: '/mcp-servers?oauth_error=MCP+server+not+found' },
+            headers: { Location: '/mcp-servers?oauth_error=OAuth+state+not+found.+The+flow+may+have+expired+or+already+completed.' },
           })
         }
 
         // Reconstruct the same redirectUrl used in /oauth/start.
         // The SDK requires it to match exactly what was used for PKCE + DCR.
-        // Use getPublicOrigin() to honour reverse-proxy forwarding headers so
-        // the https:// scheme is preserved (same as oauth-start).
         const origin = getPublicOrigin(request)
         const redirectUrl = `${origin}/api/mcp/oauth-callback`
 
@@ -109,7 +101,7 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
         //   4. Call exchangeAuthorization() - POST to token endpoint
         //   5. Call provider.saveTokens() - persists to mcp_servers.auth_config
         //   6. Return 'AUTHORIZED'
-        const provider = new DrizzleOAuthProvider(appState.mcpServerId, appState.orgId, redirectUrl)
+        const provider = new DrizzleOAuthProvider(server.id, orgId, redirectUrl)
 
         try {
           const result = await auth(provider, {
@@ -132,20 +124,24 @@ export const Route = createFileRoute('/api/mcp/oauth-callback')({
           })
         }
 
-        // Clear the transient codeVerifier from oauthState (security hygiene).
-        // Keep the AS discovery cache fields so refresh works without re-discovery.
+        // Clear transient state: codeVerifier + pendingState.
+        // Keep AS discovery cache fields for refresh flows.
         try {
           const currentState = (server.oauthState ?? {}) as Record<string, unknown>
-          const { codeVerifier: _removed, ...persistedState } = currentState
+          const {
+            codeVerifier: _cv,
+            pendingState: _ps,
+            ...persistedState
+          } = currentState
           await db.update(mcpServers)
             .set({ oauthState: persistedState })
             .where(and(
-              eq(mcpServers.id, appState.mcpServerId),
-              eq(mcpServers.orgId, appState.orgId),
+              eq(mcpServers.id, server.id),
+              eq(mcpServers.orgId, orgId),
             ))
         } catch (err) {
           // Non-fatal - tokens are already saved
-          console.error('[oauth-callback] Failed to clear codeVerifier:', err)
+          console.error('[oauth-callback] Failed to clear transient state:', err)
         }
 
         // Success
