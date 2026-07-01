@@ -1,0 +1,61 @@
+#!/bin/sh
+# .githooks/pre-commit
+# Blocks commits that stage shopmeta/src/** without also staging a bumped
+# version in shopmeta/package.json.
+#
+# This hook is committed at .githooks/pre-commit and activated via:
+#   npm run prepare   (runs: git config core.hooksPath .githooks)
+#
+# To bypass in exceptional cases: git commit --no-verify
+
+PACKAGE="shopmeta/package.json"
+
+# ── Only enforce when shopmeta/src/** files are staged ────────────────────────
+if ! git diff --cached --name-only | grep -q "^shopmeta/src/"; then
+  # No src files staged — allow (docs, config, scripts, etc.)
+  exit 0
+fi
+
+# ── Require package.json to be staged too ─────────────────────────────────────
+if ! git diff --cached --name-only | grep -q "^${PACKAGE}$"; then
+  echo ""
+  echo "  ✗ VERSION GUARD: shopmeta/src/* files staged but"
+  echo "    shopmeta/package.json is NOT staged."
+  echo ""
+  echo "  Bump the version and stage it first:"
+  echo "    npm run deploy              (recommended — bump patch + push)"
+  echo "    npm version patch --prefix shopmeta --no-git-tag-version"
+  echo "    git add shopmeta/package.json"
+  echo ""
+  echo "  Bypass: git commit --no-verify"
+  echo ""
+  exit 1
+fi
+
+# ── Verify the staged version actually differs from HEAD ──────────────────────
+STAGED_VERSION=$(git show :"${PACKAGE}" 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+HEAD_VERSION=$(git show HEAD:"${PACKAGE}" 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+
+# Allow on initial commit (no HEAD yet)
+if [ -z "$HEAD_VERSION" ]; then
+  exit 0
+fi
+
+if [ "$STAGED_VERSION" = "$HEAD_VERSION" ]; then
+  echo ""
+  echo "  ✗ VERSION GUARD: version in shopmeta/package.json is unchanged (${HEAD_VERSION})."
+  echo ""
+  echo "  Bump the version:"
+  echo "    npm run deploy              (recommended — bump patch + push)"
+  echo "    npm version patch --prefix shopmeta --no-git-tag-version"
+  echo "    npm version minor --prefix shopmeta --no-git-tag-version"
+  echo "    npm version major --prefix shopmeta --no-git-tag-version"
+  echo "  Then: git add shopmeta/package.json"
+  echo ""
+  echo "  Bypass: git commit --no-verify"
+  echo ""
+  exit 1
+fi
+
+echo "  ✓ Version guard: ${HEAD_VERSION} → ${STAGED_VERSION}"
+exit 0
