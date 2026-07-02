@@ -32,6 +32,7 @@ import {
   MessageActions,
 } from '@/components/ui/message'
 import { DotsLoader } from '@/components/ui/loader'
+import { ThinkingBar } from '@/components/ui/thinking-bar'
 import {
   RefreshCw,
   Copy,
@@ -43,6 +44,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Wrench,
 } from 'lucide-react'
 import { Markdown } from '@/components/ui/markdown'
 import { cn } from '@/lib/utils'
@@ -99,7 +101,72 @@ function ReasoningPanel({ text }: { text: string; status: { type: string } }) {
   )
 }
 
-// ─── Streaming Dots Loader ──────────────────────────────────────────────────
+// ─── Tool Call Panel ─────────────────────────────────────────────────────────
+// Collapsible panel showing what MCP tool was called, its args, and result.
+// Uses ThinkingBar for the header — pulses while running, static when done.
+
+interface ToolCallProps {
+  toolName: string
+  argsText: string
+  result?: unknown
+  status: { type: string }
+}
+
+function ToolCallPanel({ toolName, argsText, result, status }: ToolCallProps) {
+  const isRunning = useThread((state) => state.isRunning)
+  const isPending = isRunning && !result
+  const [expanded, setExpanded] = useState(false)
+
+  // Pretty-print tool name: "clickhouse-name_list_tables" → "list_tables"
+  const displayName = toolName.includes('_')
+    ? toolName.split('_').slice(1).join('_')
+    : toolName
+
+  let prettyArgs = argsText
+  try { prettyArgs = JSON.stringify(JSON.parse(argsText), null, 2) } catch { /* keep raw */ }
+
+  let prettyResult: string | undefined
+  if (result !== undefined) {
+    try {
+      const parsed = typeof result === 'string' ? JSON.parse(result) : result
+      prettyResult = JSON.stringify(parsed, null, 2)
+    } catch {
+      prettyResult = String(result)
+    }
+  }
+
+  return (
+    <div className="tool-call-panel">
+      <ThinkingBar
+        text={isPending ? `Calling ${displayName}…` : `Used ${displayName}`}
+        className="tool-call-header"
+        onClick={() => setExpanded(!expanded)}
+      />
+      {expanded && (
+        <div className="tool-call-body animate-in fade-in-0 duration-150">
+          {prettyArgs && prettyArgs !== '{}' && (
+            <div className="tool-call-section">
+              <div className="tool-call-section-label">
+                <Wrench className="h-3 w-3" />
+                Input
+              </div>
+              <pre className="tool-call-code">{prettyArgs}</pre>
+            </div>
+          )}
+          {prettyResult && (
+            <div className="tool-call-section">
+              <div className="tool-call-section-label tool-call-section-label--result">
+                Result
+              </div>
+              <pre className="tool-call-code tool-call-code--result">{prettyResult}</pre>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Shows animated dots ONLY while waiting for the first token.
 // Once content starts streaming in, this disappears — no layout shift.
 
@@ -246,6 +313,14 @@ function AssistantMessage() {
                   Text: ({ text }) => <MarkdownText text={text} />,
                   Reasoning: ({ text, status }) => (
                     <ReasoningPanel text={text} status={status} />
+                  ),
+                  ToolCall: ({ toolName, argsText, result, status }) => (
+                    <ToolCallPanel
+                      toolName={toolName}
+                      argsText={argsText}
+                      result={result}
+                      status={status}
+                    />
                   ),
                 }}
               />

@@ -3334,3 +3334,73 @@ body {
   background: var(--bg-secondary);
   color: var(--foreground);
 }
+
+/* ── Tool call panel ────────────────────────────────────────────────────────── */
+
+.tool-call-panel {
+  margin: 4px 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-muted);
+  background: var(--bg-secondary);
+  overflow: hidden;
+}
+
+.tool-call-header {
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tool-call-header:hover {
+  background: var(--bg-surface);
+}
+
+.tool-call-body {
+  border-top: 1px solid var(--border-muted);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tool-call-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tool-call-section-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+.tool-call-section-label--result {
+  color: hsl(142, 55%, 40%);
+}
+
+.tool-call-code {
+  font-family: 'Fira Code', 'Menlo', 'Consolas', monospace;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--foreground);
+  background: var(--bg-surface, var(--bg-primary));
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  padding: 8px 10px;
+  overflow-x: auto;
+  white-space: pre;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.tool-call-code--result {
+  color: hsl(142, 55%, 45%);
+  background: hsla(142, 55%, 40%, 0.05);
+  border-color: hsla(142, 55%, 40%, 0.2);
+}

@@ -31,6 +31,27 @@ const SUGGESTIONS = [
 
 // ─── Chat Adapter Factory ─────────────────────────────────────────────────────
 
+// ─── TanStack AI SSE event types ─────────────────────────────────────────────
+
+interface SseEvent {
+  type: string
+  delta?: string
+  error?: { message?: string }
+  toolCallId?: string
+  toolName?: string
+  toolCallName?: string
+  input?: Record<string, unknown>
+  content?: string
+  role?: string
+}
+
+// In-flight tool call state accumulated across ARGS delta events
+interface InFlightTool {
+  toolCallId: string
+  toolName: string
+  argsText: string
+}
+
 function createAdapter(provider: string, model: string, conversationId?: string, agentId?: string, orgId?: string): ChatModelAdapter {
   return {
     async *run({ messages, abortSignal }) {
@@ -71,6 +92,35 @@ function createAdapter(provider: string, model: string, conversationId?: string,
       let buffer = ''
       let fullText = ''
 
+      // Tool call state — keyed by toolCallId
+      const tools = new Map<string, InFlightTool>()
+      // Finalized tool calls (after TOOL_CALL_END)
+      const finishedTools = new Map<string, InFlightTool & { result?: string }>()
+
+      function buildContent() {
+        const parts: Array<
+          | { type: 'text'; text: string }
+          | { type: 'tool-call'; toolCallId: string; toolName: string; argsText: string; args: Record<string, unknown>; result?: unknown }
+        > = []
+        // Emit finished tool calls before the text
+        for (const [, t] of finishedTools) {
+          let args: Record<string, unknown> = {}
+          try { args = JSON.parse(t.argsText || '{}') } catch { /* ignore */ }
+          parts.push({
+            type: 'tool-call' as const,
+            toolCallId: t.toolCallId,
+            toolName: t.toolName,
+            argsText: t.argsText,
+            args,
+            result: t.result,
+          })
+        }
+        if (fullText) {
+          parts.push({ type: 'text' as const, text: fullText })
+        }
+        return parts
+      }
+
       try {
         while (true) {
           const { done, value } = await reader.read()
@@ -85,34 +135,68 @@ function createAdapter(provider: string, model: string, conversationId?: string,
             const data = line.slice(6).trim()
             if (data === '[DONE]') continue
 
+            let parsed: SseEvent
             try {
-              const parsed = JSON.parse(data) as {
-                type?: string
-                delta?: string
-                text?: string
-                error?: { message?: string }
-              }
+              parsed = JSON.parse(data) as SseEvent
+            } catch {
+              continue
+            }
 
-              // Handle @tanstack/ai RUN_ERROR events
-              if (parsed.type === 'RUN_ERROR') {
+            switch (parsed.type) {
+              case 'RUN_ERROR': {
                 const msg = parsed.error?.message ?? 'Unknown server error'
                 console.error('[ChatAdapter] RUN_ERROR:', msg)
                 throw new Error(msg)
               }
 
-              // Only process TEXT_MESSAGE_CONTENT chunks (which carry delta)
-              // Also handle generic delta/text for compatibility
-              const chunk = parsed.delta ?? parsed.text ?? ''
-              if (chunk) {
-                fullText += chunk
-                yield {
-                  content: [{ type: 'text' as const, text: fullText }],
+              case 'TEXT_MESSAGE_CONTENT': {
+                // ONLY this event type feeds the text content
+                if (parsed.delta) {
+                  fullText += parsed.delta
+                  yield { content: buildContent() }
                 }
+                break
               }
-            } catch (e) {
-              // Re-throw RUN_ERROR, skip parse errors
-              if (e instanceof Error && e.message !== 'Unknown server error') {
-                if (!(e instanceof SyntaxError)) throw e
+
+              case 'TOOL_CALL_START': {
+                const id = parsed.toolCallId ?? ''
+                const name = parsed.toolCallName ?? parsed.toolName ?? ''
+                tools.set(id, { toolCallId: id, toolName: name, argsText: '' })
+                break
+              }
+
+              case 'TOOL_CALL_ARGS': {
+                const id = parsed.toolCallId ?? ''
+                const tool = tools.get(id)
+                if (tool && parsed.delta) {
+                  tool.argsText += parsed.delta
+                }
+                break
+              }
+
+              case 'TOOL_CALL_END': {
+                const id = parsed.toolCallId ?? ''
+                const tool = tools.get(id)
+                if (tool) {
+                  // Use the final input from END event if available
+                  if (parsed.input) {
+                    tool.argsText = JSON.stringify(parsed.input)
+                  }
+                  finishedTools.set(id, { ...tool })
+                  tools.delete(id)
+                  yield { content: buildContent() }
+                }
+                break
+              }
+
+              case 'TOOL_CALL_RESULT': {
+                const id = parsed.toolCallId ?? ''
+                const existing = finishedTools.get(id)
+                if (existing) {
+                  existing.result = parsed.content
+                  yield { content: buildContent() }
+                }
+                break
               }
             }
           }
@@ -121,10 +205,11 @@ function createAdapter(provider: string, model: string, conversationId?: string,
         reader.releaseLock()
       }
 
-      // If we got text, yield a final result with complete status
-      if (fullText) {
+      // Final yield with complete status
+      const finalContent = buildContent()
+      if (finalContent.length > 0) {
         yield {
-          content: [{ type: 'text' as const, text: fullText }],
+          content: finalContent,
           status: { type: 'complete' as const, reason: 'stop' as const },
         }
       }
