@@ -3300,3 +3300,37 @@ body {
   margin: 0;
 }
 .mcp-error-detail { font-size: var(--text-xs); opacity: 0.75; }
+
+/* ── Chat agent selector ────────────────────────────────────────────────────── */
+
+.chat-agent-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--bg-secondary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  color: var(--foreground);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  padding: 4px 28px 4px 10px;
+  transition: border-color 0.15s, background-color 0.15s;
+  max-width: 220px;
+}
+.chat-agent-select:hover {
+  border-color: var(--text-tertiary);
+  background-color: var(--bg-surface);
+}
+.chat-agent-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px hsla(var(--accent-hsl, 210 100% 56%), 0.15);
+}
+.chat-agent-select option {
+  background: var(--bg-secondary);
+  color: var(--foreground);
+}

@@ -16,7 +16,7 @@ import {
 import { Thread } from '#/components/chat/Thread'
 import { Composer } from '#/components/chat/Composer'
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '#/lib/ai/providers'
-import { listAgents } from '#/lib/agents'
+import { listAgents, type AgentRow } from '#/lib/agents'
 import { PromptSuggestion } from '@/components/ui/prompt-suggestion'
 import { cn } from '@/lib/utils'
 
@@ -139,9 +139,12 @@ interface EmptyStateProps {
   model: string
   onModelChange: (provider: string, model: string) => void
   onSuggestionClick: (text: string) => void
+  agents: AgentRow[]
+  selectedAgentId: string | undefined
+  onAgentChange: (agentId: string | undefined) => void
 }
 
-function EmptyState({ provider, model, onModelChange, onSuggestionClick }: EmptyStateProps) {
+function EmptyState({ provider, model, onModelChange, onSuggestionClick, agents, selectedAgentId, onAgentChange }: EmptyStateProps) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 animate-in fade-in duration-300">
       <div className="w-full max-w-[640px] space-y-6">
@@ -157,6 +160,11 @@ function EmptyState({ provider, model, onModelChange, onSuggestionClick }: Empty
             Get insights about your Magento store
           </p>
         </div>
+
+        {/* Agent selector */}
+        {agents.length > 0 && (
+          <AgentSelector agents={agents} selectedAgentId={selectedAgentId} onAgentChange={onAgentChange} />
+        )}
 
         {/* Composer — centered */}
         <Composer
@@ -188,18 +196,58 @@ interface ConversationStateProps {
   provider: string
   model: string
   onModelChange: (provider: string, model: string) => void
+  agents: AgentRow[]
+  selectedAgentId: string | undefined
+  onAgentChange: (agentId: string | undefined) => void
 }
 
-function ConversationState({ provider, model, onModelChange }: ConversationStateProps) {
+function ConversationState({ provider, model, onModelChange, agents, selectedAgentId, onAgentChange }: ConversationStateProps) {
   return (
     <>
       <Thread />
+      {agents.length > 0 && (
+        <div className="px-4 pb-1 flex justify-start">
+          <AgentSelector agents={agents} selectedAgentId={selectedAgentId} onAgentChange={onAgentChange} compact />
+        </div>
+      )}
       <Composer
         provider={provider}
         model={model}
         onModelChange={onModelChange}
       />
     </>
+  )
+}
+
+// ─── Agent Selector ───────────────────────────────────────────────────────────
+
+interface AgentSelectorProps {
+  agents: AgentRow[]
+  selectedAgentId: string | undefined
+  onAgentChange: (agentId: string | undefined) => void
+  compact?: boolean
+}
+
+function AgentSelector({ agents, selectedAgentId, onAgentChange, compact = false }: AgentSelectorProps) {
+  const selected = agents.find((a) => a.id === selectedAgentId)
+  return (
+    <div className={compact ? 'flex items-center gap-1' : 'flex justify-center'}>
+      <label className="text-muted-foreground text-xs mr-1 shrink-0">Agent:</label>
+      <select
+        value={selectedAgentId ?? ''}
+        onChange={(e) => onAgentChange(e.target.value || undefined)}
+        className="chat-agent-select"
+        aria-label="Select agent"
+        data-testid="agent-selector"
+      >
+        <option value="">Default settings</option>
+        {agents.map((a) => (
+          <option key={a.id} value={a.id}>
+            {a.name}{a.isDefault ? ' ★' : ''}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 
@@ -211,27 +259,46 @@ function ChatContent({ conversationId }: { conversationId?: string }) {
   const [model, setModel] = useState(DEFAULT_MODEL)
   const [agentId, setAgentId] = useState<string | undefined>(undefined)
   const [orgId, setOrgId] = useState<string | undefined>(undefined)
+  const [agents, setAgents] = useState<AgentRow[]>([])
 
-  // On mount, load the org's default agent and apply its model/provider.
-  // If no default agent is set, use the app defaults.
+  // On mount, load all org agents. Auto-select the default agent.
   useEffect(() => {
     listAgents({ data: {} })
-      .then((agents) => {
-        const defaultAgent = agents.find((a) => a.isDefault)
+      .then((agentList) => {
+        setAgents(agentList)
+        const defaultAgent = agentList.find((a) => a.isDefault)
         if (defaultAgent) {
           setProvider(defaultAgent.provider)
           setModel(defaultAgent.model)
           setAgentId(defaultAgent.id)
           setOrgId(defaultAgent.orgId)
-        } else if (agents.length > 0) {
+        } else if (agentList.length > 0) {
           // At least capture orgId from any agent
-          setOrgId(agents[0]!.orgId)
+          setOrgId(agentList[0]!.orgId)
         }
       })
       .catch(() => {
         // Silently fall back to app defaults if the agent list can't be fetched
       })
   }, [])
+
+  // When user picks a different agent, apply its model/provider/agentId.
+  const handleAgentChange = useCallback((newAgentId: string | undefined) => {
+    if (!newAgentId) {
+      // Reset to app defaults
+      setAgentId(undefined)
+      setProvider(DEFAULT_PROVIDER)
+      setModel(DEFAULT_MODEL)
+      return
+    }
+    const agent = agents.find((a) => a.id === newAgentId)
+    if (agent) {
+      setAgentId(agent.id)
+      setProvider(agent.provider)
+      setModel(agent.model)
+      setOrgId(agent.orgId)
+    }
+  }, [agents])
 
   // Memoize the adapter so its reference remains stable across renders.
   // This prevents useLocalRuntime from resetting messages/re-initializing on every render.
@@ -252,6 +319,9 @@ function ChatContent({ conversationId }: { conversationId?: string }) {
         provider={provider}
         model={model}
         onModelChange={handleModelChange}
+        agents={agents}
+        selectedAgentId={agentId}
+        onAgentChange={handleAgentChange}
       />
     </AssistantRuntimeProvider>
   )
@@ -262,12 +332,18 @@ interface ChatContentInnerProps {
   provider: string
   model: string
   onModelChange: (provider: string, model: string) => void
+  agents: AgentRow[]
+  selectedAgentId: string | undefined
+  onAgentChange: (agentId: string | undefined) => void
 }
 
 function ChatContentInner({
   provider,
   model,
   onModelChange,
+  agents,
+  selectedAgentId,
+  onAgentChange,
 }: ChatContentInnerProps) {
   const threadRuntime = useThreadRuntime()
   const [hasMessages, setHasMessages] = useState(false)
@@ -319,6 +395,9 @@ function ChatContentInner({
           provider={provider}
           model={model}
           onModelChange={onModelChange}
+          agents={agents}
+          selectedAgentId={selectedAgentId}
+          onAgentChange={onAgentChange}
         />
       ) : (
         <EmptyState
@@ -326,6 +405,9 @@ function ChatContentInner({
           model={model}
           onModelChange={onModelChange}
           onSuggestionClick={handleSuggestionClick}
+          agents={agents}
+          selectedAgentId={selectedAgentId}
+          onAgentChange={onAgentChange}
         />
       )}
     </div>
