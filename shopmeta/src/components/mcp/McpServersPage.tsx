@@ -121,7 +121,6 @@ function validate(f: FormState): Record<string, string> {
   } else {
     try { new URL(f.url) } catch { e['url'] = 'Must be a valid URL' }
   }
-  if (!f.trusted) e['trusted'] = 'You must confirm you trust this application'
   if (f.authType === 'apikey' && !f.apiKey.trim()) e['apiKey'] = 'API Key is required'
   if (f.authType === 'apikey' && f.headerFormat === 'custom' && !f.customHeader.trim()) {
     e['customHeader'] = 'Custom header name is required'
@@ -585,8 +584,8 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
           )}
         </div>
 
-        {/* Trust checkbox */}
-        <div className={`mcp-trust-box${errors['trusted'] ? ' mcp-trust-box--error' : ''}`}>
+        {/* Always apply toggle — mirrors skill's alwaysApply pattern */}
+        <div className="mcp-trust-box">
           <label className="conn-checkbox-label">
             <input
               type="checkbox"
@@ -597,11 +596,10 @@ function McpServerForm({ initial = emptyForm, title, onSubmit, onCancel, submitL
               data-testid="mcp-trusted"
             />
             <span>
-              <strong>I trust this application</strong>
-              <span className="mcp-trust-hint"> - Custom connectors are not verified by Shopmeta</span>
+              <strong>Always apply in all chats</strong>
+              <span className="mcp-trust-hint"> — Auto-include tools from this server in every conversation</span>
             </span>
           </label>
-          {errors['trusted'] && <p className="mcp-field-error">{errors['trusted']}</p>}
         </div>
 
         {/* Actions - matches conn-form-actions pattern */}
@@ -799,6 +797,16 @@ function McpServerCard({ server, onEdit, onDelete, isDeleting }: McpCardProps) {
               title={hasTokens ? 'OAuth token stored' : 'Not authenticated - click Reconnect'}
             >
               {hasTokens ? '-- Connected' : '-- Not authenticated'}
+            </span>
+          )}
+
+          {/* Always-on badge — shown when trusted=true (tools inject into all chats) */}
+          {server.trusted && (
+            <span
+              className="mcp-always-on-badge"
+              title="Tools from this server are auto-included in all conversations"
+            >
+              Always on
             </span>
           )}
         </div>

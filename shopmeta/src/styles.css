@@ -2777,6 +2777,27 @@ body {
   border: 1px solid hsla(0, 72%, 50%, 0.25);
 }
 
+/* Always-on badge — mirrors the skill alwaysApply pill */
+.mcp-always-on-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 100px;
+  line-height: 1.4;
+  white-space: nowrap;
+  background: hsla(174, 60%, 35%, 0.12);
+  color: hsl(174, 60%, 35%);
+  border: 1px solid hsla(174, 60%, 35%, 0.25);
+}
+.dark .mcp-always-on-badge {
+  background: hsla(174, 60%, 50%, 0.15);
+  color: hsl(174, 60%, 55%);
+  border-color: hsla(174, 60%, 50%, 0.3);
+}
+
 /* Reconnect / refresh OAuth button */
 .mcp-reconnect-btn {
   color: var(--accent);
