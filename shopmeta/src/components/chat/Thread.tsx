@@ -58,7 +58,7 @@ const actionBtnClass =
 function MarkdownText({ text }: { text: string }) {
   return (
     <Markdown
-      className="prose prose-neutral dark:prose-invert max-w-none leading-relaxed break-words"
+      className="chat-prose"
     >
       {text}
     </Markdown>
