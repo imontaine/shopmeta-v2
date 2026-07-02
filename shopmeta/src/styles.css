@@ -569,9 +569,10 @@ body {
 
 .app-layout {
   display: flex;
-  min-height: 100dvh;
+  height: 100dvh;     /* Must match html/body/#app to stay within the clip */
   background: var(--bg-base);
   position: relative;
+  overflow: hidden;
 }
 
 .app-main {
@@ -3526,18 +3527,22 @@ body {
   white-space: nowrap !important;
 }
 
-/* Code blocks — do NOT reset padding: CodeBlockCode uses [&>pre]:px-4 py-4
-   which adds padding inside the Shiki-rendered pre. We only reset the
-   outer margins that typography adds. */
+/* Code blocks — reset bare prose <pre> default styles, but restore padding for
+   Shiki-highlighted <pre> elements (identified by the .shiki class Shiki always adds).
+   react-markdown's pre: () => <>{children}</> suppresses bare <pre> tags, so the
+   only actual <pre> in .chat-prose is the Shiki output inside CodeBlock. */
 .chat-prose pre {
   background: transparent !important;
-  padding: 0 !important;     /* The CodeBlock outer wrapper gets no padding */
-  margin: 0 !important;      /* Spacing is handled by .chat-block + .chat-block */
+  margin: 0 !important;
   border-radius: 0 !important;
+  /* No padding override — Shiki pre gets its own padding below */
 }
-/* But the Shiki <pre> inside CodeBlockCode DOES need its own padding —
-   that is already set via [&>pre]:px-4 [&>pre]:py-4 in code-block.tsx.
-   We must NOT override it here. */
+
+/* Restore padding on the actual Shiki-rendered <pre> so code is not flush
+   against the left border of the CodeBlock card. */
+.chat-prose pre.shiki {
+  padding: 1rem !important;
+}
 
 /* Tables */
 .chat-prose table {
