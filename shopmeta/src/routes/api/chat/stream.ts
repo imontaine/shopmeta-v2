@@ -38,6 +38,7 @@ export const Route = createFileRoute('/api/chat/stream')({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
+        try {
         let body: unknown
         try {
           body = await request.json()
@@ -234,6 +235,21 @@ export const Route = createFileRoute('/api/chat/stream')({
         }
 
         return toServerSentEventsResponse(mcpClients ? withMcpCleanup() : stream)
+
+        } catch (err) {
+          // Top-level catch — prevents TanStack Start from producing an opaque
+          // {"status":500,"unhandled":true,"message":"HTTPError"} response.
+          // Log the real error so we can diagnose it from server logs.
+          const errName = err instanceof Error ? err.constructor.name : typeof err
+          const errMsg = err instanceof Error ? err.message : String(err)
+          const errStack = err instanceof Error ? err.stack : undefined
+          console.error(`[chat/stream] Unhandled error (${errName}):`, errMsg)
+          if (errStack) console.error('[chat/stream] Stack:', errStack)
+          return new Response(
+            JSON.stringify({ error: errMsg, errorType: errName }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } },
+          )
+        }
       },
     },
   },
