@@ -226,9 +226,44 @@ export const Route = createFileRoute('/api/chat/stream')({
         // Split out system messages vs conversation messages
         const systemMessages = parsed.messages.filter((m) => m.role === 'system')
         const conversationMessages = parsed.messages.filter((m) => m.role !== 'system')
-        const baseSystemPrompt = systemMessages.map((m) =>
+
+        // Base instructions: check system messages in the request first,
+        // then fall back to any client-sent systemInstructions field.
+        const clientBasePrompt = systemMessages.map((m) =>
           typeof m.content === 'string' ? m.content : m.content.map((p) => p.text ?? '').join('')
         ).join('\n') || parsed.systemInstructions || ''
+
+        // Load the agent's systemInstructions from the DB if an agentId was provided.
+        // The client only sends the agentId — the actual instructions live in the DB.
+        let agentSystemInstructions = ''
+        if (parsed.agentId && parsed.orgId) {
+          try {
+            const { getDb } = await import('#/lib/db/index')
+            const { agents } = await import('#/lib/db/schema')
+            const { eq, and } = await import('drizzle-orm')
+            const db = getDb()
+            const [agentRow] = await db
+              .select({ systemInstructions: agents.systemInstructions })
+              .from(agents)
+              .where(
+                and(
+                  eq(agents.id, parsed.agentId),
+                  eq(agents.orgId, parsed.orgId),
+                )
+              )
+              .limit(1)
+            agentSystemInstructions = agentRow?.systemInstructions ?? ''
+            if (agentSystemInstructions) {
+              console.log(`[chat/stream] Loaded agent system instructions (${agentSystemInstructions.length} chars) for agent ${parsed.agentId}`)
+            }
+          } catch (err) {
+            console.error('[chat/stream] Failed to load agent system instructions:', err instanceof Error ? err.message : String(err))
+          }
+        }
+
+        // Merge: agent instructions take precedence, then any client-sent base prompt.
+        // If both exist, agent instructions come first so they set the persona/scope.
+        const baseSystemPrompt = [agentSystemInstructions, clientBasePrompt].filter(Boolean).join('\n\n')
 
         // Compile skills into system prompt
         const systemPrompt = parsed.orgId
