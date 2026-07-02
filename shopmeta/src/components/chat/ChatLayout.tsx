@@ -123,9 +123,6 @@ function createAdapter(provider: string, model: string, conversationId?: string,
 
       try {
         while (true) {
-          // Check abort before each read — ThreadPrimitive.Stop sets this signal
-          if (abortSignal?.aborted) break
-
           const { done, value } = await reader.read()
           if (done) break
 
