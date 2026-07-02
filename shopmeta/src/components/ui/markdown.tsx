@@ -1,4 +1,3 @@
-import { cn } from "@/lib/utils"
 import { marked } from "marked"
 import { memo, useId, useMemo } from "react"
 import ReactMarkdown from "react-markdown"
@@ -32,16 +31,11 @@ const INITIAL_COMPONENTS: Partial<Components> = {
       props.node?.position?.start.line === props.node?.position?.end.line
 
     if (isInline) {
+      // Render a bare <code> — styling comes from .chat-prose :not(pre)>code
       return (
-        <span
-          className={cn(
-            "bg-primary-foreground rounded-sm px-1 font-mono text-base",
-            className
-          )}
-          {...props}
-        >
+        <code className={className} {...props}>
           {children}
-        </span>
+        </code>
       )
     }
 
