@@ -18,7 +18,8 @@ import { eq, and, or } from 'drizzle-orm'
 export type { SkillRecord } from '#/lib/ai/skill-helpers'
 export { assembleSkillsPrompt, bakeSkillIntoInstructions } from '#/lib/ai/skill-helpers'
 
-// Local alias for use below
+// Local imports for use within this file
+import { assembleSkillsPrompt } from '#/lib/ai/skill-helpers'
 import type { SkillRecord } from '#/lib/ai/skill-helpers'
 
 // ─── DB fetcher (integration-testable) ────────────────────────────────────────
