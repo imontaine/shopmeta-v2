@@ -54,14 +54,14 @@ const actionBtnClass =
   'hover:bg-muted hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors inline-flex items-center justify-center'
 
 // ─── Markdown wrapper for assistant messages ────────────────────────────────
+// Wrapped in .chat-block so CSS sibling selectors can add spacing between
+// consecutive content blocks (text ↔ tool) without a hard-coded margin.
 
 function MarkdownText({ text }: { text: string }) {
   return (
-    <Markdown
-      className="chat-prose"
-    >
-      {text}
-    </Markdown>
+    <div className="chat-block">
+      <Markdown className="chat-prose">{text}</Markdown>
+    </div>
   )
 }
 
@@ -148,7 +148,13 @@ function ToolCallPanel({ toolName, argsText, args, result, status }: ToolCallPro
     toolCallId: undefined,
   }
 
-  return <Tool toolPart={toolPart} />
+  // Tool component from prompt-kit always adds mt-3; override it to mt-0
+  // and let the .chat-block + .chat-block CSS rule handle inter-block spacing.
+  return (
+    <div className="chat-block">
+      <Tool toolPart={toolPart} className="mt-0" />
+    </div>
+  )
 }
 
 // Shows animated dots ONLY while waiting for the first token.
@@ -160,10 +166,14 @@ function StreamingDotsLoader() {
     const msgs = state.messages
     if (msgs.length === 0) return false
     const last = msgs[msgs.length - 1]
+    // Hide as soon as ANY content part appears: text OR tool-call.
+    // Previously only checked for text, so loader stayed visible
+    // during the entire tool-call phase before the final text.
     return (
       last?.content?.some(
         (p: { type: string; text?: string }) =>
-          p.type === 'text' && (p.text?.length ?? 0) > 0,
+          (p.type === 'text' && (p.text?.length ?? 0) > 0) ||
+          p.type === 'tool-call',
       ) ?? false
     )
   })
@@ -292,25 +302,28 @@ function AssistantMessage() {
             </MessagePrimitive.If>
 
             <MessageContent className="bg-transparent p-0 text-foreground">
-              <MessagePrimitive.Content
-                components={{
-                  Text: ({ text }) => <MarkdownText text={text} />,
-                  Reasoning: ({ text, status }) => (
-                    <ReasoningPanel text={text} status={status} />
-                  ),
-                  tools: {
-                    Override: ({ toolName, argsText, args, result, status }) => (
-                      <ToolCallPanel
-                        toolName={toolName}
-                        argsText={argsText}
-                        args={args as Record<string, unknown>}
-                        result={result}
-                        status={status}
-                      />
+              {/* flex-col so .chat-block children stack and sibling CSS rules apply */}
+              <div className="flex flex-col">
+                <MessagePrimitive.Content
+                  components={{
+                    Text: ({ text }) => <MarkdownText text={text} />,
+                    Reasoning: ({ text, status }) => (
+                      <ReasoningPanel text={text} status={status} />
                     ),
-                  },
-                }}
-              />
+                    tools: {
+                      Override: ({ toolName, argsText, args, result, status }) => (
+                        <ToolCallPanel
+                          toolName={toolName}
+                          argsText={argsText}
+                          args={args as Record<string, unknown>}
+                          result={result}
+                          status={status}
+                        />
+                      ),
+                    },
+                  }}
+                />
+              </div>
             </MessageContent>
 
             {/* Actions — always in DOM to reserve space (no CLS), visible on hover */}

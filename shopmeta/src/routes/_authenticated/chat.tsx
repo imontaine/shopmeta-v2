@@ -23,7 +23,7 @@ function ChatPage() {
     <div
       id="conversation-view"
       data-testid="chat-page"
-      style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+      className="flex flex-1 flex-col overflow-hidden"
     >
       <ChatLayout conversationId={conversationId} />
     </div>

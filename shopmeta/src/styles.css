@@ -575,7 +575,10 @@ body {
   margin-left: var(--sidebar-width);
   transition: margin-left var(--sidebar-transition);
   height: 100dvh;
-  overflow: auto;
+  /* overflow hidden — the chat container inside handles its own scroll */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .app-main--expanded {
@@ -3552,4 +3555,14 @@ body {
 }
 .chat-prose a:hover {
   color: hsl(221, 83%, 75%);
+}
+
+/* ── Chat block inter-block spacing ──────────────────────────────────────────
+ * Each content part (text, tool-call) is wrapped in .chat-block.
+ * The first block gets no top margin. Every subsequent sibling gets 10px.
+ * This gives uniform spacing between text↔tool↔text sequences without
+ * hard-coding margins in each individual component.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.chat-block + .chat-block {
+  margin-top: 10px;
 }
