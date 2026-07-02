@@ -32,7 +32,8 @@ import {
   MessageActions,
 } from '@/components/ui/message'
 import { DotsLoader } from '@/components/ui/loader'
-import { ThinkingBar } from '@/components/ui/thinking-bar'
+import { Tool } from '@/components/ui/tool'
+import type { ToolPart } from '@/components/ui/tool'
 import {
   RefreshCw,
   Copy,
@@ -44,7 +45,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Wrench,
 } from 'lucide-react'
 import { Markdown } from '@/components/ui/markdown'
 import { cn } from '@/lib/utils'
@@ -102,8 +102,7 @@ function ReasoningPanel({ text }: { text: string; status: { type: string } }) {
 }
 
 // ─── Tool Call Panel ─────────────────────────────────────────────────────────
-// Collapsible panel showing what MCP tool was called, its args, and result.
-// Uses ThinkingBar for the header — pulses while running, static when done.
+// Wraps prompt-kit's <Tool> component and maps assistant-ui's state to ToolPart.
 
 interface ToolCallProps {
   toolName: string
@@ -114,59 +113,42 @@ interface ToolCallProps {
 }
 
 function ToolCallPanel({ toolName, argsText, args, result, status }: ToolCallProps) {
-  const isRunning = useThread((state) => state.isRunning)
-  const isPending = isRunning && !result
-  const [expanded, setExpanded] = useState(false)
+  const isRunning = useThread((s) => s.isRunning)
+
+  // Map to prompt-kit ToolPart state
+  const toolState: ToolPart['state'] = result !== undefined
+    ? 'output-available'
+    : isRunning
+    ? 'input-streaming'
+    : 'input-available'
 
   // Pretty-print tool name: "clickhouse-name_list_tables" → "list_tables"
   const displayName = toolName.includes('_')
     ? toolName.split('_').slice(1).join('_')
     : toolName
 
-  // Use parsed args if available, fall back to argsText parse
-  let prettyArgs = argsText
-  try { prettyArgs = JSON.stringify(JSON.parse(argsText), null, 2) } catch { /* keep raw */ }
-
-  let prettyResult: string | undefined
+  // Parse the result into an output object for the Tool component
+  let output: Record<string, unknown> | undefined
   if (result !== undefined) {
     try {
       const parsed = typeof result === 'string' ? JSON.parse(result) : result
-      prettyResult = JSON.stringify(parsed, null, 2)
+      output = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+        ? parsed as Record<string, unknown>
+        : { result: parsed }
     } catch {
-      prettyResult = String(result)
+      output = { result: String(result) }
     }
   }
 
-  return (
-    <div className="tool-call-panel">
-      <ThinkingBar
-        text={isPending ? `Calling ${displayName}…` : `Used ${displayName}`}
-        className="tool-call-header"
-        onClick={() => setExpanded(!expanded)}
-      />
-      {expanded && (
-        <div className="tool-call-body animate-in fade-in-0 duration-150">
-          {prettyArgs && prettyArgs !== '{}' && (
-            <div className="tool-call-section">
-              <div className="tool-call-section-label">
-                <Wrench className="h-3 w-3" />
-                Input
-              </div>
-              <pre className="tool-call-code">{prettyArgs}</pre>
-            </div>
-          )}
-          {prettyResult && (
-            <div className="tool-call-section">
-              <div className="tool-call-section-label tool-call-section-label--result">
-                Result
-              </div>
-              <pre className="tool-call-code tool-call-code--result">{prettyResult}</pre>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
+  const toolPart: ToolPart = {
+    type: displayName,
+    state: toolState,
+    input: args && Object.keys(args).length > 0 ? args : undefined,
+    output,
+    toolCallId: undefined,
+  }
+
+  return <Tool toolPart={toolPart} />
 }
 
 // Shows animated dots ONLY while waiting for the first token.
