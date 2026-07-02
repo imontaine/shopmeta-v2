@@ -3500,6 +3500,11 @@ body {
   margin: 0.75em 0;
   font-style: italic;
 }
+/* Suppress @tailwindcss/typography open-quote / close-quote pseudo-content */
+.chat-prose blockquote p:first-of-type::before,
+.chat-prose blockquote p:last-of-type::after {
+  content: none !important;
+}
 
 /* Inline code */
 .chat-prose code:not(pre code) {

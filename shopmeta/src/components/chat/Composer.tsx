@@ -164,8 +164,8 @@ function ComposerInner({
           <div className="flex items-center gap-2">
             {/* Stop button — visible during streaming */}
             <ThreadPrimitive.If running>
-              <ComposerPrimitive.Cancel asChild>
-                <PromptInputAction tooltip="Stop generation">
+              <PromptInputAction tooltip="Stop generation">
+                <ComposerPrimitive.Cancel asChild>
                   <Button
                     data-testid="stop-generation-btn"
                     variant="destructive"
@@ -174,8 +174,8 @@ function ComposerInner({
                   >
                     <Square className="h-3.5 w-3.5" fill="currentColor" />
                   </Button>
-                </PromptInputAction>
-              </ComposerPrimitive.Cancel>
+                </ComposerPrimitive.Cancel>
+              </PromptInputAction>
             </ThreadPrimitive.If>
 
             {/* Send button — visible when not streaming */}
