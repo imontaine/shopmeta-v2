@@ -149,6 +149,12 @@ function createAdapter(provider: string, model: string, conversationId?: string,
                 throw new Error(msg)
               }
 
+              case 'TEXT_MESSAGE_START': {
+                // If there's already text from a previous run, add a paragraph break
+                if (fullText) fullText += '\n\n'
+                break
+              }
+
               case 'TEXT_MESSAGE_CONTENT': {
                 // ONLY this event type feeds the text content
                 if (parsed.delta) {

@@ -108,11 +108,12 @@ function ReasoningPanel({ text }: { text: string; status: { type: string } }) {
 interface ToolCallProps {
   toolName: string
   argsText: string
+  args?: Record<string, unknown>
   result?: unknown
   status: { type: string }
 }
 
-function ToolCallPanel({ toolName, argsText, result, status }: ToolCallProps) {
+function ToolCallPanel({ toolName, argsText, args, result, status }: ToolCallProps) {
   const isRunning = useThread((state) => state.isRunning)
   const isPending = isRunning && !result
   const [expanded, setExpanded] = useState(false)
@@ -122,6 +123,7 @@ function ToolCallPanel({ toolName, argsText, result, status }: ToolCallProps) {
     ? toolName.split('_').slice(1).join('_')
     : toolName
 
+  // Use parsed args if available, fall back to argsText parse
   let prettyArgs = argsText
   try { prettyArgs = JSON.stringify(JSON.parse(argsText), null, 2) } catch { /* keep raw */ }
 
@@ -314,14 +316,17 @@ function AssistantMessage() {
                   Reasoning: ({ text, status }) => (
                     <ReasoningPanel text={text} status={status} />
                   ),
-                  ToolCall: ({ toolName, argsText, result, status }) => (
-                    <ToolCallPanel
-                      toolName={toolName}
-                      argsText={argsText}
-                      result={result}
-                      status={status}
-                    />
-                  ),
+                  tools: {
+                    Override: ({ toolName, argsText, args, result, status }) => (
+                      <ToolCallPanel
+                        toolName={toolName}
+                        argsText={argsText}
+                        args={args as Record<string, unknown>}
+                        result={result}
+                        status={status}
+                      />
+                    ),
+                  },
                 }}
               />
             </MessageContent>
