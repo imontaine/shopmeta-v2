@@ -59,6 +59,19 @@ export const Route = createFileRoute('/api/chat/stream')({
           })
         }
 
+        // If the client didn't send orgId, resolve it server-side from the session.
+        // This makes MCP loading reliable even when the client-side listAgents call
+        // fails or the user hasn't configured a default agent yet.
+        if (!parsed.orgId) {
+          try {
+            const { requireOrgSession } = await import('#/lib/auth/require-org-session')
+            const { orgId } = await requireOrgSession()
+            parsed = { ...parsed, orgId }
+          } catch {
+            // Session unavailable or no org — MCP will be skipped gracefully
+          }
+        }
+
         let adapter: ReturnType<typeof getAdapter>
         try {
           adapter = getAdapter(parsed.provider, parsed.model)
@@ -70,49 +83,71 @@ export const Route = createFileRoute('/api/chat/stream')({
         }
 
         // -- MCP Integration ----------------------------------------------------
-        // Load agent MCP servers from the DB catalog. For OAuth servers, the SDK
-        // transport automatically injects the Bearer token and refreshes it on 401
-        // via DrizzleOAuthProvider (no manual token management needed).
+        // Load MCP servers from the DB catalog in two passes:
+        //   1. Trusted org-wide servers  — always injected (requires only orgId)
+        //   2. Agent-specific servers    — additionally injected when agentId is set
+        //
+        // "Trusted" is the user's explicit signal that a server is safe to use in
+        // all conversations.  The agent layer is a fine-grained override/extension.
         let mcpTools: unknown[] = []
         let mcpClients: Awaited<ReturnType<typeof import('@tanstack/ai-mcp').createMCPClients>> | undefined
 
-        if (parsed.agentId && parsed.orgId) {
+        if (parsed.orgId) {
           try {
             const { getDb } = await import('#/lib/db/index')
             const { mcpServers, agentMcpServers } = await import('#/lib/db/schema')
-            const { eq, and } = await import('drizzle-orm')
+            const { eq, and, or, inArray } = await import('drizzle-orm')
             const { mcpRowToClientOptions } = await import('#/lib/mcp-client-options.server')
             const { createMCPClients, MCPConnectionError, DuplicateToolNameError } = await import('@tanstack/ai-mcp')
 
             const db = getDb()
 
-            // Fetch agent's attached MCP servers directly from DB
-            const rows = await db
-              .select({
-                id: mcpServers.id,
-                orgId: mcpServers.orgId,
-                name: mcpServers.name,
-                serverName: mcpServers.serverName,
-                url: mcpServers.url,
-                transport: mcpServers.transport,
-                description: mcpServers.description,
-                iconUrl: mcpServers.iconUrl,
-                authType: mcpServers.authType,
-                authConfig: mcpServers.authConfig,
-                oauthClientInfo: mcpServers.oauthClientInfo,
-                oauthState: mcpServers.oauthState,
-                trusted: mcpServers.trusted,
-                createdAt: mcpServers.createdAt,
-                updatedAt: mcpServers.updatedAt,
-              })
-              .from(agentMcpServers)
-              .innerJoin(mcpServers, eq(agentMcpServers.mcpServerId, mcpServers.id))
+            // 1. Trusted servers for this org (org-wide, always available)
+            const trustedRows = await db
+              .select()
+              .from(mcpServers)
               .where(
                 and(
-                  eq(agentMcpServers.agentId, parsed.agentId),
                   eq(mcpServers.orgId, parsed.orgId),
+                  eq(mcpServers.trusted, true),
                 )
               )
+
+            // 2. Agent-specific servers (union, deduped by id)
+            let agentRows: typeof trustedRows = []
+            if (parsed.agentId) {
+              const allAgentRows = await db
+                .select({
+                  id: mcpServers.id,
+                  orgId: mcpServers.orgId,
+                  name: mcpServers.name,
+                  serverName: mcpServers.serverName,
+                  url: mcpServers.url,
+                  transport: mcpServers.transport,
+                  description: mcpServers.description,
+                  iconUrl: mcpServers.iconUrl,
+                  authType: mcpServers.authType,
+                  authConfig: mcpServers.authConfig,
+                  oauthClientInfo: mcpServers.oauthClientInfo,
+                  oauthState: mcpServers.oauthState,
+                  trusted: mcpServers.trusted,
+                  createdAt: mcpServers.createdAt,
+                  updatedAt: mcpServers.updatedAt,
+                })
+                .from(agentMcpServers)
+                .innerJoin(mcpServers, eq(agentMcpServers.mcpServerId, mcpServers.id))
+                .where(
+                  and(
+                    eq(agentMcpServers.agentId, parsed.agentId),
+                    eq(mcpServers.orgId, parsed.orgId),
+                  )
+                )
+              // Exclude servers already in trustedRows (dedup by id)
+              const trustedIds = new Set(trustedRows.map((r) => r.id))
+              agentRows = allAgentRows.filter((r) => !trustedIds.has(r.id))
+            }
+
+            const rows = [...trustedRows, ...agentRows]
 
             if (rows.length > 0) {
               // Derive the redirect URL from the public-facing origin.
@@ -149,11 +184,14 @@ export const Route = createFileRoute('/api/chat/stream')({
                 clientOptionsMap[key] = opts
               }
 
-
               try {
                 // Create MCP client pool. SDK handles transport lifecycle.
                 mcpClients = await createMCPClients(clientOptionsMap)
                 mcpTools = await mcpClients.tools()
+                console.log(
+                  `[chat/stream] MCP loaded: ${mcpTools.length} tools from ${rows.length} servers`,
+                  rows.map((r) => r.name),
+                )
               } catch (err) {
                 if (err instanceof DuplicateToolNameError) {
                   // Two MCP servers expose a tool with the same prefixed name
@@ -175,7 +213,8 @@ export const Route = createFileRoute('/api/chat/stream')({
                   throw err
                 }
               }
-
+            } else {
+              console.log('[chat/stream] No MCP servers configured for org:', parsed.orgId)
             }
           } catch (err) {
             // Log but don't crash - degrade gracefully to no-MCP mode
